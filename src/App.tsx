@@ -10,6 +10,9 @@ import { useInchiStore } from './store';
 import { useKetcherHighlights } from './hooks/useKetcherHighlights';
 import { MOLECULES } from './data/molecules';
 import { handleMolSelectLogic } from './lib/handleMolSelectLogic';
+import { FeedbackDialog } from './components/FeedbackDialog';
+import { buildFeedbackUrl } from './lib/buildFeedbackUrl';
+import type { FeedbackCategory, FeedbackContext, BuildFeedbackUrlResult } from './lib/buildFeedbackUrl';
 
 // Module-level — created once for the page lifetime. NEVER move inside a component.
 // (D-13: provider inside component re-creates WASM worker on every render)
@@ -28,6 +31,8 @@ export default function App() {
   // Prevents selectedMolId from resetting to null when the 'change' event fires
   // after setMolecule() — separate from isHighlightingRef (RESEARCH.md Pitfall 4)
   const isSettingMoleculeRef = useRef(false);
+  // Ref to the native <dialog> element — passed to FeedbackDialog; showModal()/close() called on it
+  const dialogRef = useRef<HTMLDialogElement>(null);
 
   // Bridge hover state → Ketcher canvas highlights (Phase 4)
   useKetcherHighlights(ketcherRef, isReady, isHighlightingRef);
@@ -55,6 +60,41 @@ export default function App() {
       setIsLoading,
       isSettingMoleculeRef,
     });
+  };
+
+  // Context snapshot for the FeedbackDialog preview — re-computed on each render so it
+  // reflects the current selectedMolId. smiles is undefined in the preview (live getSmiles()
+  // is only called at submit time per D-12; the dialog renders a placeholder from D-15).
+  const contextPreview: FeedbackContext = {
+    inchi: useInchiStore.getState().inchi || undefined,
+    smiles: undefined,
+    presetName: MOLECULES.find(m => m.id === selectedMolId)?.name,
+    userAgent: navigator.userAgent,
+    appVersion: `v${__APP_VERSION__} (${__APP_COMMIT__.slice(0, 7)})`,
+  };
+
+  // Assembles FeedbackContext at submit time with a live getSmiles() call (D-12 / D-13 / D-14).
+  // Reads inchi from store via getState() (not a hook subscription — avoids extra re-renders).
+  const handleFeedbackSubmit = async (
+    message: string,
+    category: FeedbackCategory,
+  ): Promise<BuildFeedbackUrlResult> => {
+    const inchi = useInchiStore.getState().inchi || undefined;
+    let smiles: string | undefined;
+    try {
+      smiles = await ketcherRef.current?.getSmiles() ?? undefined;
+    } catch {
+      smiles = undefined; // silent fallback per D-12 discretion
+    }
+    const presetName = MOLECULES.find(m => m.id === selectedMolId)?.name;
+    const context: FeedbackContext = {
+      inchi,
+      smiles,
+      presetName,
+      userAgent: navigator.userAgent,
+      appVersion: `v${__APP_VERSION__} (${__APP_COMMIT__.slice(0, 7)})`,
+    };
+    return buildFeedbackUrl({ message, category, context });
   };
 
   // Generation counter: synchronous useRef (not useState) so it updates before the
@@ -148,6 +188,34 @@ export default function App() {
   return (
     <div className="app">
       <Header />
+      <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '4px 2px', marginBottom: '12px' }}>
+        <button
+          type="button"
+          style={{
+            height: '32px',
+            borderRadius: '999px',
+            background: 'var(--c-formula)',
+            color: 'var(--bg-canvas)',
+            fontFamily: 'var(--font-sans)',
+            fontSize: '12.5px',
+            fontWeight: 500,
+            border: 'none',
+            cursor: 'pointer',
+            padding: '0 16px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}
+          onClick={() => dialogRef.current?.showModal()}
+        >
+          Send feedback
+        </button>
+      </div>
+      <FeedbackDialog
+        dialogRef={dialogRef}
+        onSubmit={handleFeedbackSubmit}
+        contextPreview={contextPreview}
+      />
       <KetcherPanel
         isReady={isReady}
         onInit={handleInit}
