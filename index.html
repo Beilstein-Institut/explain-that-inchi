@@ -4,11 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Explain that InChI</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
-    <!-- FIRST script: must precede all others — polyfills COOP/COEP for GitHub Pages SharedArrayBuffer -->
-    <script src="%BASE_URL%coi-serviceworker.js"></script>
+    <!-- FIRST script: must precede all others — polyfills COOP/COEP for GitHub Pages SharedArrayBuffer.
+         Relative path (no leading slash) so it resolves under the GitHub Pages base subpath
+         (e.g. /explain-that-inchi/coi-serviceworker.js), giving the SW the correct scope. -->
+    <script src="coi-serviceworker.js"></script>
   </head>
   <body>
     <div id="root"></div>
