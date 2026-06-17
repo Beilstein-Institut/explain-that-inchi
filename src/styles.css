@@ -15,7 +15,7 @@
   --c-hydro:   oklch(0.62 0.14 65);
   --c-charge:  oklch(0.55 0.14 305);
   --c-proton:  oklch(0.55 0.14 325);
-  --c-stereo:  oklch(0.58 0.16 25);
+  --c-stereo:  oklch(0.58 0.15 112);
   --c-isotope: oklch(0.58 0.13 200);
 
   /* Element-specific colors (used in formula layer + per-element halos) */
@@ -64,7 +64,7 @@
   --c-hydro-bg:   oklch(0.96 0.05 75);
   --c-charge-bg:  oklch(0.95 0.04 305);
   --c-proton-bg:  oklch(0.95 0.04 325);
-  --c-stereo-bg:  oklch(0.96 0.05 25);
+  --c-stereo-bg:  oklch(0.96 0.05 112);
   --c-isotope-bg: oklch(0.95 0.04 200);
 
   --font-sans: "IBM Plex Sans", system-ui, sans-serif;
