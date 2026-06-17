@@ -48,7 +48,7 @@ Full phase details: `.planning/milestones/v1.0-ROADMAP.md`
 **Plans**: 2 plans
 
 Plans:
-- [ ] 09-01-PLAN.md — Bump version + inject __APP_VERSION__/__APP_COMMIT__ Vite defines (FEED-09)
+- [x] 09-01-PLAN.md — Bump version + inject __APP_VERSION__/__APP_COMMIT__ Vite defines (FEED-09)
 - [ ] 09-02-PLAN.md — Pure, test-anchored buildFeedbackUrl() with encoding/budget/truncation/@-neutralization (FEED-04/05/07)
 
 ### Phase 10: Feedback dialog, context capture & entry point
@@ -88,7 +88,7 @@ Phases execute in numeric order: 9 → 10
 | 6. Hydrogen Highlight, Polish, and Deploy | v1.0 | 4/4 | Complete | 2026-06-01 |
 | 7. Multi-Fragment Highlighting, p-Layer, and Copy | v1.0 | 3/3 | Complete | 2026-06-01 |
 | 8. Hydrogen Implicit & Explicit Highlight | v1.0 | 2/2 | Complete | 2026-06-05 |
-| 9. Feedback URL builder, config & version injection | v1.2 | 0/2 | Not started | - |
+| 9. Feedback URL builder, config & version injection | v1.2 | 1/2 | In Progress|  |
 | 10. Feedback dialog, context capture & entry point | v1.2 | 0/TBD | Not started | - |
 
 ---

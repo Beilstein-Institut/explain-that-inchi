@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: In-app feedback via prefilled GitHub issues
-status: planning
-last_updated: "2026-06-17T07:48:33.558Z"
-last_activity: 2026-06-17 - v1.2 roadmap created (Phases 9–10)
+status: executing
+last_updated: "2026-06-17T11:07:19.887Z"
+last_activity: 2026-06-17
 progress:
   total_phases: 2
   completed_phases: 0
-  total_plans: 0
+  total_plans: 2
   completed_plans: 0
   percent: 0
 ---
@@ -17,14 +17,14 @@ progress:
 
 **Project:** Explain that InChI
 **Milestone:** v1.2 — In-app feedback via prefilled GitHub issues (roadmap drafted; v1.1 shipped 2026-06-17)
-**Status:** Phase 9 planned & verified — ready to execute (`/gsd:execute-phase 9`)
+**Status:** Executing Phase 09
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-06-17)
 
 **Core value:** Every chunk of an InChI string is hoverable, explained, and linked back to the atoms in the drawing — demystifying a notation that most chemists treat as opaque.
-**Current focus:** v1.2 — in-app feedback via prefilled GitHub issues (roadmap → plan Phase 9)
+**Current focus:** Phase 09 — feedback-url-builder-config-version-injection
 
 ## Milestone Archive
 
@@ -95,7 +95,7 @@ None
 
 | coi+favicon | /gsd-fast: fix coi-serviceworker.js path (%BASE_URL% → relative; was 404) + add project favicon.svg (benzene ring, color-coded vertices) | 2026-06-17 | 7ffeec3 | (index.html, public/favicon.svg) |
 
-Last activity: 2026-06-17 - v1.2 roadmap created (Phases 9–10)
+Last activity: 2026-06-17
 
 ### Multi-fragment support (now complete)
 
@@ -103,7 +103,7 @@ The 4-task multi-component fix series (260610-d2r, -eci, -eoi) closed all known 
 
 ## Current Position
 
-Phase: 9 — planned (2 plans, 1 wave)
-Plan: 09-01 (version injection, FEED-09), 09-02 (pure buildFeedbackUrl, FEED-04/05/07)
-Status: Phase 9 planned & verified (plan-checker PASS) — ready to execute
-Last activity: 2026-06-17 — planned Phase 9; checker PASS; hardened FEED-09 sha-vs-tag resolution
+Phase: 09 (feedback-url-builder-config-version-injection) — EXECUTING
+Plan: 1 of 2
+Status: Executing Phase 09
+Last activity: 2026-06-17 -- Phase 09 execution started
