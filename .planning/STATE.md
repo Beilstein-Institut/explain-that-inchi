@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: In-app feedback via prefilled GitHub issues
 status: planning
-last_updated: "2026-06-17T07:14:04.531Z"
-last_activity: 2026-06-17
+last_updated: "2026-06-17T07:48:33.558Z"
+last_activity: 2026-06-17 - v1.2 roadmap created (Phases 9–10)
 progress:
   total_phases: 2
   completed_phases: 0
