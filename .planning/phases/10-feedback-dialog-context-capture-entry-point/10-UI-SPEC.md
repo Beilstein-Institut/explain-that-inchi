@@ -1,10 +1,11 @@
 ---
 phase: 10
 slug: feedback-dialog-context-capture-entry-point
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-06-17
+reviewed_at: 2026-06-17
 ---
 
 # Phase 10 — UI Design Contract
