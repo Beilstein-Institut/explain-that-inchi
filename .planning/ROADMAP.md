@@ -78,7 +78,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 10-02-PLAN.md — FeedbackDialog component: category selector, message field, context preview, submit/clipboard flows
+- [x] 10-02-PLAN.md — FeedbackDialog component: category selector, message field, context preview, submit/clipboard flows
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -106,7 +106,7 @@ Phases execute in numeric order: 9 → 10
 | 7. Multi-Fragment Highlighting, p-Layer, and Copy | v1.0 | 3/3 | Complete | 2026-06-01 |
 | 8. Hydrogen Implicit & Explicit Highlight | v1.0 | 2/2 | Complete | 2026-06-05 |
 | 9. Feedback URL builder, config & version injection | v1.2 | 2/2 | Complete | 2026-06-17 |
-| 10. Feedback dialog, context capture & entry point | v1.2 | 1/3 | In Progress|  |
+| 10. Feedback dialog, context capture & entry point | v1.2 | 2/3 | In Progress|  |
 
 ---
 *Roadmap created: 2026-05-18*
