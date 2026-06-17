@@ -72,6 +72,10 @@ None
 
 | 260610-ist (fix2) | /gsd-fast: formula-H badges now include mobile-H (H,5,6) groups — hovering H-count showed no "H?" badge for the OH/COOH proton (e.g. alanine) | 2026-06-10 | e655971 | (useKetcherHighlights) |
 
+| stereo-hue | /gsd-verify-work 8 UAT fix: give undefined '?' parity a distinct hue (--c-stereo → lime 112; was identical to + red) | 2026-06-17 | f6e3dc6 | (src/styles.css) |
+
+| coi+favicon | /gsd-fast: fix coi-serviceworker.js path (%BASE_URL% → relative; was 404) + add project favicon.svg (benzene ring, color-coded vertices) | 2026-06-17 | 7ffeec3 | (index.html, public/favicon.svg) |
+
 Last activity: 2026-06-10 - Fixed formula-H badges missing mobile-H ("H?") for (H,5,6) groups
 
 ### Multi-fragment support (now complete)
