@@ -31,7 +31,7 @@ Full phase details: `.planning/milestones/v1.0-ROADMAP.md`
 **Overview:** This is a small, low-complexity, purely additive feature: client-side URL construction, no network call until the user clicks through. It splits along the one natural seam research identified — a pure, DOM-free URL builder that owns all the hard logic (single-`URLSearchParams` encoding, the ~7.5 KB `TextEncoder` byte-budget guard, deterministic truncation of auto-context only, `@`-neutralization, category title-prefixing) plus the build-time version string it consumes — built and test-anchored first — then the impure submit-time context collector, the native `<dialog>` modal, the entry-point control, and App wiring layered on top.
 
 - [x] **Phase 9: Feedback URL builder, config & version injection** — Pure, fully-tested `buildFeedbackUrl()` plus build-time app version (completed 2026-06-17)
-- [ ] **Phase 10: Feedback dialog, context capture & entry point** — On-brand "Send feedback" modal wired into the app, opening the prefilled issue
+- [x] **Phase 10: Feedback dialog, context capture & entry point** — On-brand "Send feedback" modal wired into the app, opening the prefilled issue (completed 2026-06-17)
 
 ## Phase Details
 
@@ -82,7 +82,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 10-03-PLAN.md — App.tsx wiring: toolbar pill, dialogRef, handleFeedbackSubmit context assembly
+- [x] 10-03-PLAN.md — App.tsx wiring: toolbar pill, dialogRef, handleFeedbackSubmit context assembly
 
 ## Non-Code Maintainer Checklist (not a phase)
 
@@ -106,7 +106,7 @@ Phases execute in numeric order: 9 → 10
 | 7. Multi-Fragment Highlighting, p-Layer, and Copy | v1.0 | 3/3 | Complete | 2026-06-01 |
 | 8. Hydrogen Implicit & Explicit Highlight | v1.0 | 2/2 | Complete | 2026-06-05 |
 | 9. Feedback URL builder, config & version injection | v1.2 | 2/2 | Complete | 2026-06-17 |
-| 10. Feedback dialog, context capture & entry point | v1.2 | 2/3 | In Progress|  |
+| 10. Feedback dialog, context capture & entry point | v1.2 | 3/3 | Complete   | 2026-06-17 |
 
 ---
 *Roadmap created: 2026-05-18*
