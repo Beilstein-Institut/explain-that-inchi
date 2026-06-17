@@ -13,6 +13,14 @@
   max-width: 560px;
   width: min(560px, calc(100vw - 32px));
   margin: auto;
+}
+
+/* Flex layout applies only while the dialog is open. Author CSS overrides the UA
+   `dialog:not([open]) { display: none }` rule by cascade origin, so an unconditional
+   `display: flex` would keep the closed dialog in the layout (visible behind other
+   stacking contexts like the Ketcher canvas). Scoping to [open] restores the UA
+   hide-on-close behaviour. */
+.feedbackDialog[open] {
   display: flex;
   flex-direction: column;
   gap: 16px;
