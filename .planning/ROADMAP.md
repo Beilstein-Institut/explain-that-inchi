@@ -45,10 +45,11 @@ Full phase details: `.planning/milestones/v1.0-ROADMAP.md`
   3. When the encoded URL would exceed the ~7.5 KB `TextEncoder` byte budget, the auto-context (drop SMILES first, then trim InChI with a `...[truncated]` marker) is deterministically reduced while the user's message is preserved intact, and the result reports `truncated: true` — verified against the multi-fragment repro molecule.
   4. `@` in user-supplied text is neutralized so submissions cannot accidentally ping GitHub users.
   5. The running app exposes a non-`0.0.0` version/commit string (Vite `define`, `git describe --tags --always` with `$GITHUB_SHA` CI fallback, `package.json` bumped) that the builder includes in the context block.
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 09-01: TBD
+- [ ] 09-01-PLAN.md — Bump version + inject __APP_VERSION__/__APP_COMMIT__ Vite defines (FEED-09)
+- [ ] 09-02-PLAN.md — Pure, test-anchored buildFeedbackUrl() with encoding/budget/truncation/@-neutralization (FEED-04/05/07)
 
 ### Phase 10: Feedback dialog, context capture & entry point
 **Goal**: A visitor can discover a "Send feedback" control, fill in a category and message in an on-brand modal, see exactly what context will be attached, and click through to a prefilled GitHub issue in a new tab — without ever disturbing the Ketcher canvas.
@@ -87,7 +88,7 @@ Phases execute in numeric order: 9 → 10
 | 6. Hydrogen Highlight, Polish, and Deploy | v1.0 | 4/4 | Complete | 2026-06-01 |
 | 7. Multi-Fragment Highlighting, p-Layer, and Copy | v1.0 | 3/3 | Complete | 2026-06-01 |
 | 8. Hydrogen Implicit & Explicit Highlight | v1.0 | 2/2 | Complete | 2026-06-05 |
-| 9. Feedback URL builder, config & version injection | v1.2 | 0/TBD | Not started | - |
+| 9. Feedback URL builder, config & version injection | v1.2 | 0/2 | Not started | - |
 | 10. Feedback dialog, context capture & entry point | v1.2 | 0/TBD | Not started | - |
 
 ---
