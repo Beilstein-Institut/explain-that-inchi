@@ -514,3 +514,38 @@ describe('FEED-07: byte-budget truncation', () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// D-11: fullBody field — clipboard fallback source of truth
+// ---------------------------------------------------------------------------
+
+describe('D-11: fullBody field', () => {
+  it('result includes fullBody for non-truncated input', () => {
+    const { fullBody } = buildFeedbackUrl({
+      message: 'Test',
+      category: 'Bug',
+      context: {
+        inchi: 'InChI=1S/C6H6/c1-2-4-6-5-3-1/h1-6H',
+        smiles: 'c1ccccc1',
+      },
+    });
+    expect(fullBody).toBeTruthy();
+    expect(fullBody).toContain('Test');
+    expect(fullBody).toContain('InChI=1S/C6H6');
+  });
+
+  it('fullBody contains the untruncated InChI even when url is truncated', () => {
+    const LONG_INCHI =
+      'InChI=1S/C7H8.C6H6/c1-7-5-3-2-4-6-7;1-2-4-6-5-3-1/h2-6H,1H3;1-6H'.repeat(100);
+    const { truncated, fullBody } = buildFeedbackUrl({
+      message: 'My feedback',
+      category: 'Bug',
+      context: {
+        inchi: LONG_INCHI,
+        smiles: 'Cc1ccccc1.'.repeat(200),
+      },
+    });
+    expect(truncated).toBe(true);
+    expect(fullBody).toContain(LONG_INCHI);
+  });
+});
