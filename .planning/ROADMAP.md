@@ -61,11 +61,13 @@ Plans:
   3. Before submitting, the user sees a preview of the auto-captured context (InChI read verbatim from the store, SMILES via `ketcher.getSmiles()`, preset name via `MOLECULES.find(selectedMolId)`, trimmed user-agent, app version) and clear copy stating that submitting opens a PUBLIC GitHub issue and requires a GitHub account.
   4. On submit, a prefilled GitHub `issues/new` page opens in a new tab via a real user-gesture anchor (`target="_blank" rel="noopener"`) without being popup-blocked; if the builder reported truncation, the user is offered a clipboard fallback to copy the full InChI / issue body.
   5. With an empty canvas / no InChI yet, the dialog still works and the body degrades cleanly (e.g. "no structure loaded") with no broken or empty submission.
-**Plans**: TBD
+**Plans**: 3 plans
 **UI hint**: yes
 
 Plans:
-- [ ] 10-01: TBD
+- [ ] 10-01-PLAN.md — Extend buildFeedbackUrl to return fullBody field (D-11 builder extension + tests)
+- [ ] 10-02-PLAN.md — FeedbackDialog component: category selector, message field, context preview, submit/clipboard flows
+- [ ] 10-03-PLAN.md — App.tsx wiring: toolbar pill, dialogRef, handleFeedbackSubmit context assembly
 
 ## Non-Code Maintainer Checklist (not a phase)
 
