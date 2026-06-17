@@ -124,6 +124,32 @@ body {
   color: var(--ink-soft);
   font-weight: 500;
 }
+/* Feedback trigger: rendered on the "Draw a molecule…" section-label row
+   (justify-content: space-between pushes it to the right). Shares that row
+   instead of opening its own band, so no vertical space is wasted. */
+.feedback-trigger {
+  height: 28px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 999px;
+  background: var(--c-formula);
+  color: var(--bg-canvas);
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 120ms;
+}
+.feedback-trigger:hover {
+  background: oklch(from var(--c-formula) calc(l + 0.05) c h);
+}
+.feedback-trigger:focus-visible {
+  outline: 2px solid var(--c-formula);
+  outline-offset: 2px;
+}
 
 /* ---------- Section labels ---------- */
 .section-label {

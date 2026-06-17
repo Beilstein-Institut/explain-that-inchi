@@ -188,29 +188,6 @@ export default function App() {
   return (
     <div className="app">
       <Header />
-      <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '4px 2px', marginBottom: '12px' }}>
-        <button
-          type="button"
-          style={{
-            height: '32px',
-            borderRadius: '999px',
-            background: 'var(--c-formula)',
-            color: 'var(--bg-canvas)',
-            fontFamily: 'var(--font-sans)',
-            fontSize: '12.5px',
-            fontWeight: 500,
-            border: 'none',
-            cursor: 'pointer',
-            padding: '0 16px',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-          }}
-          onClick={() => dialogRef.current?.showModal()}
-        >
-          Send feedback
-        </button>
-      </div>
       <FeedbackDialog
         dialogRef={dialogRef}
         onSubmit={handleFeedbackSubmit}
@@ -223,6 +200,7 @@ export default function App() {
         selectedMolId={selectedMolId}
         onMolSelect={handleMolSelect}
         isLoading={isLoading}
+        onFeedbackClick={() => dialogRef.current?.showModal()}
       />
       <InchiSection />
       <Explanation />

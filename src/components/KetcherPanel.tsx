@@ -10,6 +10,8 @@ interface KetcherPanelProps {
   selectedMolId: string | null;
   onMolSelect: (id: string) => void;
   isLoading: boolean;
+  /** Opens the feedback dialog. Rendered as a trigger on the section-label row. */
+  onFeedbackClick?: () => void;
 }
 
 export function KetcherPanel({
@@ -19,11 +21,17 @@ export function KetcherPanel({
   selectedMolId,
   onMolSelect,
   isLoading,
+  onFeedbackClick,
 }: KetcherPanelProps) {
   return (
     <section>
       <div className="section-label">
         <span>Draw a molecule to see its InChI</span>
+        {onFeedbackClick && (
+          <button type="button" className="feedback-trigger" onClick={onFeedbackClick}>
+            Send feedback
+          </button>
+        )}
       </div>
       <div className={styles.ketcher}>
         {/* Canvas column: Editor + loading overlay + canvas-meta overlay */}
