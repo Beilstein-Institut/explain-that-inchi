@@ -44,6 +44,11 @@ export interface BuildFeedbackUrlResult {
   url: string;
   /** True if auto-context was reduced to fit the ~7.5 KB byte budget (D-13). */
   truncated: boolean;
+  /**
+   * Full untruncated issue body (message + full context). Single source of truth
+   * for the clipboard fallback (D-11) — never re-assembled by the dialog.
+   */
+  fullBody: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -255,5 +260,5 @@ export function buildFeedbackUrl(opts: BuildFeedbackUrlOpts): BuildFeedbackUrlRe
     }
   }
 
-  return { url, truncated };
+  return { url, truncated, fullBody: initialBody };
 }
