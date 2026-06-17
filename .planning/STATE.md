@@ -1,9 +1,9 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
+milestone: v1.1
+milestone_name: post-ship correctness & polish
 status: completed
-last_updated: "2026-06-10T07:00:00.000Z"
+last_updated: "2026-06-17T00:00:00.000Z"
 progress:
   total_phases: 0
   completed_phases: 0
@@ -14,7 +14,7 @@ progress:
 # Project State
 
 **Project:** Explain that InChI
-**Milestone:** v1.0 MVP — ✅ SHIPPED 2026-06-05
+**Milestone:** v1.1 patch — ✅ TAGGED 2026-06-17 (post-ship correctness & polish on v1.0 MVP, shipped 2026-06-05)
 **Status:** Complete
 
 ## Project Reference
@@ -26,6 +26,7 @@ See: .planning/PROJECT.md (updated 2026-06-05)
 
 ## Milestone Archive
 
+- v1.1 (patch): see `.planning/MILESTONES.md` — 70 commits since v1.0, tag `v1.1`. No separate roadmap/requirements (maintenance release; work logged in "Quick Tasks Completed").
 - Full details: `.planning/MILESTONES.md`
 - Roadmap archive: `.planning/milestones/v1.0-ROADMAP.md`
 - Requirements archive: `.planning/milestones/v1.0-REQUIREMENTS.md`

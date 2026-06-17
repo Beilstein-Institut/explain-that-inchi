@@ -2,6 +2,35 @@
 
 ---
 
+## v1.1 — Post-ship correctness & polish (patch)
+
+**Shipped:** 2026-06-17
+**Type:** Maintenance/patch release (no new milestone scope — fixes + small additions on top of v1.0)
+**Timeline:** 2026-06-05 → 2026-06-17
+**Commits:** 70 since `v1.0` (27 src files, +1448/−566)
+**Tests:** 206 passing, `tsc -b` clean
+
+### Delivered
+
+Correctness and polish pass on the shipped v1.0, driven by a code review and live UAT (`/gsd-verify-work 8`). Hardened multi-fragment/multi-component handling end-to-end, fixed the H-hover system, and cleared deploy-time and cosmetic gaps. No backend/architecture changes.
+
+### Key Accomplishments
+
+1. **Multi-component correctness** — canonical→Ketcher pool-ID remap via AuxInfo `/rC:` coordinate matching (fixed ~25/31 atoms highlighting the wrong fragment); multi-fragment-aware `readingFor` explanation text; `/q` and `/p` layer highlighting fixed for multi-fragment salts (e.g. CuSO₄).
+2. **Hydrogen-hover overhaul** — unified explicit-H (atom+bond via traversal) vs implicit-H (badge-only) hover, fragment-scoped via `canonRange`, mobile-H `(H,5,6)` "H?" badges, undefined `?` stereocenters supported end-to-end.
+3. **Stereo palette fix** — undefined `?` parity given a distinct lime hue (was identical to `+` red) — surfaced and fixed during live UAT.
+4. **Preset & UX** — 20 drug molecules added to the preset picker; presets load from embedded SMILES (dropped runtime PubChem fetch); "Copied!" confirmation timing fix under StrictMode.
+5. **Deploy/cosmetic** — fixed `coi-serviceworker.js` path (`%BASE_URL%` → relative, was 404 / would break COOP-COEP on GitHub Pages); added project favicon.
+6. **Verification** — all multi-fragment/H/stereo fixes confirmed against live Ketcher WASM (UAT: 6/7 pass, 1 issue found & fixed). Closes the v1.0 "not browser-verified" carry-forward items.
+
+### Notes
+
+- Removed dead components (`Footnote`, `MappingStrip`) that were built/tested but never mounted.
+- Not run as a formal GSD milestone (no separate ROADMAP/REQUIREMENTS) — all work routed through `/gsd-quick`/`/gsd-fast`; see STATE.md "Quick Tasks Completed".
+- Still deferred to v2: MAP-03 shareable URL; `App.tsx` Ketcher `as any` adapter refactor.
+
+---
+
 ## v1.0 MVP
 
 **Shipped:** 2026-06-05
