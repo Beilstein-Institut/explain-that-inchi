@@ -12,12 +12,29 @@ Every chunk of an InChI string is hoverable, explained, and linked back to the a
 
 ## Current State
 
-**Version:** v1.0 MVP — shipped 2026-06-05
+**Version:** v1.1 — shipped 2026-06-17 (post-ship correctness & polish on the v1.0 MVP, shipped 2026-06-05)
 
-- 8 phases, 25 plans, 186 commits, ~4,773 LOC TypeScript
+- 8 phases, 25 plans (v1.0); v1.1 = 70-commit maintenance/polish patch
 - Tech stack: Vite 8 + React 18 + TypeScript + Ketcher 3.12.0 (WASM) + Zustand 5 + CSS Modules
-- 135+ unit/integration tests passing; TypeScript clean
+- 206 unit/integration tests passing; TypeScript clean
 - Deployed to GitHub Pages via GitHub Actions CD
+
+## Current Milestone: v1.2 In-app feedback via prefilled GitHub issues
+
+**Goal:** Let any visitor send feedback through a "Send feedback" control that opens a prefilled GitHub new-issue page, auto-including the current InChI, molecule, and environment context — with no backend.
+
+**Target features:**
+- A "Send feedback" entry point in the UI, on-brand with the design tokens
+- Opens `github.com/cm-beilstein/explain-that-inchi/issues/new` with prefilled title + body
+- Auto-captured context: current InChI string, molecule (SMILES + preset name if any), browser/user-agent + app version/commit
+- Feedback type/category (bug / suggestion / "explanation unclear") mapped to issue labels or title prefix
+- Graceful behavior when the canvas is empty / no InChI yet
+- Privacy-aware: only includes what's already on the page; clear that it opens a PUBLIC GitHub issue
+
+**Key constraints:**
+- No backend — pure client-side URL construction (`encodeURIComponent`; mind GitHub's ~8KB URL length limit for long InChI/SMILES)
+- Requires a GitHub account to actually submit (accepted tradeoff)
+- Must preserve the oklch token system / high visual fidelity
 
 ## Requirements
 
@@ -104,4 +121,4 @@ Every chunk of an InChI string is hoverable, explained, and linked back to the a
 This document evolves at phase transitions and milestone boundaries.
 
 ---
-*Last updated: 2026-06-05 after v1.0 milestone*
+*Last updated: 2026-06-17 — v1.2 milestone (in-app feedback) started; v1.1 shipped*

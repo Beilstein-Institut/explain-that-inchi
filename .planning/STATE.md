@@ -1,28 +1,30 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: post-ship correctness & polish
-status: completed
-last_updated: "2026-06-17T00:00:00.000Z"
+milestone: v1.2
+milestone_name: In-app feedback via prefilled GitHub issues
+status: planning
+last_updated: "2026-06-17T07:14:04.531Z"
+last_activity: 2026-06-17
 progress:
   total_phases: 0
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 **Project:** Explain that InChI
-**Milestone:** v1.1 patch — ✅ TAGGED 2026-06-17 (post-ship correctness & polish on v1.0 MVP, shipped 2026-06-05)
-**Status:** Complete
+**Milestone:** v1.2 — In-app feedback via prefilled GitHub issues (planning; v1.1 shipped 2026-06-17)
+**Status:** Planning — defining requirements
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-06-05)
 
 **Core value:** Every chunk of an InChI string is hoverable, explained, and linked back to the atoms in the drawing — demystifying a notation that most chemists treat as opaque.
-**Current focus:** Planning next milestone (v2.0) — run `/gsd-new-milestone`
+**Current focus:** v1.2 — in-app feedback via prefilled GitHub issues (defining requirements → roadmap)
 
 ## Milestone Archive
 
@@ -80,4 +82,12 @@ None
 Last activity: 2026-06-10 - Fixed formula-H badges missing mobile-H ("H?") for (H,5,6) groups
 
 ### Multi-fragment support (now complete)
+
 The 4-task multi-component fix series (260610-d2r, -eci, -eoi) closed all known multi-fragment bugs: hover-highlight token offsets (d2r), canonical→pool-ID canvas mapping for non-sequential pools (eci), and explanation-card text + undefined-stereo handling (eoi). No outstanding multi-fragment follow-ups.
+
+## Current Position
+
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-06-17 — Milestone v1.2 started
