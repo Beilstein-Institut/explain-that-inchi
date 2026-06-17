@@ -1,425 +1,284 @@
-# Pitfalls Research: Explain that InChI
+# Pitfalls Research: v1.2 In-app Feedback (prefilled GitHub issue)
 
-**Domain:** Ketcher + React 18 + WASM chemistry tool
-**Researched:** 2026-05-18
-**Overall confidence:** MEDIUM — Ketcher API and behavior verified from official GitHub issues and discussions; some internals (exact WASM threading model) require empirical verification at build time
+**Domain:** Client-side prefilled GitHub-issue URL feedback in a static, no-backend React/Vite/GitHub-Pages SPA
+**Researched:** 2026-06-17
+**Confidence:** HIGH — GitHub's 8191-byte URL limit and prefill query params are officially documented; encoding/popup/markdown behaviors are well-established web-platform facts; repo-specific details from PROJECT.md / CLAUDE.md.
+
+> NOTE: This file was rewritten for the **v1.2 feedback milestone**. The prior contents (v1.0 Ketcher/WASM/Vite pitfalls) are preserved in git history (`PITFALLS.md` at commits up to `cd24091`). If both sets are needed, restore the v1.0 version as `PITFALLS-v1-ketcher.md`.
+
+> Scope: "Explain that InChI" is served at `/explain-that-inchi/` on GitHub Pages, repo `cm-beilstein/explain-that-inchi`. The feature builds a `https://github.com/cm-beilstein/explain-that-inchi/issues/new?...` URL entirely client-side from on-screen state (current InChI string, molecule SMILES + preset name, UA, app version) plus a user message + category. No network call leaves the page until the user clicks through to GitHub.
 
 ---
 
 ## Critical Pitfalls
 
-High-severity: will block progress or require significant rework if not addressed.
-
----
-
-### 1. Vite + SWC crashes on ketcher-react build
+### Pitfall 1: URL exceeds GitHub's 8191-byte server-side limit → 414 / silent truncation
 
 **What goes wrong:**
-When scaffolding with `npm create vite@latest -- --template react-swc-ts` (the SWC variant), the production build panics with:
-
-```
-width 3 given for non-narrow character
-Abort trap: 6
-```
-
-SWC's Rust-based compiler cannot process characters inside the ketcher package source tree. The build exits with a non-zero code. This is a known open issue (epam/ketcher#5565, filed Sep 2024, status: open as of research date).
+GitHub's new-issue endpoint enforces a server-side limit of **8191 bytes** for the full request URL. Multi-fragment InChI strings (the app's recurring test molecule is ~190 chars; pathological structures are far longer) plus SMILES + UA + version + the user's prose + percent-encoding overhead (each special char → 3 bytes, each newline → `%0A`) can blow past this. Result: either a `414 URI Too Long` GitHub error page instead of a prefilled issue, or a body that GitHub/the browser silently clips — producing a broken issue missing the InChI it was meant to carry. Since the product's whole value is multi-fragment InChI, this is the single most likely real-world failure.
 
 **Why it happens:**
-ketcher bundles third-party code that contains Unicode characters SWC cannot handle during its transform phase. The Babel-based `@vitejs/plugin-react` does not have this constraint.
+Devs test with short single-component presets (benzene, caffeine) where the URL is ~1KB and never nears the cap, then ship. Encoded length is non-obvious: a 1500-char body of InChI/SMILES encodes to 3000+ bytes once `+ / ; , ( ) #` and newlines are percent-encoded, plus a fixed ~120 bytes of repo slug + param scaffold.
 
-**Warning signs:**
-- You chose `--template react-swc-ts` at scaffold time.
-- The error appears in `vite build`, not `vite dev`.
+**How to avoid:**
+- Build the final URL, then measure `new TextEncoder().encode(url).length` (byte length — NOT `.length`, which counts UTF-16 units and undercounts). Budget **~7500 bytes** (headroom below 8191 for GitHub redirect params / future scaffold growth).
+- When over budget, **degrade deterministically**: truncate the InChI/SMILES context block with an explicit `…[truncated — paste full InChI manually]` marker; keep the user's prose + category intact (the human message matters more than auto-context). Shrink auto-context first (drop SMILES, keep InChI; trim UA) before touching the user's words. Never silently drop content.
+- Offer "copy InChI to clipboard" in the over-budget path so the user can paste manually (reuse PLSH-04's existing copy-to-clipboard).
 
-**Prevention:**
-Use `@vitejs/plugin-react` (Babel-based), not `@vitejs/plugin-react-swc`.
+**Warning signs:** Feedback issues with empty / mid-string-cut bodies; users reporting a GitHub error page after clicking; QA only ever testing the 10 short presets.
 
-```ts
-// vite.config.ts
-import react from '@vitejs/plugin-react';
-export default { plugins: [react()] };
-```
-
-Switching is a one-line change. There is no meaningful DX difference for this project.
-
-**Phase:** Scaffold (Phase 1). Must be right before the first build.
+**Phase to address:** URL-construction / context-capture phase. Add a budget-check unit test using the recurring multi-fragment repro molecule from HANDOFF.md as the worst-case fixture.
 
 ---
 
-### 2. ketcher-react/dist/index.css pollutes global styles
+### Pitfall 2: Improper / double `encodeURIComponent` mangles the InChI and SMILES
 
 **What goes wrong:**
-`import 'ketcher-react/dist/index.css'` injects CSS rules that are not scoped to any component class. Rules targeting bare HTML elements (`body`, `button`, `input`, `p`, etc.) override the project's own design tokens and layout. Reported as epam/ketcher#699 and linked to multiple downstream breakages.
+InChI/SMILES are dense with chars that are reserved or special in query strings: `+` (decodes to space if unencoded), `/` (InChI layer separator `1S/C12H19N...`), `;` (component separator), `,` `(` `)` `#` `=` (SMILES). Without encoding, GitHub sees `+`→space, `/` splitting the path, or `#` truncating the body as a URL fragment — corrupting the exact InChI the feature exists to send. The mirror bug is **double-encoding**: pre-encoding a value with `encodeURIComponent` and then feeding it to `URLSearchParams` (which encodes again), so the issue shows literal `%2F`/`%2B` instead of `/`/`+`.
 
 **Why it happens:**
-Ketcher's stylesheet is an application-level stylesheet, not a component stylesheet. It was written assuming it owns the entire page. The project's `styles.css` design tokens (IBM Plex typefaces, colour system, spacing) will be partially or fully overridden.
+Manual concat (`'?title=' + v + '&body=' + v`) without encoding "works" for alphanumeric test input; a later refactor adds `URLSearchParams` to one param but leaves a hand-encoded value → double-encoding. The `#` case is the nastiest: everything after an unencoded `#` is dropped as a fragment and never reaches the server, silently ending the body early.
 
-**Warning signs:**
-- After mounting `<Editor>`, body font changes, button padding shifts, or `--ink` colours stop matching the prototype.
-- Typography regression visible even when the Ketcher editor is off-screen.
+**How to avoid:**
+- Use **exactly one** encoding mechanism. Recommended: a single `URLSearchParams` object (`params.set('title', rawTitle); params.set('body', rawBody)`) — never pre-encode values you put into it. `.toString()` handles all reserved chars. (It encodes space as `+`, which GitHub accepts.)
+- Add a round-trip unit test: encode an InChI containing `+ / ; , ( ) # =`, then `new URL(built).searchParams.get('body')` must equal the original raw string.
 
-**Prevention:**
-Wrap the `<Editor>` in a containing element and use CSS layer specificity or `@layer` to isolate Ketcher's stylesheet below the project's own tokens. Alternatively, import Ketcher's CSS inside a CSS `@layer` with the lowest priority:
+**Warning signs:** Issues showing `%2F`/`%2B`/`%23` literals (double-encoded), or bodies ending abruptly at the first `#` (unencoded fragment cutoff); InChI separators turning into spaces.
 
-```css
-@layer ketcher-reset {
-  /* paste or @import ketcher-react/dist/index.css here */
-}
-```
-
-Or apply a scoping class via PostCSS. Regardless of technique, test the full design token system immediately after the first Ketcher mount — don't assume styles are safe.
-
-**Phase:** Ketcher integration (Phase 2). Verify token integrity with a visual diff against the prototype immediately.
+**Phase to address:** URL-construction phase. The round-trip test is the gate.
 
 ---
 
-### 3. WASM and worker files 404 in production / GitHub Pages deployment
+### Pitfall 3: Markdown injection / accidental @-mention pings via unfenced context
 
 **What goes wrong:**
-`ketcher-standalone` loads Indigo as a WASM module inside a Web Worker. In the Vite dev server, imports are resolved against `node_modules`. After `vite build`, the WASM binary and its companion worker script must be present at a URL the browser can reach. If Vite inlines the WASM as base64, or if the deploy base path is wrong, the worker silently fails to start and all structure-service calls hang or reject.
+The issue `body` renders as GitHub-Flavored Markdown. If captured InChI/SMILES or the user's free text is dropped in unfenced: backticks break out of code spans; a line-leading `#` renders as an H1; `@username`/`@org/team` sends a **real notification ping**; `- [ ]` becomes a task list; `1.` starts a list. InChI/SMILES rarely contain `@`, but user prose can ("@maintainer this is broken"), and a malicious user could weaponize the prefill to mass-ping. SMILES legitimately contains `#` (triple bond) and `[N+]` brackets that interact with markdown.
 
-On GitHub Pages the deploy URL is `https://user.github.io/repo-name/`, meaning the Vite `base` option must be `/repo-name/`. If `base` is not set, asset paths in the production bundle resolve from `/` and all WASM fetches 404.
+**Why it happens:** Treating the body as plain text. Auto-context feels "safe" because it's machine-generated; the user message is fully attacker-controlled.
 
-**Why it happens:**
-- Vite's default `base: '/'` does not match a GitHub Pages subpath.
-- WASM files may be below the `assetsInlineLimit` threshold and get inlined, causing `WebAssembly.instantiateStreaming` to fail because it expects a `Response` object, not a data URL.
-- The `staticResourcesUrl` prop on `<Editor>` must point to where Ketcher's `help.md` and `library.sdf` are hosted; in a Vite project this is the `/public` directory, and its URL prefix changes with `base`.
+**How to avoid:**
+- Wrap **all** auto-captured context (InChI, SMILES, UA, version) in fenced code blocks (```` ``` ````); markdown is inert inside a fence. Guard the rare case where content contains a closing fence by using a longer fence (` ```` `).
+- Neutralize `@` in user prose so it renders visibly but doesn't notify (e.g. insert a zero-width space after `@`, or backtick-wrap mention-like tokens). At minimum, never place user text where `@` can ping.
+- Don't build any raw HTML.
 
-**Warning signs:**
-- `vite dev` works; `vite preview` or deployed site shows blank Ketcher / console errors like `WebAssembly streaming compile failed`.
-- Network tab shows 404 for `.wasm` or `.js` worker files.
+**Warning signs:** A SMILES `#` became a heading in a test issue; a maintainer pinged from a test submission; user message rendered as a giant H1.
 
-**Prevention:**
-1. Set `base` in `vite.config.ts` to match the GitHub Pages subpath:
-   ```ts
-   export default defineConfig({ base: '/InChI-vis/' });
-   ```
-2. Set `assetsInlineLimit: 0` to prevent WASM inlining:
-   ```ts
-   build: { assetsInlineLimit: 0 }
-   ```
-3. Pass `staticResourcesUrl` as the base-aware public URL:
-   ```tsx
-   <Editor staticResourcesUrl={import.meta.env.BASE_URL} ... />
-   ```
-4. Test with `vite preview --base /InChI-vis/` before first deploy.
-
-**Phase:** Deployment setup (Phase 1 scaffold), verification in Phase 2 (first Ketcher mount). Do not defer until final deploy.
+**Phase to address:** Body-templating phase. Tests asserting context is fenced and `@` is neutralized.
 
 ---
 
-### 4. SharedArrayBuffer / COOP+COEP not set on GitHub Pages
+### Pitfall 4: Popup/tab blocked because navigation isn't a direct user gesture
 
 **What goes wrong:**
-Indigo's WASM is compiled with Emscripten and uses Web Workers internally. Whether it uses `SharedArrayBuffer` (pthread-style threading) cannot be confirmed without inspecting the build artifacts, but if it does, the browser silently refuses to create `SharedArrayBuffer` unless the page is cross-origin isolated (COOP: `same-origin` + COEP: `require-corp` or `credentialless`). GitHub Pages does not allow setting custom HTTP headers. The symptom is Ketcher appearing to load but all structure operations silently failing.
+`window.open(url, '_blank')` from inside an async callback (e.g. after `await ketcher.getInchi(true)` or a `setTimeout`/debounce) loses the user-activation token browsers require → the popup is **silently blocked**. User clicks "Send feedback," nothing happens, no error. Safari/Firefox are strictest.
 
-**Why it happens:**
-Chrome 91+ and Firefox require cross-origin isolation for `SharedArrayBuffer`. GitHub Pages serves all responses with a fixed header set it controls.
+**Why it happens:** The InChI capture is async (app already uses `getInchi(true)` → Promise). The intuitive approach awaits InChI then opens — but by resolve time the gesture is "used up." Any `await` before `window.open` in the same handler breaks it.
 
-**Warning signs:**
-- `crossOriginIsolated` is `false` in browser devtools console.
-- Ketcher editor renders but `getInchi()` / `getMolfile()` never resolve.
-- No explicit error — just a stuck Promise.
+**How to avoid:**
+- Capture context **synchronously from already-computed Zustand state** at click time (the live InChI/SMILES/preset are already in the store — do NOT recompute InChI in the click handler). Build the URL synchronously, open in the same tick.
+- Preferred: render a real `<a href={builtUrl} target="_blank" rel="noopener noreferrer">` with a reactively-updated `href` — native navigation, never blocked. If a `<button>` is needed for styling, call `window.open(url, '_blank', 'noopener')` synchronously in `onClick` with no preceding `await`.
+- Always pass `noopener` (anchor `rel` or `window.open` features) so the GitHub tab can't reach `window.opener`.
 
-**Prevention:**
-Include `coi-serviceworker` (gzuidhof/coi-serviceworker) in the `public/` directory and load it from `index.html` before any other scripts:
+**Warning signs:** "Nothing happens when I click feedback"; works in dev Chrome but blocked in Safari/Firefox; the open call sits after an `await`.
 
-```html
-<script src="/coi-serviceworker.js"></script>
-```
-
-The service worker intercepts page load, injects synthetic COOP/COEP headers, then reloads once. After that, `crossOriginIsolated === true`. Caveats: causes a single extra page load on first visit; must be served from the same origin (cannot be a CDN URL); requires HTTPS (GitHub Pages satisfies this).
-
-**Empirical check first:** After initial ketcher mount, run `console.log(crossOriginIsolated)`. If `true`, this pitfall does not apply and `coi-serviceworker` is not needed. Only add it if the check fails.
-
-**Phase:** Deployment verification (Phase 2 Ketcher integration, confirmed before Phase N deploy).
+**Phase to address:** Entry-point/UI phase. Verify anchor approach; manual cross-browser click test.
 
 ---
 
-## Common Mistakes
+## Moderate Pitfalls
 
-Medium-severity: wastes development time but recoverable without structural rework.
+### Pitfall 5: Pretending feedback is anonymous when it requires a GitHub account
 
----
+**What goes wrong:** An accountless visitor clicks through, lands on GitHub's sign-in/sign-up wall — their feedback evaporates and they feel tricked. The audience (chemists/students) frequently has no GitHub account.
 
-### 5. Stale closure in `editor.subscribe('change', handler)` inside `useEffect`
+**Why it happens:** Devs all have GitHub accounts and forget the public audience doesn't; the accepted "no backend" tradeoff is invisible unless surfaced.
 
-**What goes wrong:**
-The `onInit` callback fires once (when Ketcher is ready). Inside `onInit`, calling `ketcher.editor.subscribe('change', handler)` creates a closure over whatever React state or props exist at that moment. When React re-renders and state updates (e.g., `hoveredLayerIdx`, `auxMap`, `subHover`), the handler still reads the stale original values. The symptom is highlight logic that uses outdated state.
+**How to avoid:** Set expectations **before** the click: e.g. "Opens a public GitHub issue — a free GitHub account is required to submit." Don't label it "anonymous." Consider an accountless fallback: a `mailto:` link or copy-to-clipboard of the prefilled body (mailto has its own length limits — same budget discipline applies).
 
-This is a confirmed pattern in Ketcher-specific community discussion (epam/ketcher Discussion #6156, "Handling Stale State Values in Event Handlers with Editor.subscribe").
+**Warning signs:** Drop-off; "I clicked feedback and it asked me to sign up."
 
-**Why it happens:**
-The subscription is created once inside `onInit`, which itself runs once. React's closure model means the handler captures variables by value at creation time.
-
-**Prevention:**
-Store mutable state in a `useRef` and read `.current` inside the handler. Never read React state directly inside a Ketcher subscription callback:
-
-```ts
-const auxMapRef = useRef<Map<number, number>>(new Map());
-// On every auxMap state update:
-useEffect(() => { auxMapRef.current = auxMap; }, [auxMap]);
-
-// Inside onInit:
-ketcher.editor.subscribe('change', async () => {
-  // Read from ref, never from closed-over state:
-  const map = auxMapRef.current;
-  ...
-});
-```
-
-**Cleanup:** The subscribe API returns a `Subscription` object. Use `ketcher.editor.unsubscribe('change', subscription)` in a cleanup path. Because `onInit` is not inside a standard `useEffect`, store the subscription reference on a ref and unsubscribe on component unmount via a separate `useEffect` cleanup.
-
-**Phase:** Phase 2 (Ketcher integration + structure-change pipeline). Get the ref pattern right from the first subscriber.
+**Phase to address:** UX/copy phase.
 
 ---
 
-### 6. `getInchi(true)` return format — concatenated string, not two separate values
+### Pitfall 6: Privacy — over-capturing context or hiding that the issue is PUBLIC
 
-**What goes wrong:**
-The README gotcha says: "`getInchi(true)` returns both InChI and aux-info concatenated." Concretely, calling `ketcher.getInchi(true)` (with `withAuxInfo = true`) returns a single `Promise<string>`. The resolved string contains the InChI line followed by a newline, then the AuxInfo line:
+**What goes wrong:** Auto-including more than what's on screen (verbose UA with OS build, screen resolution, locale; or anything from localStorage/clipboard) leaks data the user didn't consent to publish. GitHub issues are world-readable, so captured data becomes permanently public and indexed.
 
-```
-InChI=1S/C6H6/c1-2-4-6-5-3-1/h1-6H
-AuxInfo=1/0/N:3,1,5,2,6,4/E:(1,2,3,4,5,6)/...
-```
+**Why it happens:** "More context = better bug reports" instinct; dumping full `navigator.userAgent` + every `navigator` field; not registering the destination is a public repo.
 
-Code that tries to destructure two values (`const [inchi, aux] = await getInchi(true)`) gets `undefined` for the second variable. Code that expects a structured object crashes silently. The atom mapping is therefore never parsed, and the entire highlighting system does not function.
+**How to avoid:** Capture **only** what PROJECT.md scopes — current InChI, SMILES + preset name, a **minimal** browser/version string, app version/commit. No storage/cookies/IP/geolocation reads. Show a **preview of the exact body** before submit, and state plainly "This creates a PUBLIC GitHub issue visible to anyone." Trim UA to browser family + major version.
 
-**Why it happens:**
-The API is not well-documented. The boolean parameter exists but is not described in the public README. The concatenation format follows the raw InChI library output.
+**Warning signs:** UA includes data beyond browser/version; no "public" warning; any `localStorage`/`geolocation` read in the feedback path.
 
-**Warning signs:**
-- `auxMap` is always empty.
-- Mapping strip shows all pairs as identity.
-- No highlights appear on hover.
-
-**Prevention:**
-Split on newline after the `await`:
-
-```ts
-async function fetchInchiAndAux(ketcher: Ketcher) {
-  const raw = await ketcher.getInchi(true);
-  const lines = raw.split('\n').map(s => s.trim()).filter(Boolean);
-  const inchi = lines.find(l => l.startsWith('InChI=')) ?? '';
-  const auxinfo = lines.find(l => l.startsWith('AuxInfo=')) ?? '';
-  return { inchi, auxinfo };
-}
-```
-
-Alternatively, use the lower-level `ketcher.editor.structService` to call `getInChIAuxInfo` directly and get two separate fields — but this is a private/internal API with no stability guarantees.
-
-**Phase:** Phase 3 (structure-change pipeline + aux-info parsing). Write a unit test for `parseAuxMapping` immediately to confirm the split produces correct `/N:` data.
+**Phase to address:** Context-capture + UX/copy phases.
 
 ---
 
-### 7. `setMolecule()` called inside `onInit` causes rendering artifacts
+### Pitfall 7: Empty / invalid canvas state produces a broken or misleading body
 
-**What goes wrong:**
-The preset molecule list requires loading a molecule when the user clicks a row. If `ketcher.setMolecule(molfile)` is called directly inside `onInit` (for initial load), or if it is called from a click handler before Ketcher has finished its internal initialization, the molecule may disappear from the canvas after the first user action (e.g., clicking "Aromatize"). This is a confirmed bug in epam/ketcher#1174.
+**What goes wrong:** User clicks "Send feedback" before drawing (or with an invalid structure where InChI is empty/errored). The body interpolates `undefined`/empty into "Current InChI:" → a confusing empty fenced block, or the code throws on null InChI and the button appears dead.
 
-**Why it happens:**
-Ketcher's internal render state is not fully settled when `onInit` fires. The `setMolecule` call races with an internal reset cycle.
+**Why it happens:** Happy-path assumption that an InChI always exists. The app explicitly has an empty/placeholder state (PLSH-01), so feedback must mirror it.
 
-**Warning signs:**
-- Preset molecule loads visually on start, then disappears after the first toolbar click.
-- No error in console.
+**How to avoid:** Treat each context field as optional — omit the InChI/SMILES block (or render `_(no structure drawn)_`) when empty rather than emitting an empty fence. Guard against `null`/`undefined`; never call string methods on a possibly-null InChI. Feedback must be submittable with zero structure context.
 
-**Prevention:**
-Either use a `setTimeout(() => ketcher.setMolecule(mol), 0)` deferred call (or a small delay if zero-tick is insufficient), or use the `moleculeData` prop on `<Editor>` for the initial load and reserve `setMolecule` for user-triggered preset switches (which happen after the editor is fully ready).
+**Warning signs:** Empty code fences in issues; button throws on empty canvas; "Current InChI:" followed by nothing.
 
-**Phase:** Phase 2 (preset molecule list integration).
+**Phase to address:** Body-templating phase. Test the empty-state body shape.
 
 ---
 
-### 8. `onInit` fires twice in React StrictMode (dev mode)
+### Pitfall 8: Hardcoded repo slug / base-path mistakes
 
-**What goes wrong:**
-In React 18 StrictMode (the default in Vite's React template), the `<Editor>` component mounts, unmounts, and remounts. Ketcher versions around 3.0.0-rc embed their own `<StrictMode>` inside the editor component, causing `onInit` to fire twice even in non-StrictMode parent apps (epam/ketcher#6375). In the 2.x series the behaviour is driven by the outer app's StrictMode. Either way, the subscription to `'change'` fires twice, the `window.ketcher` reference is reassigned, and any cleanup logic attached to the first init is orphaned.
+**What goes wrong:** Two traps:
+1. **GitHub target slug** typo'd — owner (`cmbeilstein` vs `cm-beilstein`), wrong repo, or a fork — sends feedback into the void / wrong repo.
+2. **App base path** confusion: the app is served under Vite `base: '/explain-that-inchi/'`. Naively building relative URLs or deriving things from `window.location` can pick up the base path. The GitHub URL is absolute so it's mostly immune, but app-version/commit injection and any internal links are not.
 
-**Why it happens:**
-React 18 StrictMode deliberately double-invokes effects in dev mode to surface cleanup bugs. This is dev-only; production builds do not double-mount.
+**Why it happens:** Copy-paste of owner/repo; assuming root-served app; mixing the absolute GitHub URL with the Pages base path.
 
-**Warning signs:**
-- `onInit` console.log appears twice in dev.
-- Two `'change'` subscriptions accumulate after every hot reload.
-- Stale subscriptions accumulate across hot reloads, causing duplicate `getInchi` calls per change event.
+**How to avoid:** Define the GitHub target as one constant (`const FEEDBACK_REPO = 'cm-beilstein/explain-that-inchi'`) used everywhere. Inject app version/commit via Vite `import.meta.env`/`define` at build time (e.g. `__APP_VERSION__`, `__GIT_SHA__`), not by parsing the page URL. Keep `https://github.com/${FEEDBACK_REPO}/issues/new` fully qualified; verify `base` is never prepended to a feedback link.
 
-**Prevention:**
-- Store the Ketcher instance and subscription on refs, not in component state.
-- Guard initialization with a flag ref:
-  ```ts
-  const ketcherInitialized = useRef(false);
-  // in onInit:
-  if (ketcherInitialized.current) return;
-  ketcherInitialized.current = true;
-  ```
-- This is a development-only problem. Do not strip StrictMode to paper over it.
+**Warning signs:** 404 on GitHub; link resolving to `cm-beilstein.github.io/explain-that-inchi/github.com/...`; wrong owner casing.
 
-**Phase:** Phase 2 (Ketcher integration). Put the guard in before any other subscription logic.
+**Phase to address:** URL-construction phase + build-config (version injection).
 
 ---
 
-### 9. `highlights.create` index numbering and multi-highlight model
+### Pitfall 9: Labels query param silently ignored (permission gate)
 
-**What goes wrong:**
-Two related mistakes appear together:
+**What goes wrong:** `&labels=bug` only applies if the **submitting user has triage/write permission** on the repo. External contributors (the whole audience) don't, so the label is silently dropped — the category→label mapping doesn't work for the people who'll actually use it.
 
-**a) Index convention confusion.** Ketcher's `highlights.create({ atoms: [...] })` accepts **0-based** atom indices (matching the internal graph representation). The aux-info `/N:` mapping, per the design handoff's `parseAuxMapping` function, outputs `ketcherIdx - 1` — i.e., it already converts to 0-based. Using 1-based canonical numbers directly as atom indices produces off-by-one highlights (wrong atoms light up).
+**Why it happens:** Tested by the maintainer (who has write access), so labels appear and seem to work; fails for everyone else.
 
-**b) Accumulating highlights without clearing.** Each call to `highlights.create` adds a new highlight layer. Calling it without a preceding `highlights.clear()` on every hover event causes highlights to stack, visually corrupting the canvas. The clear must precede every new create call (or use the returned handle to delete individual highlights if selective removal is needed).
+**How to avoid:** Don't rely on `labels=` for external categorization. Encode the category in the **title prefix** (`[Bug] …`, `[Suggestion] …`, `[Unclear explanation] …`) — always survives — and/or use a GitHub **issue template** (`template=` param). Maintainers can auto-label via a workflow. If you also send `labels=`, treat it as best-effort.
 
-**Warning signs:**
-- Hovering a layer highlights the wrong atoms (shifted by one).
-- After several hovers the canvas is covered in highlight colours that don't go away.
+**Warning signs:** Issues from non-maintainers arrive unlabeled despite the param.
 
-**Prevention:**
-```ts
-ketcher.editor.highlights.clear();
-if (atomIndices.length > 0) {
-  ketcher.editor.highlights.create({ atoms: atomIndices, color });
-}
-```
-
-For sub-token hover that needs multiple colour groups (e.g., per-element formula colours), issue multiple sequential `create` calls after a single `clear` — do not `clear` between each `create`.
-
-**Phase:** Phase 4 (hover → highlight wiring).
+**Phase to address:** Category-mapping phase.
 
 ---
 
-### 10. Async race condition when debouncing the `'change'` subscription
+### Pitfall 10: GitHub mobile-app deeplink steals the prefill
 
-**What goes wrong:**
-`getInchi(true)` is asynchronous and takes ~50–200ms depending on molecule size (WASM round-trip). If the user draws quickly, multiple `'change'` events fire before the previous `getInchi` call resolves. The last-started call may resolve before an earlier one, causing the InChI display to momentarily show a stale structure's InChI string before being overwritten.
+**What goes wrong:** On a device with the GitHub mobile app installed, clicking a `github.com/.../issues/new?...` link can deep-link into the app, which historically **ignores the prefill query params** (community discussion #113726) — the user gets a blank form, losing all auto-context.
 
-**Why it happens:**
-Promises do not have built-in cancellation. Without a version guard, out-of-order resolutions corrupt the displayed state.
+**Why it happens:** OS-level universal-link interception; out of the web app's control.
 
-**Warning signs:**
-- InChI display flickers during rapid drawing.
-- Occasionally shows the wrong layer count for a fraction of a second.
+**How to avoid:** Largely unavoidable from client code; mitigate with a "copy feedback to clipboard" fallback so mobile-app users can paste. PROJECT.md notes Ketcher's canvas is poor on touch (mobile is secondary), so document this as a known limitation rather than over-engineering.
 
-**Prevention:**
-Use a generation counter. Discard results from any call that is not the latest:
+**Warning signs:** Mobile users reporting blank issue forms.
 
-```ts
-let callGen = 0;
-ketcher.editor.subscribe('change', debounce(async () => {
-  const myGen = ++callGen;
-  const raw = await ketcher.getInchi(true);
-  if (myGen !== callGen) return; // superseded
-  // update state...
-}, 150));
-```
-
-The 150ms debounce from the design handoff is already specified; combine it with the generation guard.
-
-**Phase:** Phase 3 (structure-change pipeline). Must be in place before integrating state updates.
+**Phase to address:** UX/copy phase.
 
 ---
 
-## Watch List
+## Technical Debt Patterns
 
-Low-severity: monitor during development; address if they manifest.
+| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
+|----------|-------------------|----------------|-----------------|
+| Manual string concat instead of `URLSearchParams` | Fewer lines | Encoding / double-encoding bugs; breaks on `#`/`+`/`/` (P2) | Never |
+| Recompute InChI in the click handler via `await getInchi()` | "Always fresh" | Breaks popup gesture (P4); slow click | Never — read store synchronously |
+| Skip the byte-length budget check | Ships faster | 414s / truncated bodies on real multi-fragment molecules (P1) | Never — most likely real failure |
+| Hardcode repo slug inline in JSX | Quick | Drift/typos; hard to audit (P8) | Only if extracted to one constant |
+| Full `navigator.userAgent` dump | One line | Privacy over-capture (P6) | Acceptable only if trimmed + previewed |
 
----
+## Integration Gotchas
 
-### 11. TypeScript gaps — `window.ketcher`, internal editor types
+| Integration | Common Mistake | Correct Approach |
+|-------------|----------------|------------------|
+| GitHub new-issue prefill | Relying on `labels=` for external categorization | Title prefix and/or issue template; labels are write-gated (P9) |
+| GitHub new-issue prefill | Assuming any body length works | Respect 8191-byte cap; budget ~7500 encoded (P1) |
+| GitHub Markdown rendering | Treating body as plain text | Fence all auto-context; neutralize `@` (P3) |
+| Browser popup policy | `window.open` after `await` | Synchronous open or `<a target=_blank rel=noopener>` (P4) |
+| GitHub mobile universal links | Expecting prefill on mobile app | Clipboard fallback; document limitation (P10) |
+| Vite `base` path | Relative feedback URL picks up `/explain-that-inchi/` | Fully-qualified absolute `https://github.com/...` (P8) |
 
-Ketcher packages ship type declarations, but the `window.ketcher` global is not typed. Accessing `window.ketcher` without augmentation produces a TS error. The `editor.highlights` and `editor.subscribe` signatures are part of the internal `Editor` type from `ketcher-core`; they are exported but not prominently documented.
+## Performance Traps
 
-**Workaround:** Augment the Window interface:
-```ts
-// src/types/ketcher.d.ts
-import type { Ketcher } from 'ketcher-core';
-declare global {
-  interface Window { ketcher: Ketcher; }
-}
-```
+| Trap | Symptoms | Prevention | When It Breaks |
+|------|----------|------------|----------------|
+| Rebuilding the feedback URL on every keystroke | Jank in the message textarea | Memoize URL build; recompute on submit or debounced | Negligible at this scale; only matters with a long message + reactive `<a href>` |
 
-For `highlights.create`, the return type is an opaque handle. If selective per-handle deletion is needed later, check the type declaration in `ketcher-core`'s `src/domain/entities/highlight.ts`. For this project, `highlights.clear()` clears all and is sufficient.
+(Performance is essentially a non-issue — pure client-side string work, no network/runtime scaling. Listed for completeness.)
 
-**Phase:** Phase 1 (scaffold). Add the augmentation file before the first `window.ketcher` access.
+## Security Mistakes
 
----
+| Mistake | Risk | Prevention |
+|---------|------|------------|
+| Unfenced user text in body | `@`-mention pings real users/teams; markdown injection | Fence context; neutralize `@` (P3) |
+| `window.open` without `noopener` | Opened GitHub tab accesses `window.opener` (reverse tabnabbing) | `rel="noopener noreferrer"` / `noopener` feature (P4) |
+| Capturing more than on-screen state | Publishing PII to a world-readable issue | Capture only scoped fields; show preview (P6) |
+| Public prefilled link enables spam | Junk issues in the repo | Repo-side mitigations (below) — not solvable in app code |
 
-### 12. `getInchi()` throws on empty canvas / valence errors
+**Spam / abuse mitigation (repo-side, NOT app code):**
+- Add GitHub **issue templates / issue forms** so the prefill targets a structured template.
+- Configure repo **issue interaction limits**; sign-in is inherently required.
+- Use a **label + GitHub Action** to auto-triage/label feedback by title prefix.
+- Document these as maintainer configuration tasks, separate from the code phase.
 
-Ketcher's InChI call rejects if the canvas has no atoms, or if the structure has a valence error. The known error message is: `IndigoException: inchi-wrapper: Indigo-InChI: InChI generation failed: Empty structure`. An unhandled rejection crashes the change-handler pipeline and leaves the UI in a broken state.
+## UX Pitfalls
 
-**Prevention:**
-Wrap every `getInchi` call in try/catch and handle the empty/error case by displaying a placeholder in the InChI display panel:
+| Pitfall | User Impact | Better Approach |
+|---------|-------------|-----------------|
+| Implying anonymity / no preview | Surprised by sign-in wall + public visibility | "Opens a PUBLIC GitHub issue; free account required"; show body preview (P5, P6) |
+| Dead button on empty canvas | Confusion | Submittable with no structure; omit empty context (P7) |
+| Silent failure when over budget | Lost feedback | Truncate-with-marker + clipboard fallback (P1) |
+| Category that doesn't survive (labels) | Maintainer can't triage | Title-prefix categorization (P9) |
 
-```ts
-try {
-  const raw = await ketcher.getInchi(true);
-  // update state...
-} catch {
-  setInchiError('Draw a valid molecule to see InChI.');
-}
-```
+## "Looks Done But Isn't" Checklist
 
-**Phase:** Phase 3 (structure-change pipeline).
+- [ ] **URL builder:** Often missing the **byte-length** check — verify with `TextEncoder` on the multi-fragment repro molecule (HANDOFF.md), not just short presets.
+- [ ] **Encoding:** Often double-encodes — verify a round-trip test reconstructs raw InChI containing `+ / ; , ( ) # =`.
+- [ ] **Markdown:** Often unfenced — verify a SMILES `#` doesn't become a heading and `@x` doesn't ping.
+- [ ] **Popup:** Often blocked in Safari/Firefox — verify the open is synchronous / native anchor, no `await` before it.
+- [ ] **Empty state:** Often throws on null InChI — verify feedback works before any molecule is drawn.
+- [ ] **Account expectation:** Often missing the "public / account required" note — verify copy is present pre-click.
+- [ ] **Repo slug:** Often typo'd — verify exact `cm-beilstein/explain-that-inchi`, absolute URL, no base-path prefix.
+- [ ] **Labels:** Often relied upon — verify category still works as a title prefix for a logged-in non-collaborator.
 
----
+## Recovery Strategies
 
-### 13. Ketcher version drift — 2.x vs 3.x API surface
+| Pitfall | Recovery Cost | Recovery Steps |
+|---------|---------------|----------------|
+| Over-budget URL shipped (414s) | LOW | Add `TextEncoder` budget check + truncation marker; redeploy (static, fast) |
+| Double-encoding shipped | LOW | Collapse to single `URLSearchParams`; redeploy |
+| `@`-ping incident | LOW | Patch `@` neutralization; sent pings can't be unsent — fix forward |
+| Wrong repo slug | LOW | Fix constant; redeploy; manually migrate any misfiled issues |
+| Spam flood | MEDIUM | Add issue template + interaction limits + auto-label workflow (repo settings) |
 
-As of research date (2026-05), the latest ketcher-react on npm is 3.x. The design handoff was written against the 2.x API (`highlights.create` / `highlights.clear`, `editor.subscribe`, `getInchi`). The 3.x series added macromolecule mode and moved to React 19 peer dependency (tracked in epam/ketcher#6657). The core small-molecule API used by this project (`getInchi`, `getMolfile`, `subscribe`, highlights) did not change in ways visible from release notes, but was not verified against every minor 3.x release.
+## Pitfall-to-Phase Mapping
 
-**Risk:** Pinning to the latest 3.x and discovering a small API breakage mid-build.
+| Pitfall | Prevention Phase | Verification |
+|---------|------------------|--------------|
+| 1. URL byte-length cap | URL-construction / context-capture | `TextEncoder` budget test on multi-fragment repro; truncation marker present |
+| 2. Encoding / double-encoding | URL-construction | Round-trip test with all special chars |
+| 3. Markdown injection / @-ping | Body-templating | Fenced-context + `@`-neutralization tests |
+| 4. Popup blocking | Entry-point/UI | Synchronous-open / anchor; cross-browser manual click |
+| 5. Account expectation | UX/copy | Copy review; "account required" note present |
+| 6. Privacy over-capture | Context-capture + UX/copy | Audit captured fields; body preview shown |
+| 7. Empty/invalid state | Body-templating | Empty-canvas body-shape test |
+| 8. Repo slug / base path | URL-construction + build-config | Constant audit; absolute-URL assertion; env version injection |
+| 9. Labels permission gate | Category-mapping | Title-prefix categorization verified for non-collaborator |
+| 10. Mobile deeplink | UX/copy | Documented limitation + clipboard fallback |
 
-**Mitigation:** Pin to an explicit minor version in `package.json` (`"ketcher-react": "3.x.y"`) so the CI lockfile is deterministic. Do not use `^` or `~` ranges. Check the release notes for every version bump before updating.
+## Testing Pitfalls (project-specific)
 
-**Phase:** Phase 1 (scaffold). Lock the version before the first `npm install`.
-
----
-
-### 14. GitHub Pages WASM MIME type
-
-GitHub Pages now serves `.wasm` files with the correct `application/wasm` MIME type (confirmed via GitHub community discussions; the historical Jekyll-local issue was with `jekyll serve`, not the live site). This is not expected to be a problem in production, but `vite preview` served locally may serve WASM with `application/octet-stream` on some systems, which causes `WebAssembly.instantiateStreaming` to fail with a MIME type error.
-
-**Mitigation:** Use `vite preview` (which uses esbuild's server) rather than a plain `python3 -m http.server` for local production testing.
-
-**Phase:** Pre-deployment testing.
-
----
-
-## Phase-Specific Warnings
-
-| Phase | Topic | Likely Pitfall | Mitigation |
-|-------|-------|---------------|------------|
-| 1 — Scaffold | Vite template selection | SWC crash on ketcher build (#1) | Use `@vitejs/plugin-react`, not SWC variant |
-| 1 — Scaffold | Vite base path | 404 on GitHub Pages (#3) | Set `base: '/InChI-vis/'`, `assetsInlineLimit: 0` |
-| 1 — Scaffold | TypeScript types | `window.ketcher` TS error (#11) | Add `ketcher.d.ts` augmentation |
-| 1 — Scaffold | Version pinning | API drift (#13) | Lock to exact version, no `^` |
-| 2 — Ketcher mount | CSS pollution | Design token override (#2) | CSS layer isolation, visual diff after first mount |
-| 2 — Ketcher mount | StrictMode | `onInit` double-fire (#8) | Initialization guard ref |
-| 2 — Ketcher mount | COOP/COEP | `crossOriginIsolated: false` (#4) | Check first; add coi-serviceworker if needed |
-| 2 — Ketcher mount | Stale closures | Subscription reads stale state (#5) | Ref-based state for subscription callbacks |
-| 2 — Ketcher mount | Preset loading | `setMolecule` in onInit crash (#7) | Defer with setTimeout or `moleculeData` prop |
-| 3 — InChI pipeline | getInchi(true) format | Concatenated string, not object (#6) | Split on newline; unit test `parseAuxMapping` |
-| 3 — InChI pipeline | Async race | Stale getInchi result (#10) | Generation counter + 150ms debounce |
-| 3 — InChI pipeline | Empty structure | Unhandled rejection (#12) | try/catch every getInchi call |
-| 4 — Hover highlighting | Index confusion | 1-based vs 0-based off-by-one (#9a) | Confirm aux-info map already outputs 0-based |
-| 4 — Hover highlighting | Highlight stacking | Canvas covered in stale highlights (#9b) | Always `clear()` before `create()` |
-| N — Deploy | GitHub Pages worker files | WASM 404 (#3) | `vite preview` test before push; verify base path |
-| N — Deploy | SharedArrayBuffer | COOP headers missing (#4) | coi-serviceworker if `crossOriginIsolated: false` |
-
----
+- **Asserting on raw encoded URLs is brittle.** Don't string-match `%2F`/`%2B` — parse with `new URL(built)` and assert `url.searchParams.get('body')`/`get('title')` against the **decoded** expected value. Survives any valid encoding scheme and catches double-encoding.
+- **`window.open` in jsdom:** jsdom doesn't implement `window.open` navigation (returns `null`, logs "Not implemented"). Mock it (`vi.spyOn(window, 'open').mockReturnValue(null)`) and assert called once with the expected URL + `'noopener'`. With the `<a>` approach, assert on rendered `href`/`rel`/`target` — cleaner, no mock.
+- **Byte-length tests** must use `new TextEncoder().encode(url).length`, not `url.length`.
+- **Reuse the recurring repro molecule** from `src/lib/__tests__/remapAuxToPoolIds.realRepro.test.ts` / HANDOFF.md as the large-input fixture so the budget path is exercised against a realistic worst case.
 
 ## Sources
 
-- epam/ketcher Issue #5565 — SWC build panic: https://github.com/epam/ketcher/issues/5565
-- epam/ketcher Issue #699 — CSS not component-scoped: https://github.com/epam/ketcher/issues/699
-- epam/ketcher Issue #6375 — onInit fires twice in dev mode: https://github.com/epam/ketcher/issues/6375
-- epam/ketcher Issue #1174 — setMolecule in onInit race: https://github.com/epam/ketcher/issues/1174
-- epam/ketcher Discussion #6156 — Stale state in editor.subscribe: https://github.com/epam/ketcher/discussions/6156
-- epam/ketcher Discussion #4050 — highlights.create API confirmed: https://github.com/epam/ketcher/discussions/4050
-- epam/ketcher Discussion #586 — onInit setTimeout pattern: https://github.com/epam/ketcher/discussions/586
-- epam/ketcher Issue #667 — AuxInfo in standalone mode: https://github.com/epam/ketcher/issues/667
-- gzuidhof/coi-serviceworker — COOP/COEP for static hosting: https://github.com/gzuidhof/coi-serviceworker
-- GitHub community discussion #13309 — COOP/COEP on GitHub Pages: https://github.com/orgs/community/discussions/13309
-- Tom Ayac blog post (2025-03) — coi-serviceworker for GitHub Pages: https://blog.tomayac.com/2025/03/08/setting-coop-coep-headers-on-static-hosting-like-github-pages/
-- Vite static asset handling — assetsInlineLimit, base path: https://vite.dev/guide/assets
-- Design handoff README.md — Known Gotchas section (project-local)
+- GitHub server-side URL length limit (8191 bytes → 414): https://github.com/github/docs/issues/5136
+- Passing long body to issues/new (length discussion): https://github.com/orgs/community/discussions/22946
+- GitHub mobile app ignores prefill query params: https://github.com/orgs/community/discussions/113726
+- Creating an issue with query parameters (title/body/labels/template, permission gates): https://docs.github.com/en/issues/tracking-your-work-with-issues/creating-an-issue
+- new-github-issue-url (reference client-side prefill impl): https://github.com/sindresorhus/new-github-issue-url
+- HTTP 414 URI Too Long (MDN): https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/414
+- Project context: `.planning/PROJECT.md`, `.planning/HANDOFF.md` (multi-fragment repro molecule), `CLAUDE.md` (Vite base `/explain-that-inchi/`, static GitHub Pages, no backend)
+
+---
+*Pitfalls research for: v1.2 client-side prefilled-GitHub-issue feedback*
+*Researched: 2026-06-17*

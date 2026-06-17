@@ -1,413 +1,348 @@
-# Architecture Research: Explain that InChI
+# Architecture Research — v1.2 Feedback Feature
 
-**Researched:** 2026-05-18
-**Overall confidence:** HIGH (core component structure derived directly from design handoff source; Ketcher API patterns verified against official repo and npm type definitions)
+**Domain:** In-app prefilled-GitHub-issue feedback feature integrated into an existing React 18 + Zustand + Ketcher static SPA
+**Researched:** 2026-06-17
+**Confidence:** HIGH (grounded in the real source files; no external API dependency — pure client-side URL construction)
 
----
+> NOTE: The existing `.planning/research/ARCHITECTURE.md` documents the v1.0 app architecture and is preserved. This file is the v1.2 feedback-feature slice.
 
-## System Overview
+## Summary verdict
 
-A single-screen, single-page React app. The user draws a molecule in a Ketcher editor; Ketcher's WASM InChI library computes the InChI string live; React state distributes that string and its parsed layers to display and interaction components. No backend, no routing, no persistence.
+The feature drops in cleanly. It is **additive** — one new leaf component (`FeedbackModal`), one trigger (`FeedbackButton`, or a button slot in `Header`), one **pure** library module (`lib/feedbackUrl.ts`), and one tiny config module (`lib/feedbackConfig.ts`). The only existing files that must change are `App.tsx` (mount the modal + provide a `getContext()` callback) and `vite.config.ts` + `vite-env.d.ts` (build-time version injection). **The Ketcher canvas, the store, the highlight pipeline, and the InChI parse path are untouched.**
 
-The hard architectural seam is between React's declarative model and Ketcher's imperative API. Ketcher is a DOM singleton (one instance per page), initialized once via `onInit`, and controlled exclusively through method calls (`getInchi`, `setMolecule`, `highlights.create`). React never owns the Ketcher DOM. Ketcher pushes change events to React; React pushes highlight commands to Ketcher. That asymmetry drives every structural decision below.
+The single non-obvious architectural decision: **where to read the current molecule context.** The live InChI is in the Zustand store; the preset name/SMILES is **not** — `selectedMolId` lives in `App.tsx` local `useState`, and SMILES comes from the `MOLECULES` array. See "Data Flow → Context capture" below.
 
----
+## Standard Architecture
 
-## Component Boundaries
+### System Overview (feature slice within the existing app)
 
 ```
-App (root state owner)
-├── Header                        (static, no props)
-├── KetcherPanel
-│   ├── Editor [ketcher-react]    (imperative DOM; ref held by App)
-│   │   └── canvas-meta overlay  (reads: mol metadata from App state)
-│   └── MoleculeList             (reads: selected mol id; emits: onSelect)
-├── InchiDisplay
-│   ├── LayerChip[]               (reads: layer[]; emits: onLayerEnter/Leave)
-│   │   └── LayerText             (dispatches to sub-renderers below)
-│   │       ├── FormulaText       (emits: onSubHover element)
-│   │       ├── ConnectionText    (emits: onSubHover atom)
-│   │       ├── ParityText        (emits: onSubHover stereo)
-│   │       └── HLayerText        (emits: onSubHover hAtoms/mobileH)
-├── MappingStrip                  (reads: auxMap; pure display)
-├── ExplanationPanel
-│   ├── ExplanationCard           (reads: hoveredLayer; pure display)
-│   └── Legend
-│       └── LegendRow[]          (reads: layerTypes present in molecule)
-└── Footnote                      (static)
+┌──────────────────────────────────────────────────────────────────┐
+│                         App.tsx (orchestrator)                     │
+│   owns: ketcherRef, selectedMolId(useState), isReady, generationRef│
+│                                                                    │
+│   ┌──────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────┐ │
+│   │  Header  │  │ KetcherPanel │  │ InchiSection │  │Explanation│ │
+│   │ +feedback│  │ (NEVER       │  │ (store sel.) │  │(store sel)│ │
+│   │  trigger │  │  remounts)   │  │              │  │           │ │
+│   └────┬─────┘  └──────┬───────┘  └──────────────┘  └──────────┘ │
+│        │ open()        │ onInit → ketcherRef                       │
+│        ▼               │                                           │
+│   ┌─────────────────────────────────────────┐                     │
+│   │  FeedbackModal (NEW, leaf)               │                     │
+│   │  local form state: message, category     │                     │
+│   │  on submit → buildFeedbackUrl(...) →      │                     │
+│   │  window.open(url, '_blank')               │                     │
+│   └──────────────┬────────────────────────────┘                    │
+│                  │ reads context via getFeedbackContext() callback   │
+└──────────────────┼─────────────────────────────────────────────────┘
+                   ▼
+   ┌────────────────────────────────────────────────────────┐
+   │  Context sources (read at SUBMIT time, not render time)  │
+   │   • InChI string  ← useInchiStore.getState().inchi       │
+   │   • SMILES         ← ketcherRef.current.getSmiles()      │
+   │   • preset name    ← MOLECULES[selectedMolId] (App state)│
+   │   • UA             ← navigator.userAgent                 │
+   │   • app version    ← import.meta.env.VITE_APP_VERSION    │
+   └────────────────────────────┬─────────────────────────────┘
+                                ▼
+   ┌────────────────────────────────────────────────────────┐
+   │  lib/feedbackUrl.ts  (PURE — no DOM, no React, no async) │
+   │   buildFeedbackUrl(input) → { url, truncated }           │
+   │   + lib/feedbackConfig.ts (repo slug, labels, caps)      │
+   └────────────────────────────────────────────────────────┘
 ```
 
-**Direction rules:**
-- Data flows DOWN as props.
-- Events flow UP as callbacks (onLayerEnter, onSubHover, onSelect).
-- Ketcher highlight calls flow OUT from App (or a dedicated hook) directly to the Ketcher instance — never through React props.
-- The Ketcher instance is never passed as a prop. It is stored in a `useRef` on App and accessed by the highlight-dispatch logic co-located with App.
+### Component Responsibilities
 
----
+| Component / Module | Responsibility | New or Modified |
+|--------------------|----------------|-----------------|
+| `lib/feedbackUrl.ts` | **Pure** function: `(message, category, context) → encoded issues/new URL`. Owns title/body templating, label mapping, 8 KB truncation. No DOM, no async, no React. | **NEW** |
+| `lib/feedbackConfig.ts` | Constants: repo slug `cm-beilstein/explain-that-inchi`, category→label map, URL byte cap, truncation limits. | **NEW** |
+| `lib/getFeedbackContext.ts` | **Impure** collector: snapshots InChI, SMILES, preset name, UA, version at submit time. Thin; orchestrated from a callback App provides. | **NEW (optional — can inline in App)** |
+| `components/FeedbackModal.tsx` | Dialog UI: textarea (message), category radio/select, privacy notice, "Open GitHub issue" button. Local form state only. Calls `buildFeedbackUrl` + opens URL. | **NEW** |
+| `components/FeedbackButton.tsx` | Trigger control, on-brand. Toggles modal open state. (May live inside `Header` instead of standalone.) | **NEW** |
+| `App.tsx` | Holds `feedbackOpen` useState, mounts `<FeedbackModal>` as a sibling of existing sections, passes a `getContext` callback that reads `ketcherRef` + `selectedMolId` + store. | **MODIFIED** |
+| `Header.tsx` | Optionally hosts the feedback trigger button. | **MODIFIED (optional)** |
+| `vite.config.ts` | Inject `VITE_APP_VERSION` / commit SHA via `define`. | **MODIFIED** |
+| `vite-env.d.ts` | Type the new `import.meta.env.VITE_APP_VERSION`. | **MODIFIED** |
+
+## Recommended Project Structure
+
+```
+src/
+├── App.tsx                          # MODIFIED: feedbackOpen state + <FeedbackModal/> + getContext
+├── components/
+│   ├── Header.tsx                   # MODIFIED (optional): hosts FeedbackButton
+│   ├── FeedbackButton.tsx           # NEW: trigger
+│   ├── FeedbackModal.tsx            # NEW: form + submit
+│   └── FeedbackModal.module.css     # NEW: oklch-token-styled dialog
+├── lib/
+│   ├── feedbackUrl.ts               # NEW: PURE builder (the testable core)
+│   ├── feedbackConfig.ts            # NEW: repo slug, labels, caps
+│   ├── getFeedbackContext.ts        # NEW (optional): impure snapshot collector
+│   └── __tests__/
+│       └── feedbackUrl.test.ts      # NEW: unit tests, no DOM
+└── vite-env.d.ts                    # MODIFIED: VITE_APP_VERSION type
+```
+
+### Structure Rationale
+
+- **`lib/feedbackUrl.ts` is the architectural keystone.** Everything hard (encoding, length cap, templating, label mapping) lives behind a pure boundary that takes a plain `FeedbackContext` object. This mirrors the existing project pattern: `parseInchi.ts`, `parseAuxMapping.ts`, `handleMolSelectLogic.ts`, `highlightUtils.ts` are all pure-ish logic modules with co-located `__tests__/`. The feedback feature follows the same shape.
+- **Context collection stays out of the pure module.** `getSmiles()` is async and `navigator`/`import.meta.env` are environment reads — keep them in an impure collector (or inline in App's callback) so the URL builder stays trivially testable.
+- **FeedbackModal is a leaf sibling, not a wrapper.** It mounts beside `KetcherPanel`, never around it — see the "never remount Ketcher" constraint below.
+
+## Architectural Patterns
+
+### Pattern 1: Pure URL builder behind a plain-object boundary
+
+**What:** `buildFeedbackUrl` accepts `(message, category, context)` where `context` is a serializable struct, and returns a string + truncation flag. No `window`, no `navigator`, no `fetch`, no React.
+**When to use:** Always — this is the unit-testable core and the 8 KB truncation logic lives here.
+**Trade-offs:** Requires the caller to gather context first (async `getSmiles`), but that separation is exactly what makes the builder testable with zero mocks.
+
+```typescript
+// lib/feedbackUrl.ts
+export type FeedbackCategory = 'bug' | 'suggestion' | 'unclear';
+
+export interface FeedbackContext {
+  inchi: string;        // '' when canvas empty
+  smiles: string;       // '' when unavailable
+  presetName: string | null;
+  userAgent: string;
+  appVersion: string;
+}
+
+export interface BuildFeedbackUrlResult {
+  url: string;
+  truncated: boolean;   // surfaced so UI can note "context was shortened"
+}
+
+export function buildFeedbackUrl(
+  message: string,
+  category: FeedbackCategory,
+  ctx: FeedbackContext,
+): BuildFeedbackUrlResult {
+  // 1. title  = `${CATEGORY_PREFIX[category]} ${firstLine(message)}`
+  // 2. body   = markdown template interleaving message + context block
+  // 3. labels = CATEGORY_LABELS[category].join(',')
+  // 4. assemble URL with encodeURIComponent on each query value
+  // 5. if byteLength(url) > URL_BYTE_CAP → truncate inchi/smiles with ' …[truncated]'
+  //    and rebuild; set truncated = true
+}
+```
+
+### Pattern 2: Context read at submit time via `ketcherRef` + store `getState()` (stale-closure-safe)
+
+**What:** Never capture InChI/SMILES into the modal's render closure. Read them imperatively at the moment the user clicks submit — exactly mirroring App.tsx's existing discipline (`useInchiStore.getState().setInchiData(...)` dispatched without subscribing, and `ketcherRef.current` read inside the debounced handler rather than from a closure).
+**When to use:** For all auto-captured context. The modal can be open for a while and the user may keep drawing; submit-time reads guarantee freshness without re-renders.
+**Trade-offs:** `getSmiles()` is async, so the submit handler is async — see Anti-Pattern 4 for the `window.open`-after-`await` popup-blocker caveat and the recommended `<a href>` mitigation.
+
+```typescript
+// In App.tsx — passed to <FeedbackModal getContext={...} />
+const getFeedbackContext = useCallback(async (): Promise<FeedbackContext> => {
+  const inchi = useInchiStore.getState().inchi;            // store snapshot
+  const ketcher = ketcherRef.current;                       // ref, no closure staleness
+  let smiles = '';
+  try { smiles = ketcher ? await ketcher.getSmiles() : ''; } catch { /* empty canvas */ }
+  const preset = MOLECULES.find(m => m.id === selectedMolId) ?? null;
+  return {
+    inchi,
+    smiles,
+    presetName: preset?.name ?? null,
+    userAgent: navigator.userAgent,
+    appVersion: import.meta.env.VITE_APP_VERSION ?? 'dev',
+  };
+}, [selectedMolId]); // selectedMolId is React state → legitimately a dependency
+```
+
+> **Source-of-truth decision (answers question 2):**
+> - **InChI → read from the Zustand store** (`useInchiStore.getState().inchi`). It is the *verbatim* Ketcher output already validated/parsed by the live pipeline, and the MEMORY rule "never reconstruct InChI" applies — the store holds the canonical passthrough string. Calling `ketcher.getInchi(true)` again would re-run WASM, return the AuxInfo-concatenated form, and risk drift from what the user sees on screen. **Use the store.**
+> - **SMILES → read from Ketcher** (`ketcher.getSmiles()`). SMILES is *not* in the store, and the stored preset SMILES (`MOLECULES[].smiles`) only reflects the last preset, not subsequent free-hand edits. `getSmiles()` reflects the actual current canvas. **Use Ketcher.**
+> - **Preset name → `MOLECULES.find(id === selectedMolId)`**, reading `selectedMolId` from App state. Note `selectedMolId` becomes `null` the moment the user free-draws (App.tsx line 81), so a `null` preset name correctly means "user-modified / custom structure."
+
+### Pattern 3: Modal as conditionally-rendered sibling, Ketcher as always-mounted
+
+**What:** Gate only the modal on `feedbackOpen`. The `KetcherPanel` stays unconditionally in the tree.
+**When to use:** Always here — the whole app architecture is built around the WASM editor never re-initializing (`structServiceProvider` at module scope, `ketcherRef` not state, `onInit` fires once).
+**Trade-offs:** None. The modal is a leaf; toggling it cannot remount siblings.
+
+```tsx
+// App.tsx return — additive, KetcherPanel untouched
+<div className="app">
+  <Header onFeedbackClick={() => setFeedbackOpen(true)} />
+  <KetcherPanel ... />            {/* unchanged, never conditional */}
+  <InchiSection />
+  <Explanation />
+  {feedbackOpen && (
+    <FeedbackModal
+      getContext={getFeedbackContext}
+      onClose={() => setFeedbackOpen(false)}
+    />
+  )}
+</div>
+```
 
 ## Data Flow
 
-### Molecule change pipeline
+### Context capture flow (submit)
 
 ```
-User draws in Ketcher
-  → ketcher.editor.subscribe('change', handler)   [registered in onInit]
-  → handler fires (debounced 150ms)
-  → await ketcher.getInchi(true)                  [returns InChI + AuxInfo concatenated]
-  → parse InChI string   → layers[]               [parseInchi from molecules.js]
-  → parse AuxInfo /N:    → auxMap Map<canonical,ketcherIdx>  [parseAuxMapping]
-  → App.setState({ inchi, layers, auxMap })
-  → InchiDisplay re-renders, MappingStrip re-renders
-  → hoveredLayerIdx and subHover reset to null
+User clicks "Open GitHub issue"
+    ↓
+FeedbackModal.handleSubmit (async)
+    ↓
+await getContext()  ──→ store.getState().inchi
+    │                ──→ ketcherRef.current.getSmiles()  (await)
+    │                ──→ MOLECULES[selectedMolId].name
+    │                ──→ navigator.userAgent
+    │                ──→ import.meta.env.VITE_APP_VERSION
+    ↓
+buildFeedbackUrl(message, category, context)   [PURE]
+    ↓  { url, truncated }
+window.open(url) / navigate <a href>
+    ↓
+(optional) if truncated → show inline note in modal
 ```
 
-### Hover pipeline
+### State management
 
 ```
-User hovers LayerChip i
-  → onMouseEnter fires on LayerChip
-  → App.setState({ hoveredLayerIdx: i, subHover: null })
-  → ExplanationCard updates (reads hoveredLayer)
-  → highlight side-effect fires:
-      atoms = layers[i].canonicalAtoms        [parsed from layer text]
-      ketcherAtoms = atoms.map(n => auxMap.get(n))
-      ketcher.editor.highlights.clear()
-      ketcher.editor.highlights.create({ atoms: ketcherAtoms, color: layerAccent })
-
-User hovers sub-token in LayerText
-  → onSubHover fires → App.setState({ subHover: { kind, ... } })
-  → highlight side-effect fires with sub-token logic:
-      IF subHover set: compute targeted atoms only, suppress layer-wide highlight
-      IF subHover null: fall back to layer-wide highlight
-      ketcher.editor.highlights.clear()
-      ketcher.editor.highlights.create({ atoms, color })
-      (multiple create calls for multi-color layers: formula per element, h per count)
-
-User leaves InchiDisplay
-  → onMouseLeave on InchiDisplay container
-  → App.setState({ hoveredLayerIdx: null, subHover: null })
-  → ketcher.editor.highlights.clear()
+Existing: useInchiStore  ── inchi/layers/hover ── (UNCHANGED; read-only access)
+New (local to App):   feedbackOpen: useState<boolean>
+New (local to Modal): message: useState<string>, category: useState<FeedbackCategory>
 ```
 
-### Molecule switch pipeline
+The feature deliberately **adds no fields to the Zustand store.** Feedback is ephemeral UI state; it has no business in the shared InChI store. This keeps `store.test.ts` invariants intact.
 
-```
-User clicks MoleculeList row
-  → onSelect(molId) → App knows new molId
-  → await ketcher.setMolecule(mol.molfile)
-  → Ketcher fires 'change' event → debounced handler rebuilds layers + auxMap
-  → (no manual state set for the InChI; change subscription handles it)
-```
+## Build-time version injection (answers question 4)
 
----
-
-## State Schema
-
-Owned by App. Flat `useState` (or `useReducer`) — no external store needed for a single-screen app of this complexity.
+Repo slug and labels are **constants**, not env:
 
 ```typescript
-// Core derived state
-inchi: string                    // live from Ketcher
-layers: Layer[]                  // parseInchi(inchi)
-auxMap: Map<number, number>      // canonical# (1-based) -> Ketcher atom index (0-based)
-
-// Hover state
-hoveredLayerIdx: number | null
-subHover: SubHover | null
-
-// Selected preset (drives setMolecule on mount and on click)
-selectedMolId: string
-
-// Ketcher readiness
-ketcherReady: boolean            // set true in onInit, gates InchI display render
+// lib/feedbackConfig.ts
+export const REPO_SLUG = 'cm-beilstein/explain-that-inchi';
+export const ISSUE_NEW_URL = `https://github.com/${REPO_SLUG}/issues/new`;
+export const CATEGORY_LABELS: Record<FeedbackCategory, string[]> = {
+  bug:        ['bug', 'feedback'],
+  suggestion: ['enhancement', 'feedback'],
+  unclear:    ['documentation', 'feedback'],
+};
+export const CATEGORY_PREFIX: Record<FeedbackCategory, string> = {
+  bug: '[Bug]', suggestion: '[Idea]', unclear: '[Unclear]',
+};
+export const URL_BYTE_CAP = 8000; // headroom under GitHub's ~8 KB practical limit
 ```
 
-The Ketcher instance itself is stored in `ketcherRef = useRef<Ketcher | null>(null)`. It is NOT state — it does not cause re-renders. It is accessed imperatively by the highlight-dispatch logic.
+> **Label caveat (MEDIUM confidence):** GitHub silently drops `labels=` values that don't already exist in the repo — the issue still opens, just without the label. Verify the `feedback`/`bug`/`enhancement`/`documentation` labels exist in `cm-beilstein/explain-that-inchi`, or fall back to title-prefix-only categorization. One-line repo-settings action, not a code change.
 
----
+App version via Vite `define` (consistent with the existing `processShim` define pattern already in `vite.config.ts`):
 
-## Integration Patterns
+```typescript
+// vite.config.ts  — add to defineConfig
+import { execSync } from 'node:child_process';
+const appVersion = (() => {
+  try { return execSync('git describe --tags --always').toString().trim(); }
+  catch { return 'dev'; }
+})();
 
-### 1. Ketcher initialization (onInit)
-
-Ketcher's `onInit` fires once after the WASM module loads. The Editor component must NOT be unmounted/remounted — doing so causes a second WASM initialization and broken state. Wrap the Editor in a container that is always rendered; never conditionally render the Editor itself.
-
-```tsx
-// In App or a KetcherBridge component
-const ketcherRef = useRef<Ketcher | null>(null);
-
-<Editor
-  staticResourcesUrl=""
-  structServiceProvider={structServiceProvider}  // created ONCE outside render
-  errorHandler={console.error}
-  onInit={(ketcher) => {
-    ketcherRef.current = ketcher;
-    setKetcherReady(true);
-    // Register the change subscription here — not in useEffect
-    ketcher.editor.subscribe('change', debouncedChangeHandler);
-  }}
-/>
-```
-
-`structServiceProvider` must be created once at module level or in a `useMemo` with no deps — not inside a component body that can re-run.
-
-```ts
-// Module level (outside any component)
-const structServiceProvider = new StandaloneStructServiceProvider();
-```
-
-### 2. Debounced structure-change subscription (150ms)
-
-The canonical React pattern for a stable debounced callback that reads current state without stale closures:
-
-```ts
-// Inside App
-const latestHandlerRef = useRef<() => Promise<void>>();
-
-// Update the ref whenever the actual async logic changes
-// (in practice it doesn't change, but this is future-proof)
-useEffect(() => {
-  latestHandlerRef.current = async () => {
-    try {
-      const result = await ketcherRef.current!.getInchi(true);
-      // result is "InChI=1S/...\nAuxInfo=1/0/N:..."
-      // split on newline or detect the AuxInfo= prefix
-      const [inchiStr, auxStr] = splitInchiAndAux(result);
-      const layers = parseInchi(inchiStr);
-      const auxMap = parseAuxMapping(auxStr);
-      setInchi(inchiStr);
-      setLayers(layers);
-      setAuxMap(auxMap);
-      setHoveredLayerIdx(null);
-      setSubHover(null);
-    } catch {
-      // empty structure or invalid valence — show placeholder
-      setInchi('');
-      setLayers([]);
-      setAuxMap(new Map());
-    }
-  };
+export default defineConfig({
+  define: {
+    ...processShim,
+    'import.meta.env.VITE_APP_VERSION': JSON.stringify(appVersion),
+  },
+  ...
 });
-
-// Stable debounced wrapper — created once
-const debouncedChangeHandler = useMemo(
-  () => debounce(() => latestHandlerRef.current?.(), 150),
-  []
-);
 ```
 
-The key: the debounced function is a stable reference (created once with `useMemo(fn, [])`), but it always calls through `latestHandlerRef.current`, which holds the latest closure. This avoids stale closures without reinstalling the Ketcher subscription on every render.
-
-### 3. AuxInfo parsing: getInchi(true) vs structService
-
-**Verified from official README and npm type definitions:**
-- `ketcher.getInchi(withAuxInfo: boolean = false): Promise<string>` — documented in npm package descriptions.
-- When `withAuxInfo = true`, the return value is the InChI and AuxInfo concatenated (typically `"InChI=1S/...\nAuxInfo=1/0/N:..."`, but the separator format can vary by Ketcher version).
-
-**Recommended approach:** Call `getInchi(true)` and split on the `AuxInfo=` prefix:
-
-```ts
-function splitInchiAndAux(raw: string): [string, string] {
-  const auxIdx = raw.indexOf('AuxInfo=');
-  if (auxIdx === -1) return [raw.trim(), ''];
-  return [raw.slice(0, auxIdx).trim(), raw.slice(auxIdx).trim()];
-}
+```typescript
+// vite-env.d.ts
+/// <reference types="vite/client" />
+interface ImportMetaEnv { readonly VITE_APP_VERSION: string; }
+interface ImportMeta { readonly env: ImportMetaEnv; }
 ```
 
-**Fallback (LOW confidence — verify against actual Ketcher version):** If `getInchi(true)` returns only the InChI, look for `ketcher.indigo` or `ketcher.structService` and call a lower-level convert method with `ChemicalMimeType.InChIAuxInfo`. The `structService.types.d.ts` in ketcher-core 2.26.0 exposes `ChemicalMimeType.InChIAuxInfo = "chemical/x-inchi-aux"`, which implies it is a valid output format for the `convert()` call. This fallback adds complexity and should be validated during Phase 2 (Ketcher integration phase).
+> Note: `package.json` version is currently `0.0.0`. Recommend injecting `git describe --tags --always` (yields e.g. `v1.1-3-gabc1234` or a short SHA) since the repo ships by tag/CD, not by bumping `package.json`. Confirm during planning.
 
-### 4. Highlight dispatch without stale closures
+## 8 KB truncation strategy (answers question 3)
 
-Highlights are side effects of hover state, not render output. Use `useEffect` to watch hover state and push to Ketcher imperatively:
+GitHub's new-issue URL has a practical browser cap around 8 KB; long InChI/SMILES (e.g. atorvastatin, large drawn structures) can blow past it.
 
-```ts
-useEffect(() => {
-  const ketcher = ketcherRef.current;
-  if (!ketcher || !ketcherReady) return;
+Algorithm inside `buildFeedbackUrl` (all pure, byte-measured on the *encoded* string):
+1. Build the full URL.
+2. If `byteLength(url) <= URL_BYTE_CAP` → return `{ url, truncated: false }`.
+3. Else truncate the two largest context fields (InChI, SMILES) to a budget, appending a literal ` …[truncated]` marker, and rebuild.
+4. Message text is **never** truncated (it is the user's words) — only auto-captured context is shortened.
+5. Return `{ url, truncated: true }` so the modal can show "Some context was shortened to fit GitHub's URL limit."
 
-  ketcher.editor.highlights.clear();
+Measure bytes with `new TextEncoder().encode(url).length` (UTF-8 byte count, not `.length` which counts UTF-16 code units). `TextEncoder` is available in the jsdom test env.
 
-  if (hoveredLayerIdx === null) return;
+## Suggested build order (answers question 5 — TDD-first)
 
-  const layer = layers[hoveredLayerIdx];
-  if (!layer) return;
+Ordered by dependency; each step independently testable, matching the project's 206-test discipline.
 
-  if (subHover) {
-    // Sub-token mode: suppress layer-wide, push targeted highlight(s)
-    const groups = resolveSubHoverGroups(subHover, auxMap);
-    // groups is { atoms: number[], color: string }[]
-    for (const g of groups) {
-      ketcher.editor.highlights.create({ atoms: g.atoms, color: g.color });
-    }
-  } else {
-    // Layer-wide mode
-    const ketcherAtoms = resolveLayerAtoms(layer, auxMap);
-    const ketcherBonds = resolveLayerBonds(layer, auxMap);
-    ketcher.editor.highlights.create({
-      atoms: ketcherAtoms,
-      bonds: ketcherBonds,
-      color: layerAccentColor(layer.type),
-    });
-  }
-}, [hoveredLayerIdx, subHover, layers, auxMap, ketcherReady]);
-```
+1. **`lib/feedbackConfig.ts`** — constants only. No tests needed (or a trivial shape test). *No deps.*
+2. **`lib/feedbackUrl.ts` + `lib/__tests__/feedbackUrl.test.ts`** — **TDD core.** Write tests first: encoding correctness, label mapping per category, title prefix, body template, the 8 KB truncation branch (feed an oversized InChI, assert `truncated === true` and `byteLength <= cap`), empty-canvas case (`inchi === ''`). **Fully DOM-free, fastest to land, highest value.** *Depends on: config.*
+3. **`vite.config.ts` + `vite-env.d.ts`** — version injection. Verify with a quick `import.meta.env.VITE_APP_VERSION` log in dev; type-checks via `tsc`. *Independent.*
+4. **`lib/getFeedbackContext.ts`** (or inline App callback) — impure collector. Optionally test with a mocked ketcher (`getSmiles` stub) + store seed, asserting it produces a well-formed `FeedbackContext`. *Depends on: store, MOLECULES, Ketcher API shape.*
+5. **`components/FeedbackModal.tsx` + `.module.css`** — UI. Testable with RTL: renders fields, calls injected `getContext` + asserts the opened URL contains the message (mock `window.open`). The pure builder is already proven, so component tests stay light. *Depends on: builder, config.*
+6. **`components/FeedbackButton.tsx`** (or Header slot) — trigger. Trivial. *Depends on: nothing structural.*
+7. **`App.tsx` wiring** — add `feedbackOpen` state, `getFeedbackContext` callback, mount modal. Smallest diff, done last so all deps exist. *Depends on: all above.*
 
-The `useEffect` dependency array includes `hoveredLayerIdx`, `subHover`, `layers`, and `auxMap`. Stale closure is not an issue here because `ketcherRef.current` is a mutable ref and `layers`/`auxMap` are proper state values that appear in the dep array.
+**Independently testable units:** steps 2 (pure, no DOM — the crown jewel), 4 (mocked deps), 5 (RTL with mocks). Steps 1, 3, 6, 7 are config/wiring with minimal or no dedicated tests.
 
-**API note (MEDIUM confidence — confirmed in GitHub discussion #4050):**
-- `ketcher.editor.highlights.create({ atoms, bonds, color })` — available in Ketcher 2.x+
-- `ketcher.editor.highlights.clear()` — clears all highlights
-- Multiple `create` calls accumulate (used for multi-color layers like formula per element)
-- If on a pre-2.x Ketcher version, the old API was `editor.highlight(atoms)` — check installed version at build time
+## Anti-Patterns
 
-### 5. Two-level hover state management
+### Anti-Pattern 1: Conditionally rendering anything that wraps KetcherPanel
+**What people do:** Wrap the layout in a modal-aware container or move `KetcherPanel` behind a conditional/portal that toggles with feedback state.
+**Why it's wrong:** Any remount re-runs Ketcher's `onInit`, re-initializing the WASM worker (the entire app architecture — module-level `structServiceProvider`, `ketcherRef`, once-only `onInit` — exists to prevent this) and would wipe the drawn molecule.
+**Do this instead:** Mount `FeedbackModal` as a **leaf sibling** gated on its own `feedbackOpen` boolean. Use an overlay/portal for the modal *only*, never for the canvas.
 
-Two `useState` values on App: `hoveredLayerIdx` and `subHover`. No context, no external store — the component tree is shallow enough that prop drilling is clean and there are at most 3 levels of nesting.
+### Anti-Pattern 2: Capturing context into render closures (stale data)
+**What people do:** `const inchi = useInchiStore(s => s.inchi)` in the modal, then send that captured value on submit.
+**Why it's wrong:** The modal can sit open while the user keeps editing; a subscribed value is fine for *display* but the **submit** must reflect the true current state. Reading `ketcherRef.current` from a stale closure repeats the exact bug class App.tsx already guards against (it deliberately reads `ketcherRef.current` and `useInchiStore.getState()` imperatively inside the debounced handler, not from closures).
+**Do this instead:** Read everything imperatively at submit time via `getState()` and `ketcherRef.current` (Pattern 2). If you also want a live preview in the modal, subscribe for *display* but still re-read at submit.
 
-The suppression rule: when `subHover` is non-null, the `useEffect` above takes the sub-token branch and skips layer-wide highlights entirely (no else-branch, as the prototype comment confirms). This means the only coordination needed is clearing `subHover` when the layer changes:
+### Anti-Pattern 3: Re-running `getInchi()` to populate feedback
+**What people do:** Call `ketcher.getInchi(true)` in the feedback path to "get the freshest InChI."
+**Why it's wrong:** Returns the AuxInfo-concatenated string, re-runs WASM, and can diverge from the verbatim string the user sees (violates the MEMORY "never reconstruct / always passthrough" rule).
+**Do this instead:** Read `useInchiStore.getState().inchi` — already the verbatim, on-screen string.
 
-```ts
-// In LayerChip onMouseEnter:
-onMouseEnter={() => {
-  setHoveredLayerIdx(i);
-  setSubHover(null);   // reset sub-hover when switching layers
-}}
-```
+### Anti-Pattern 4: `await` before `window.open` causing popup blocks
+**What people do:** `await getContext()` (which awaits `getSmiles()`) then `window.open()` — some browsers treat the post-await `window.open` as non-user-initiated and block it.
+**Why it's wrong:** The new tab silently fails to open.
+**Do this instead:** Either (a) accept the minor risk and detect `window.open(...) === null`, then show a visible fallback link; or (b) **recommended** — pre-fetch SMILES into modal-local state when the modal opens, compute the href reactively, and render a real `<a href={url} target="_blank" rel="noopener noreferrer">` as the submit control. A real link is the most popup-blocker-proof and most accessible.
 
-And in InchiDisplay container `onMouseLeave`, both are cleared together.
+## Integration Points
 
-No ref tricks needed for hover state — it changes infrequently (once per user mouse movement), React batching handles it, and the `useEffect` that drives highlights runs after render.
+### External Services
 
-### 6. CSS design token system
+| Service | Integration Pattern | Notes |
+|---------|---------------------|-------|
+| GitHub Issues | Prefilled `issues/new?title=&body=&labels=` GET URL opened in new tab. No API, no auth, no token. | ~8 KB URL cap; nonexistent labels silently dropped; user needs a GitHub account to actually submit (accepted tradeoff per PROJECT.md). |
 
-The design token system is built from CSS custom properties on `:root` in `styles.css`. CSS custom properties are inheritable and cascade globally, so they are accessible from any CSS module file in the project without import. This means:
+### Internal Boundaries
 
-**Recommended approach:** Import `styles.css` once as a global stylesheet (in `main.tsx` or `index.css`), and use CSS modules for component-level scoping.
-
-```ts
-// main.tsx
-import './styles/tokens.css';   // the verbatim copy of the :root block from styles.css
-```
-
-```css
-/* KetcherPanel.module.css — can use tokens freely */
-.canvas-wrap {
-  background: var(--bg-canvas);
-  border: 1px solid var(--line);
-}
-```
-
-This is the correct approach because:
-- CSS modules scope class names, but CSS custom properties on `:root` are already global by nature.
-- No Tailwind plugin needed — the token system is self-contained vanilla CSS.
-- Do NOT use `@import` inside CSS module files for tokens — it works but creates unnecessary duplication in the bundle.
-
-The one Ketcher-specific CSS concern: `import 'ketcher-react/dist/index.css'` must appear in `main.tsx` before your own token import, so your tokens can override any Ketcher defaults that might collide.
-
----
-
-## Suggested Build Order
-
-Dependencies determine order. Each phase produces something the next phase consumes.
-
-### Phase 1: Scaffold + Ketcher mounting
-
-**Produces:** A running Vite + React 18 + TypeScript project with Ketcher visible in the browser and `getInchi()` returning a string.
-
-- Create Vite project with `@vitejs/plugin-react` (NOT the SWC variant — Ketcher's WASM bundles contain characters that crash SWC's parser; verified from Ketcher issue #5565)
-- Install `ketcher-react`, `ketcher-standalone`, `ketcher-core`
-- Add `optimizeDeps.exclude: ['ketcher-standalone']` to `vite.config.ts` (Vite pre-bundler chokes on the WASM-linked CJS output)
-- Import `ketcher-react/dist/index.css` in `main.tsx`
-- Import design tokens CSS (`styles.css` verbatim) in `main.tsx`
-- Mount `<Editor>` with `StandaloneStructServiceProvider`
-- Confirm `getInchi()` works from `onInit` console log
-- Confirm `highlights.create` works
-
-**Why first:** Everything else depends on a working Ketcher instance.
-
-### Phase 2: Data pipeline (no UI yet)
-
-**Produces:** Correct `layers[]` and `auxMap` in React state on every Ketcher change.
-
-- Port `parseInchi`, `parseConnectionBonds`, `parseHydrogenAtoms`, `parseMobileHydrogens`, `parseStereoAtoms` from `molecules.js` — these are pure functions, no React deps
-- Implement `parseAuxMapping`
-- Implement `splitInchiAndAux` (handle the version-specific return format of `getInchi(true)`)
-- Wire the debounced `'change'` subscription in `onInit`
-- Validate with console.log: structure changes produce correct layers and auxMap
-
-**Why second:** The InChI display and highlights both consume `layers[]` and `auxMap`. Until these are correct, nothing downstream can be built correctly.
-
-### Phase 3: InChI display + hover state
-
-**Produces:** The colour-coded InChI strip with working layer-level hover (dim/active classes) and ExplanationPanel updates. No Ketcher highlights yet.
-
-- Port `InchiSection`, `LayerChip` (the `inchi-layer` span from app.jsx)
-- Port `LayerText` dispatcher and all sub-renderers (`FormulaText`, `ConnectionText`, `ParityText`, `HLayerText`)
-- Wire `hoveredLayerIdx` and `subHover` state to App
-- Wire `ExplanationPanel` and `Legend` (port `LAYER_INFO` from `layers-info.js`, `readingFor()` from same)
-- Validate visual match to design handoff
-
-**Why third:** Hover state is needed before highlights, and the display is testable with hardcoded data before highlights are wired.
-
-### Phase 4: Ketcher highlight integration
-
-**Produces:** Hovering a layer chunk highlights atoms/bonds in the Ketcher canvas.
-
-- Implement `resolveLayerAtoms` / `resolveLayerBonds` (translate canonical numbers via `auxMap` to Ketcher indices)
-- Implement `resolveSubHoverGroups` (per sub-hover kind)
-- Wire the `useEffect` highlight dispatch (described in Integration Patterns §4)
-- Handle the sub-hover suppression rule
-- Validate: formula hover per-element, c-layer per-atom, h-layer per-count, t/b-layer per-parity-token
-
-**Why fourth:** Depends on Phase 2 (auxMap), Phase 3 (hover state), and Phase 1 (highlights API confirmed working).
-
-### Phase 5: MappingStrip + example molecule list
-
-**Produces:** The atom-numbering mapping strip and preset molecule switching.
-
-- Port `MappingStrip` (reads `auxMap`, derives identity vs. divergent pairs)
-- Add `MoleculeList` sidebar (reads `molecules.js` preset data, calls `ketcher.setMolecule()`)
-- Handle loading state during `setMolecule` (Ketcher fires 'change' after the molecule loads; the debounce covers transient states)
-- Handle identity message ("drawing order already matches...")
-
-**Why fifth:** MappingStrip depends on `auxMap` (Phase 2). Molecule switching is independent but the change pipeline must be stable before testing it.
-
-### Phase 6: Polish + edge cases
-
-**Produces:** Production-quality build, deploy.
-
-- Empty/invalid structure handling (Ketcher `getInchi` throws or returns empty on bad valence)
-- Graceful fallback in InChI display: show placeholder instead of empty/broken state
-- `ketcherReady` gate: show loading state while WASM initialises (can take 1-3 seconds)
-- Static build verification (`vite build`, check GitHub Pages / Netlify deploy)
-- Typography check (IBM Plex Sans/Serif/Mono from Google Fonts, verify loading)
-- Accessibility pass (keyboard-navigable layer hover, aria labels on MappingStrip)
-
----
-
-## Pitfall Flags by Phase
-
-| Phase | Pitfall | Mitigation |
-|-------|---------|------------|
-| 1 | `@vitejs/plugin-react-swc` crashes on Ketcher's WASM bundle | Use `@vitejs/plugin-react` (Babel) instead |
-| 1 | Ketcher Editor remounts unexpectedly and double-initializes WASM | Never conditionally render `<Editor>`; always mount it |
-| 1 | `structServiceProvider` recreated on render | Create at module level outside component |
-| 2 | `getInchi(true)` return format varies by Ketcher version | Split on `"AuxInfo="` prefix, not on newline; verify empirically |
-| 2 | Subscription callback captures stale state | Use `latestHandlerRef` pattern; never reinstall subscription on re-render |
-| 4 | Multiple `highlights.create` calls don't accumulate | Verify on target Ketcher version; clear before creating |
-| 4 | Bond indices in `parseConnectionBonds` are Ketcher bond indices, not canonical | The aux-info `/N:` section maps atoms only; bond mapping requires separate derivation from atom pairs in the c-layer |
-| 6 | WASM load takes 1-3s on cold start | Show skeleton/spinner gated on `ketcherReady` flag, not on first InChI |
-
----
+| Boundary | Communication | Notes |
+|----------|---------------|-------|
+| FeedbackModal ↔ App | `getContext()` callback prop (App owns ketcherRef + selectedMolId) | Keeps the modal ignorant of Ketcher/store internals; modal just calls a function. |
+| getContext ↔ Zustand store | `useInchiStore.getState().inchi` (non-subscribing read) | Same pattern App.tsx uses to dispatch — read without becoming a subscriber. |
+| getContext ↔ Ketcher | `ketcherRef.current.getSmiles()` (async) | Wrap in try/catch — throws on empty/disconnected canvas, same as `getInchi`. |
+| buildFeedbackUrl ↔ everything | Plain `FeedbackContext` object in, `{ url, truncated }` out | Pure boundary — the testable seam. |
+| version ↔ build | `import.meta.env.VITE_APP_VERSION` via Vite `define` | Reuses the existing `define` mechanism in vite.config.ts. |
 
 ## Sources
 
-- Design handoff: `/home/bsmue/code/InChI-vis/design_handoff_explain_that_inchi/README.md` (HIGH — primary specification)
-- Design handoff: `/home/bsmue/code/InChI-vis/design_handoff_explain_that_inchi/app.jsx` (HIGH — canonical component structure)
-- Ketcher GitHub repo: [epam/ketcher](https://github.com/epam/ketcher) (HIGH — official source)
-- Ketcher highlights discussion: [GitHub Discussion #4050](https://github.com/epam/ketcher/discussions/4050) (MEDIUM — maintainer-confirmed API)
-- Ketcher Vite SWC crash: [GitHub Issue #5565](https://github.com/epam/ketcher/issues/5565) (MEDIUM — known bug, workaround confirmed)
-- Ketcher onChange discussion: [GitHub Issue #645](https://github.com/epam/ketcher/issues/645) (MEDIUM — confirms subscribe('change') is the integration path)
-- ketcher-core structService types: [unpkg ketcher-core 2.26.0](https://app.unpkg.com/ketcher-core@2.26.0/files/dist/domain/services/struct/structService.types.d.ts) (MEDIUM — confirms ChemicalMimeType.InChIAuxInfo exists)
-- React debounce pattern: [Developer Way — debouncing in React](https://www.developerway.com/posts/debouncing-in-react) (HIGH — well-documented pattern)
-- CSS custom properties with React: [Josh W. Comeau](https://www.joshwcomeau.com/css/css-variables-for-react-devs/) (HIGH — standard CSS behaviour)
+- `src/App.tsx` — orchestrator: `ketcherRef`, `selectedMolId` (useState), `isReady`, generation/highlighting refs, the debounced `getInchi(true)` + `getState().setInchiData` dispatch pattern, "never move provider inside component" comment. HIGH.
+- `src/store.ts` — Zustand store shape; `inchi` field; non-subscribing `getState()` dispatch usage note. HIGH.
+- `src/components/InchiSection.tsx` — confirms `inchi` read via store selector; `navigator.clipboard` try/catch precedent for graceful API-unavailable handling. HIGH.
+- `src/components/Header.tsx` — current header markup; candidate host for the trigger. HIGH.
+- `src/data/molecules.ts` — `MoleculePreset { id, name, formula, smiles }`; SMILES live here, not in the store. HIGH.
+- `src/lib/handleMolSelectLogic.ts` — confirms `selectedMolId` lifecycle (set on preset, cleared on free-draw via App's handleChange). HIGH.
+- `vite.config.ts` — existing `define`/`processShim` mechanism reused for version injection. HIGH.
+- `.planning/PROJECT.md` — v1.2 milestone scope, repo slug `cm-beilstein/explain-that-inchi`, 8 KB cap constraint, GitHub-account tradeoff. HIGH.
+- MEMORY: "never reconstruct InChI — always display verbatim Ketcher output." HIGH — drives the "read InChI from store, not re-run getInchi" decision.
+- GitHub prefilled-issue URL params (`title`/`body`/`labels`) + ~8 KB practical URL limit + silent-drop of unknown labels — MEDIUM (well-established community behavior; verify labels exist in repo).
+
+---
+*Architecture research for: in-app prefilled-GitHub-issue feedback, integrated into the existing Explain-that-InChI SPA*
+*Researched: 2026-06-17*
