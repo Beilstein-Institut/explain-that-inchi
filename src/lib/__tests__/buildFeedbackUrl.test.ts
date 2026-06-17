@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildFeedbackUrl, FeedbackCategory } from '../buildFeedbackUrl';
+import { buildFeedbackUrl } from '../buildFeedbackUrl';
 
 // ---------------------------------------------------------------------------
 // FEED-04: title prefix + labels
@@ -398,20 +398,16 @@ describe('FEED-05: @-neutralization', () => {
 // ---------------------------------------------------------------------------
 
 describe('FEED-07: byte-budget truncation', () => {
-  // Multi-fragment repro molecule: toluene + benzene InChI and SMILES
-  // This is a long enough InChI to trigger the byte-budget path when
-  // combined with a long SMILES and other context fields.
+  // Multi-fragment repro molecule — long InChI/SMILES designed to exceed the ~7680 byte budget.
+  // D-13/specifics: truncation must be validated against a multi-fragment repro,
+  // not a short preset like ethanol which never exercises the byte-budget path.
+  // 100 repetitions of the toluene+benzene InChI fragment (~6400 chars) combined
+  // with a long SMILES (~2000 chars) reliably exceeds the 7680-byte URL budget
+  // after URLSearchParams encoding and the rest of the body template.
   const LONG_INCHI =
-    'InChI=1S/C7H8.C6H6/c1-7-5-3-2-4-6-7;1-2-4-6-5-3-1/h2-6H,1H3;1-6H'.repeat(3) +
-    '/C10H14.C9H12.C8H10.C7H8.C6H6' +
-    '/c1-8(2)6-4-3-5-7-6;1-7-4-2-3-5-7,2-8(1)6-4-3-5-7-6;' +
-    '1-6-4-2-3-5-6,2-7(1)5-3-2-4-6-5' +
-    '/h3-5,8H,1-2H3;2-6H,1H3;1-5H,1-2H3'.repeat(5);
+    'InChI=1S/C7H8.C6H6/c1-7-5-3-2-4-6-7;1-2-4-6-5-3-1/h2-6H,1H3;1-6H'.repeat(100);
 
-  const LONG_SMILES =
-    'Cc1ccccc1.c1ccccc1.CCc1ccccc1.Cc1ccccc1.c1ccccc1.CCc1ccccc1.' +
-    'Cc1ccccc1.c1ccccc1.CCc1ccccc1.Cc1ccccc1.c1ccccc1.CCc1ccccc1.' +
-    'Cc1ccccc1.c1ccccc1.CCc1ccccc1.Cc1ccccc1.c1ccccc1.CCc1ccccc1';
+  const LONG_SMILES = 'Cc1ccccc1.'.repeat(200);
 
   it('short input returns truncated: false', () => {
     const { truncated } = buildFeedbackUrl({
