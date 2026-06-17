@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Explain that InChI">
-  <!-- soft card background for tab contrast (matches app --bg cream) -->
+  <!-- soft card background for tab contrast (app cream bg) -->
   <rect x="1" y="1" width="30" height="30" rx="7" fill="#fbfbf6" stroke="#e3e1d8" stroke-width="1"/>
   <!-- benzene ring -->
   <polygon points="26,16 21,25 11,25 6,16 11,7 21,7"
