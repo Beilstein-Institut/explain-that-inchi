@@ -1,54 +1,31 @@
 {
   "version": "1.0",
-  "timestamp": "2026-06-08T11:50:54Z",
-  "phase": null,
-  "phase_name": "ad-hoc: Ketcher menu visibility debugging",
-  "phase_dir": null,
-  "plan": null,
-  "task": null,
-  "total_tasks": null,
+  "timestamp": "2026-06-17T12:59:53.794Z",
+  "phase": "10",
+  "phase_name": "feedback-dialog-context-capture-entry-point",
+  "phase_dir": ".planning/phases/10-feedback-dialog-context-capture-entry-point",
+  "plan": 3,
+  "task": 2,
+  "total_tasks": 2,
   "status": "paused",
   "completed_tasks": [
-    {"id": 1, "name": "Remove canvas-meta overlay (formula + heavy atom count shown top-left of Ketcher)", "status": "done", "commit": "60c6000"},
-    {"id": 2, "name": "Remove overflow:hidden from global .ketcher (confirmed dead CSS — no element has literal class 'ketcher')", "status": "done", "commit": "2b4c84c"},
-    {"id": 3, "name": "Remove overflow:hidden from global .canvas-wrap and module .canvasWrap override", "status": "done", "commit": "a123ecb"}
+    {"id": "10-01", "name": "Expose fullBody on BuildFeedbackUrlResult", "status": "done", "commit": "25ba315"},
+    {"id": "10-02", "name": "FeedbackDialog component + CSS module + tests", "status": "done", "commit": "a8fab82"},
+    {"id": "10-03", "name": "Wire feedback into App (pill, mount, submit handler)", "status": "done", "commit": "6f73b1e"},
+    {"id": "fix-1", "name": "Hide closed FeedbackDialog (scope flex to [open])", "status": "done", "commit": "e1070dc"},
+    {"id": "fix-2", "name": "Move Send feedback trigger onto section-label row", "status": "done", "commit": "49a0dce"}
   ],
   "remaining_tasks": [
-    {"id": 4, "name": "Diagnose why Ketcher menus are still hidden — need browser DevTools inspection", "status": "blocked"},
-    {"id": 5, "name": "Fix Ketcher menus once root cause is known", "status": "not_started"}
+    {"id": "verify", "name": "Run gsd-verifier to produce 10-VERIFICATION.md", "status": "not_started"},
+    {"id": "complete", "name": "phase.complete 10 — marks phase + milestone v1.2 done (last phase)", "status": "not_started"}
   ],
-  "blockers": [
-    {
-      "description": "Cannot determine root cause of hidden Ketcher menus without live browser DOM inspection",
-      "type": "human_action",
-      "workaround": "User must open DevTools, trigger a context menu (right-click on canvas), inspect element with class ContextMenu-module_contextMenu__oqyL- and report computed top/left/z-index/display/visibility"
-    }
-  ],
-  "human_actions_pending": [
-    {
-      "action": "Open browser DevTools → right-click Ketcher canvas → find element class=ContextMenu-module_contextMenu__oqyL- → report computed style: top, left, z-index, display, visibility, opacity",
-      "context": "All overflow:hidden removed from our CSS wrappers but menus still not visible. Need to know if rendering off-screen, behind elements, or not rendering at all.",
-      "blocking": true
-    }
-  ],
+  "blockers": [],
+  "human_actions_pending": [],
   "decisions": [
-    {
-      "decision": "Global .ketcher CSS in styles.css (display:grid etc.) is dead CSS — no element in the DOM has literal class 'ketcher'. Ketcher uses 'Ketcher-root' (capital K) as its root class name.",
-      "rationale": "KETCHER_ROOT_NODE_CLASS_NAME = 'Ketcher-root' in Ketcher bundle. Exhaustive search found no literal 'ketcher' className assignment.",
-      "phase": null
-    },
-    {
-      "decision": "Ketcher toolbar dropdown portals: position:absolute z-index:20, appended to .Ketcher-root. Context menu: position:fixed z-index:1. Modal overlays: position:absolute z-index:40 within .Ketcher-root.",
-      "rationale": "Sourced from Ketcher built CSS: ToolbarMultiToolItem-module_portal__2XJgz and ContextMenu-module_contextMenu__oqyL-",
-      "phase": null
-    },
-    {
-      "decision": "App-module_app__8cgyF has container-type:size (=contain:size layout style, NOT paint). Does NOT clip overflow, does NOT create containing block for fixed elements.",
-      "rationale": "CSS Containment spec: only paint containment clips overflow and creates containing block for fixed. container-type:size excludes paint.",
-      "phase": null
-    }
+    {"decision": "Render the Send feedback trigger inside KetcherPanel's existing .section-label row (justify-content: space-between)", "rationale": "A standalone right-aligned toolbar row created a wasted empty band; a negative-margin lift collided with the header meta. Sharing the 'Draw a molecule...' label row avoids both.", "phase": "10"},
+    {"decision": "Scope .feedbackDialog flex layout to [open] only", "rationale": "Author 'display: flex' overrode the UA 'dialog:not([open]) { display: none }' by cascade origin, leaving the closed dialog rendered behind the Ketcher canvas.", "phase": "10"}
   ],
   "uncommitted_files": [],
-  "next_action": "Ask user to provide browser DevTools inspection result for a hidden Ketcher menu element, then diagnose and fix based on actual computed styles.",
-  "context_notes": "Full session analysis: removed canvas-meta overlay (user request), then attempted to fix Ketcher menu clipping. Removed overflow:hidden from all our CSS wrapper layers. After exhaustive static analysis of Ketcher bundle internals, could not determine why menus remain hidden. Strongest remaining hypotheses: (1) context menu z-index:1 is too low and something in our page creates a stacking context above it, (2) portal position calculation goes wrong because of some layout quirk, (3) something in Ketcher's own CSS I missed. The global .ketcher CSS block in styles.css is dead code that could be cleaned up but is not causing the issue."
+  "next_action": "Run the gsd-verifier agent against phase 10 to create 10-VERIFICATION.md, then `gsd-sdk query phase.complete 10` to mark the phase and milestone v1.2 complete.",
+  "context_notes": "All 3 plans built via worktree-isolated executors, merged sequentially. The 10-03 human-verify checkpoint surfaced two real UI bugs, both fixed, browser-verified via Playwright (no console errors, dialog opens/closes cleanly), committed, and pushed to origin/master at d925dbc. 264 tests pass, tsc + vite build clean. Phase is functionally done and shipped; only GSD verification/completion bookkeeping remains."
 }
