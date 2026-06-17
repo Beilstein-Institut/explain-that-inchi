@@ -46,7 +46,7 @@ Core mechanism (locked): a "Send feedback" control opens a **prefilled GitHub ne
 | Third-party feedback SaaS / floating widget (Usersnap, etc.) | Adds external dependency, branding, privacy surface; GitHub issues suffice |
 | Client-side auth / GitHub OAuth / API token submission | No backend to hold secrets; prefilled-URL flow needs none |
 | Collecting PII / email / screenshots | Privacy; only surface what's already on screen |
-| Repo-side labels / issue-template / triage setup | Maintainer GitHub config, not app code — tracked as a non-code checklist item in the roadmap |
+| Repo-side labels / issue-template / triage setup | Maintainer GitHub config, not app code — tracked as a non-code checklist item in ROADMAP.md |
 
 ---
 
@@ -54,12 +54,12 @@ Core mechanism (locked): a "Send feedback" control opens a **prefilled GitHub ne
 
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| FEED-01 | _TBD (roadmap)_ | pending |
-| FEED-02 | _TBD_ | pending |
-| FEED-03 | _TBD_ | pending |
-| FEED-04 | _TBD_ | pending |
-| FEED-05 | _TBD_ | pending |
-| FEED-06 | _TBD_ | pending |
-| FEED-07 | _TBD_ | pending |
-| FEED-08 | _TBD_ | pending |
-| FEED-09 | _TBD_ | pending |
+| FEED-01 | Phase 10 | pending |
+| FEED-02 | Phase 10 | pending |
+| FEED-03 | Phase 10 | pending |
+| FEED-04 | Phase 9 | pending |
+| FEED-05 | Phase 9 | pending |
+| FEED-06 | Phase 10 | pending |
+| FEED-07 | Phase 9 | pending |
+| FEED-08 | Phase 10 | pending |
+| FEED-09 | Phase 9 | pending |

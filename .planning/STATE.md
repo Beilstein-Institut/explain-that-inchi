@@ -6,7 +6,7 @@ status: planning
 last_updated: "2026-06-17T07:14:04.531Z"
 last_activity: 2026-06-17
 progress:
-  total_phases: 0
+  total_phases: 2
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -16,15 +16,15 @@ progress:
 # Project State
 
 **Project:** Explain that InChI
-**Milestone:** v1.2 — In-app feedback via prefilled GitHub issues (planning; v1.1 shipped 2026-06-17)
-**Status:** Planning — defining requirements
+**Milestone:** v1.2 — In-app feedback via prefilled GitHub issues (roadmap drafted; v1.1 shipped 2026-06-17)
+**Status:** Roadmap created — ready to plan Phase 9
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-06-05)
+See: .planning/PROJECT.md (updated 2026-06-17)
 
 **Core value:** Every chunk of an InChI string is hoverable, explained, and linked back to the atoms in the drawing — demystifying a notation that most chemists treat as opaque.
-**Current focus:** v1.2 — in-app feedback via prefilled GitHub issues (defining requirements → roadmap)
+**Current focus:** v1.2 — in-app feedback via prefilled GitHub issues (roadmap → plan Phase 9)
 
 ## Milestone Archive
 
@@ -33,6 +33,22 @@ See: .planning/PROJECT.md (updated 2026-06-05)
 - Roadmap archive: `.planning/milestones/v1.0-ROADMAP.md`
 - Requirements archive: `.planning/milestones/v1.0-REQUIREMENTS.md`
 - Git tag: `v1.0`
+
+## v1.2 Roadmap (Phases 9–10)
+
+- **Phase 9: Feedback URL builder, config & version injection** — pure, DOM-free `buildFeedbackUrl()` (encoding, ~7.5 KB byte-budget guard + deterministic truncation, `@`-neutralization, category title-prefix) + build-time version injection. Requirements: FEED-04, FEED-05, FEED-07, FEED-09. Test-anchored keystone, built first.
+- **Phase 10: Feedback dialog, context capture & entry point** — impure submit-time context collector (InChI from store verbatim, SMILES via `getSmiles()`, preset via `MOLECULES.find(selectedMolId)`, trimmed UA, version), native `<dialog>` modal, "Send feedback" entry point, App wiring. Requirements: FEED-01, FEED-02, FEED-03, FEED-06, FEED-08. UI phase.
+- Non-code maintainer checklist (repo-side labels/issue-template/triage) surfaced in ROADMAP.md — not a code phase.
+
+## v1.2 Key Decisions (carry-forward from research)
+
+- Zero new npm dependencies — native `URL`/`URLSearchParams` + `TextEncoder` + one Vite `define`. Do NOT add `new-github-issue-url` or any feedback SaaS.
+- #1 risk = GitHub's ~8 KB server-side URL cap; budget ~7.5 KB and validate truncation against the multi-fragment repro molecule, not short presets.
+- Categorize via **title prefix** (labels silently drop for non-collaborators); pass `labels=` redundantly.
+- Open the issue via a real `<a target="_blank" rel="noopener">` on the user gesture — no `await` before opening (popup blocker).
+- Three-way context source-of-truth, read imperatively at submit time: InChI from `useInchiStore.getState().inchi` (verbatim, never re-run `getInchi`), SMILES from `ketcherRef.current.getSmiles()`, preset from `MOLECULES.find(m => m.id === selectedMolId)` (`null` = custom).
+- Feedback is ephemeral UI state — add NO fields to the Zustand store. Never remount/wrap KetcherPanel; the modal is a leaf sibling.
+- Fence ALL auto-context in code blocks; neutralize `@` in user prose.
 
 ## Key Decisions (carry-forward)
 
@@ -79,7 +95,7 @@ None
 
 | coi+favicon | /gsd-fast: fix coi-serviceworker.js path (%BASE_URL% → relative; was 404) + add project favicon.svg (benzene ring, color-coded vertices) | 2026-06-17 | 7ffeec3 | (index.html, public/favicon.svg) |
 
-Last activity: 2026-06-10 - Fixed formula-H badges missing mobile-H ("H?") for (H,5,6) groups
+Last activity: 2026-06-17 - v1.2 roadmap created (Phases 9–10)
 
 ### Multi-fragment support (now complete)
 
@@ -87,7 +103,7 @@ The 4-task multi-component fix series (260610-d2r, -eci, -eoi) closed all known 
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: Not started (roadmap created)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-06-17 — Milestone v1.2 started
+Status: Roadmap created — ready to plan Phase 9
+Last activity: 2026-06-17 — v1.2 roadmap added (Phases 9–10), traceability mapped
