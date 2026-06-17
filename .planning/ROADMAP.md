@@ -30,7 +30,7 @@ Full phase details: `.planning/milestones/v1.0-ROADMAP.md`
 
 **Overview:** This is a small, low-complexity, purely additive feature: client-side URL construction, no network call until the user clicks through. It splits along the one natural seam research identified — a pure, DOM-free URL builder that owns all the hard logic (single-`URLSearchParams` encoding, the ~7.5 KB `TextEncoder` byte-budget guard, deterministic truncation of auto-context only, `@`-neutralization, category title-prefixing) plus the build-time version string it consumes — built and test-anchored first — then the impure submit-time context collector, the native `<dialog>` modal, the entry-point control, and App wiring layered on top.
 
-- [ ] **Phase 9: Feedback URL builder, config & version injection** — Pure, fully-tested `buildFeedbackUrl()` plus build-time app version
+- [x] **Phase 9: Feedback URL builder, config & version injection** — Pure, fully-tested `buildFeedbackUrl()` plus build-time app version (completed 2026-06-17)
 - [ ] **Phase 10: Feedback dialog, context capture & entry point** — On-brand "Send feedback" modal wired into the app, opening the prefilled issue
 
 ## Phase Details
@@ -49,7 +49,7 @@ Full phase details: `.planning/milestones/v1.0-ROADMAP.md`
 
 Plans:
 - [x] 09-01-PLAN.md — Bump version + inject __APP_VERSION__/__APP_COMMIT__ Vite defines (FEED-09)
-- [ ] 09-02-PLAN.md — Pure, test-anchored buildFeedbackUrl() with encoding/budget/truncation/@-neutralization (FEED-04/05/07)
+- [x] 09-02-PLAN.md — Pure, test-anchored buildFeedbackUrl() with encoding/budget/truncation/@-neutralization (FEED-04/05/07)
 
 ### Phase 10: Feedback dialog, context capture & entry point
 **Goal**: A visitor can discover a "Send feedback" control, fill in a category and message in an on-brand modal, see exactly what context will be attached, and click through to a prefilled GitHub issue in a new tab — without ever disturbing the Ketcher canvas.
@@ -88,7 +88,7 @@ Phases execute in numeric order: 9 → 10
 | 6. Hydrogen Highlight, Polish, and Deploy | v1.0 | 4/4 | Complete | 2026-06-01 |
 | 7. Multi-Fragment Highlighting, p-Layer, and Copy | v1.0 | 3/3 | Complete | 2026-06-01 |
 | 8. Hydrogen Implicit & Explicit Highlight | v1.0 | 2/2 | Complete | 2026-06-05 |
-| 9. Feedback URL builder, config & version injection | v1.2 | 1/2 | In Progress|  |
+| 9. Feedback URL builder, config & version injection | v1.2 | 2/2 | Complete | 2026-06-17 |
 | 10. Feedback dialog, context capture & entry point | v1.2 | 0/TBD | Not started | - |
 
 ---
