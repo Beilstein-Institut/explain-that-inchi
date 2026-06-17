@@ -14,6 +14,6 @@
   <!-- question mark overlaid on the ring (the "explain / understand" theme) -->
   <text x="16" y="16" text-anchor="middle" dominant-baseline="central"
         font-family="system-ui, 'Segoe UI', Helvetica, Arial, sans-serif"
-        font-weight="700" font-size="19"
-        fill="#2b2f36" stroke="#fbfbf6" stroke-width="2.8" paint-order="stroke">?</text>
+        font-weight="700" font-size="25"
+        fill="#2b2f36" stroke="#fbfbf6" stroke-width="3.2" paint-order="stroke">?</text>
 </svg>
