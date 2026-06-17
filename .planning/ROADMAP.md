@@ -74,7 +74,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 10-01-PLAN.md — Extend buildFeedbackUrl to return fullBody field (D-11 builder extension + tests)
+- [x] 10-01-PLAN.md — Extend buildFeedbackUrl to return fullBody field (D-11 builder extension + tests)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -106,7 +106,7 @@ Phases execute in numeric order: 9 → 10
 | 7. Multi-Fragment Highlighting, p-Layer, and Copy | v1.0 | 3/3 | Complete | 2026-06-01 |
 | 8. Hydrogen Implicit & Explicit Highlight | v1.0 | 2/2 | Complete | 2026-06-05 |
 | 9. Feedback URL builder, config & version injection | v1.2 | 2/2 | Complete | 2026-06-17 |
-| 10. Feedback dialog, context capture & entry point | v1.2 | 0/TBD | Not started | - |
+| 10. Feedback dialog, context capture & entry point | v1.2 | 1/3 | In Progress|  |
 
 ---
 *Roadmap created: 2026-05-18*

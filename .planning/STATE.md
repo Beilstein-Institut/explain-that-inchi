@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: In-app feedback via prefilled GitHub issues
 status: executing
-last_updated: "2026-06-17T12:11:14.565Z"
+last_updated: "2026-06-17T12:13:06.049Z"
 last_activity: 2026-06-17
 progress:
   total_phases: 2
@@ -17,14 +17,14 @@ progress:
 
 **Project:** Explain that InChI
 **Milestone:** v1.2 — In-app feedback via prefilled GitHub issues (roadmap drafted; v1.1 shipped 2026-06-17)
-**Status:** Ready to execute
+**Status:** Executing Phase 10
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-06-17)
 
 **Core value:** Every chunk of an InChI string is hoverable, explained, and linked back to the atoms in the drawing — demystifying a notation that most chemists treat as opaque.
-**Current focus:** Phase 09 — feedback-url-builder-config-version-injection
+**Current focus:** Phase 10 — feedback-dialog-context-capture-entry-point
 
 ## Milestone Archive
 
@@ -103,7 +103,7 @@ The 4-task multi-component fix series (260610-d2r, -eci, -eoi) closed all known 
 
 ## Current Position
 
-Phase: 09 (feedback-url-builder-config-version-injection) — COMPLETE (verified 2026-06-17, 5/5 must-haves)
-Plan: 2 of 2 complete
-Status: Ready to execute
-Last activity: 2026-06-17 -- Phase 10 planning complete
+Phase: 10 (feedback-dialog-context-capture-entry-point) — EXECUTING
+Plan: 1 of 3
+Status: Executing Phase 10
+Last activity: 2026-06-17 -- Phase 10 execution started
