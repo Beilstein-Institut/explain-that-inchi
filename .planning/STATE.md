@@ -17,7 +17,7 @@ progress:
 
 **Project:** Explain that InChI
 **Milestone:** v1.2 — In-app feedback via prefilled GitHub issues (roadmap drafted; v1.1 shipped 2026-06-17)
-**Status:** Roadmap created — ready to plan Phase 9
+**Status:** Phase 9 planned & verified — ready to execute (`/gsd:execute-phase 9`)
 
 ## Project Reference
 
@@ -103,7 +103,7 @@ The 4-task multi-component fix series (260610-d2r, -eci, -eoi) closed all known 
 
 ## Current Position
 
-Phase: Not started (roadmap created)
-Plan: —
-Status: Roadmap created — ready to plan Phase 9
-Last activity: 2026-06-17 — v1.2 roadmap added (Phases 9–10), traceability mapped
+Phase: 9 — planned (2 plans, 1 wave)
+Plan: 09-01 (version injection, FEED-09), 09-02 (pure buildFeedbackUrl, FEED-04/05/07)
+Status: Phase 9 planned & verified (plan-checker PASS) — ready to execute
+Last activity: 2026-06-17 — planned Phase 9; checker PASS; hardened FEED-09 sha-vs-tag resolution
