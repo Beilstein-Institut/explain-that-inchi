@@ -65,14 +65,14 @@ Exceptions: none beyond the documented reuse of handoff half-steps (10/12/18/22p
 ## Typography
 
 All sizes/weights below already exist in `src/styles.css`. Phase 10 reuses them; it introduces
-no new type tokens. Max distinct sizes in the dialog: 4 (display title, body, label, micro-label).
+no new type tokens. Max distinct sizes in the dialog: 4 — exactly the four system sizes 26 / 14.5 / 12.5 / 10.5px (display title, body, mono/pill chrome, micro-label).
 
 | Role | Size | Weight | Line Height | Family | Token precedent |
 |------|------|--------|-------------|--------|-----------------|
 | Dialog title (Display) | 26px | 500 | 1.15 | `--font-serif` | `.explain .layer-title` (verbatim) |
 | Body / message text / radio labels | 14.5px | 400 | 1.55 | `--font-sans` | `.explain .layer-body` (verbatim) |
 | Section / field micro-label (uppercase) | 10.5px | 400 | 1.4 | `--font-mono` | `.section-label` / `.inchiSection .sectionLabel` |
-| Pill button label | 13px | 500 | 1 | `--font-sans` | `.mol-item .mol-name` weight precedent |
+| Pill button label | 12.5px | 500 | 1 | `--font-sans` | `.layer-eg` / `.legendTip` body size (chrome reads fine at this size) |
 | Context preview (monospace block) | 12.5px | 400 | 1.5 | `--font-mono` | `.explain .layer-eg` (verbatim) |
 | Inline public-issue note | 12.5px | 400 | 1.55 | `--font-sans` | matches `.legendTip` body size |
 
@@ -151,7 +151,7 @@ the tokens. All decisions trace to 10-CONTEXT D-01..D-15.
 
 ### 1. Toolbar row + pill button (FEED-01, D-01)
 - A new thin row between `<Header />` and `<KetcherPanel />` in `App.tsx`'s flat layout. Right-aligned (`display:flex; justify-content:flex-end`).
-- Pill button: 32px tall, `border-radius: 999px`, `--c-formula` fill, `--bg-canvas` text, `--font-sans` 13px/500. Optional leading 16px inline SVG (speech-bubble) in `currentColor`.
+- Pill button: 32px tall, `border-radius: 999px`, `--c-formula` fill, `--bg-canvas` text, `--font-sans` 12.5px/500. Optional leading 16px inline SVG (speech-bubble) in `currentColor`.
 - Hover: lighten fill via `oklch(from var(--c-formula) calc(l + 0.05) c h)` (matches the lightening idiom already in `InchiSection.module.css`). Focus-visible: 2px `--c-formula` outline, 2px offset (verbatim `.copyBtn:focus-visible` pattern).
 - Clicking calls `dialogRef.current.showModal()`. MUST NOT remount KetcherPanel or touch the store (D-02). Open/close state is local React state in App (or a tiny `FeedbackToolbar`), never Zustand.
 
