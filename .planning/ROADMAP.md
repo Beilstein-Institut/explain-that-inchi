@@ -48,44 +48,58 @@ Full phase details: `.planning/milestones/v1.2-ROADMAP.md`
 ## Phase Details (v1.3)
 
 ### Phase 11: Source & Wiring
+
 **Goal**: The molecule's InChIKey is computed live from the same in-browser WASM source as the InChI, stored verbatim, and stays in sync with the molecule across rapid edits, preset loads, and empty/invalid states.
 **Depends on**: Nothing (extends the existing v1.0 pipeline; v1.2 shipped)
 **Requirements**: INKEY-01, INKEY-02, INKEY-06
 **Success Criteria** (what must be TRUE):
+
   1. When a user draws or loads a molecule, an InChIKey value appears in the store, computed via `ketcher.getInChIKey()` from the same WASM source as the InChI, updating in sync with the molecule.
   2. The stored InChIKey is the verbatim library output string — a test asserts the stored value equals the raw `getInChIKey()` output, with no reconstruction or re-joining.
   3. Under rapid edits, the InChIKey never lags or overwrites with a stale value — it rides the existing `generationRef` stale-result guard and is fetched concurrently with `getInchi(true)` via `Promise.allSettled` in the same debounced `handleChange` tick.
   4. Clearing the canvas (or an empty/invalid/disconnected structure) resets the InChIKey to empty in the same atomic write and in the catch path — no lingering key, no error.
   5. A pure `parseInchiKey.ts` returns segment offset ranges only (`{kind, start, end}`) and tolerates malformed/short keys without throwing — unit-tested, never returns reassembled text.
+
 **Plans**: 3 plans
 Plans:
+**Wave 1**
+
 - [ ] 11-01-PLAN.md — parseInchiKey.ts pure offset parser + 6-group unit test suite
 - [ ] 11-02-PLAN.md — Extend Zustand store with inchiKey field and setInchiData trailing arg
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 11-03-PLAN.md — Wire Promise.allSettled concurrent fetch in handleChange; propagate inchiKey to all setInchiData call sites
 
 ### Phase 12: Render & Layout
+
 **Goal**: The user sees the InChIKey rendered below the InChI strip as color-coded segments they can hover and copy — visually consistent with the InChI strip but with no canvas highlighting, and without ever remounting the Ketcher canvas.
 **Depends on**: Phase 11 (needs the verbatim key in the store and the tested offset parser)
 **Requirements**: INKEY-03, INKEY-04, INKEY-05
 **Success Criteria** (what must be TRUE):
+
   1. The InChIKey appears below the InChI strip as color-coded segments — skeleton hash (14), remaining-layers hash (8), flag + version chars, protonation char — rendered by slicing the verbatim stored string; the two hyphens are visually dimmed/de-emphasized.
   2. Hovering a segment surfaces a per-segment explanation card and dims sibling segments, driven by a component-local `useState` hover index — and hovering a segment does NOT highlight any atoms or bonds in the canvas.
   3. A copy-to-clipboard control copies the verbatim InChIKey and shows a "Copied!" confirmation that resets after 3s and survives StrictMode double-mount (PLSH-04 parity, `mountedRef` reset-on-mount pattern).
   4. The strip renders only when the key matches the full 27-char format; otherwise it shows the same placeholder treatment as the empty InChI strip.
   5. Mounting the new section does not remount the Ketcher canvas (WASM does not re-initialize) and the existing InChI strip and its tests remain green — the section is a leaf sibling.
+
 **Plans**: TBD
 **UI hint**: yes
 
 ### Phase 13: Content & Explanation
+
 **Goal**: A chemist hovering any InChIKey segment understands what that segment encodes, why the key exists, and the critical mental-model corrections — it is a one-way hash, not reversible, not atom-mapped, and not collision-proof.
 **Depends on**: Phase 12 (prose is authored against the finalized segments and rendered card)
 **Requirements**: INKEY-07, INKEY-08, INKEY-09, INKEY-10, INKEY-11, INKEY-12
 **Success Criteria** (what must be TRUE):
+
   1. Each segment's card describes its block structure correctly — 14-char skeleton/connectivity hash, 8-char remaining-layers (stereo/isotope/proton) hash, standard/non-standard flag + version char, protonation char — with offsets pinned by a slice-boundary + label unit test.
   2. Content explains the InChIKey's purpose: a fixed 27-char, web/database-search-friendly hashed form of the InChI.
   3. Content states the InChIKey is a one-way hash — not reversible and not atom-mappable — and explicitly notes its segments deliberately do NOT highlight atoms (unlike InChI layers); content also includes the collision caveat (improbable but theoretically possible; for lookup/indexing, not proof of identity).
   4. The skeleton-hash card notes that molecules sharing the same connectivity share this first block — the basis for InChIKey database/web lookup; the flag/version card distinguishes standard (`S`) vs non-standard (`N`) and the version character (`A`).
   5. Content notes that a multi-component/salt structure yields one key for the entire drawn assembly (no per-fragment keys), and no prose implies reversibility, atom-mapping, or guaranteed uniqueness.
+
 **Plans**: TBD
 **UI hint**: yes
 

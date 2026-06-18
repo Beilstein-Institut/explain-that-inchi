@@ -500,7 +500,9 @@ export function parseInchiKey(key: string): InchiKeySegment[] {
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+> Both questions below are answered inline and designated as Wave 0 execution-time smoke checks; Plan 11-01's benzene fixture test catches any prefix/offset mismatch at test time. Neither blocks planning.
 
 1. **`getInChIKey()` return format**
    - What we know: TypeScript type is `Promise<string>`; CONTEXT.md says it "routes through the same WASM worker as `getInchi()`".
