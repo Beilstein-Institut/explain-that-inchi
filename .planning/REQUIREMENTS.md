@@ -8,7 +8,7 @@
 
 ### InChIKey display (INKEY)
 
-- [ ] **INKEY-01**: A live InChIKey appears below the InChI strip, computed from the same in-browser WASM source as the InChI (`ketcher.getInChIKey()`), updating in sync with the molecule.
+- [x] **INKEY-01**: A live InChIKey appears below the InChI strip, computed from the same in-browser WASM source as the InChI (`ketcher.getInChIKey()`), updating in sync with the molecule.
 - [x] **INKEY-02**: The displayed and copied InChIKey is the verbatim library output string — never reconstructed or re-joined from parsed segments.
 - [ ] **INKEY-03**: The InChIKey is rendered as color-coded segments — skeleton hash (14), remaining-layers hash (8), flag + version chars, protonation char — with the two hyphens visually dimmed/de-emphasized.
 - [ ] **INKEY-04**: Hovering a segment surfaces a per-segment explanation card, mirroring the InChI strip's hover behaviour.
@@ -45,7 +45,7 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INKEY-01 | Phase 11 | pending |
+| INKEY-01 | Phase 11 | Complete |
 | INKEY-02 | Phase 11 | Complete |
 | INKEY-03 | Phase 12 | pending |
 | INKEY-04 | Phase 12 | pending |

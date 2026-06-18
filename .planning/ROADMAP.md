@@ -65,7 +65,7 @@ Plans:
 **Wave 1**
 
 - [x] 11-01-PLAN.md — parseInchiKey.ts pure offset parser + 6-group unit test suite
-- [ ] 11-02-PLAN.md — Extend Zustand store with inchiKey field and setInchiData trailing arg
+- [x] 11-02-PLAN.md — Extend Zustand store with inchiKey field and setInchiData trailing arg
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -134,7 +134,7 @@ Surfaced here so it isn't mistaken for implementation work (per the v1.2 require
 | 8. Hydrogen Implicit & Explicit Highlight | v1.0 | 2/2 | Complete | 2026-06-05 |
 | 9. Feedback URL builder, config & version injection | v1.2 | 2/2 | Complete | 2026-06-17 |
 | 10. Feedback dialog, context capture & entry point | v1.2 | 4/4 | Complete | 2026-06-18 |
-| 11. Source & Wiring | v1.3 | 1/3 | In Progress|  |
+| 11. Source & Wiring | v1.3 | 2/3 | In Progress|  |
 | 12. Render & Layout | v1.3 | 0/0 | Not started | - |
 | 13. Content & Explanation | v1.3 | 0/0 | Not started | - |
 
