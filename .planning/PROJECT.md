@@ -12,29 +12,13 @@ Every chunk of an InChI string is hoverable, explained, and linked back to the a
 
 ## Current State
 
-**Version:** v1.1 — shipped 2026-06-17 (post-ship correctness & polish on the v1.0 MVP, shipped 2026-06-05)
+**Version:** v1.2 — shipped 2026-06-18 (in-app feedback via prefilled GitHub issues, on the v1.1 polish patch / v1.0 MVP)
 
-- 8 phases, 25 plans (v1.0); v1.1 = 70-commit maintenance/polish patch
+- v1.0: 8 phases, 25 plans; v1.1: 70-commit maintenance/polish patch; v1.2: 2 phases (9–10), 6 plans
 - Tech stack: Vite 8 + React 18 + TypeScript + Ketcher 3.12.0 (WASM) + Zustand 5 + CSS Modules
-- 206 unit/integration tests passing; TypeScript clean
+- 256 unit/integration tests passing; TypeScript clean; production build clean
 - Deployed to GitHub Pages via GitHub Actions CD
-
-## Current Milestone: v1.2 In-app feedback via prefilled GitHub issues
-
-**Goal:** Let any visitor send feedback through a "Send feedback" control that opens a prefilled GitHub new-issue page, auto-including the current InChI, molecule, and environment context — with no backend.
-
-**Target features:**
-- A "Send feedback" entry point in the UI, on-brand with the design tokens
-- Opens `github.com/cm-beilstein/explain-that-inchi/issues/new` with prefilled title + body
-- Auto-captured context: current InChI string, molecule (SMILES + preset name if any), browser/user-agent + app version/commit
-- Feedback type/category (bug / suggestion / "explanation unclear") mapped to issue labels or title prefix
-- Graceful behavior when the canvas is empty / no InChI yet
-- Privacy-aware: only includes what's already on the page; clear that it opens a PUBLIC GitHub issue
-
-**Key constraints:**
-- No backend — pure client-side URL construction (`encodeURIComponent`; mind GitHub's ~8KB URL length limit for long InChI/SMILES)
-- Requires a GitHub account to actually submit (accepted tradeoff)
-- Must preserve the oklch token system / high visual fidelity
+- Next milestone: not yet started (`/gsd:new-milestone`)
 
 ## Requirements
 
@@ -60,6 +44,15 @@ Every chunk of an InChI string is hoverable, explained, and linked back to the a
 - ✓ PLSH-02: WASM initialisation loading state shown until Ketcher is ready — v1.0
 - ✓ PLSH-03: Typography, color tokens, spacing, hover transitions match handoff — v1.0
 - ✓ PLSH-04: Copy-to-clipboard button copies verbatim InChI string with visual confirmation — v1.0
+- ✓ FEED-01: "Send feedback" control opens an on-brand dialog without remounting the Ketcher canvas — v1.2
+- ✓ FEED-02: User selects a feedback category (Bug · Explanation · Highlighting · Suggestion · General) — v1.2
+- ✓ FEED-03: User types a free-text feedback message — v1.2
+- ✓ FEED-04: Submit opens a prefilled GitHub `issues/new` page in a new tab (category title-prefix + redundant `labels=`) — v1.2
+- ✓ FEED-05: Issue body auto-includes fenced context (InChI, SMILES + preset, user-agent + version/commit) with `@` neutralized — v1.2
+- ✓ FEED-06: Pre-submit context preview + clear "public GitHub issue, account required" copy — v1.2
+- ✓ FEED-07: ~7.5 KB byte-budget truncation of context (never the message) with clipboard fallback — v1.2
+- ✓ FEED-08: Empty-canvas feedback degrades cleanly ("no structure loaded") — v1.2
+- ✓ FEED-09: Build injects app version/commit (Vite `define`, `git describe`/`GITHUB_SHA` fallback) surfaced in context — v1.2
 
 ### Active (v2 candidates)
 
@@ -107,6 +100,12 @@ Every chunk of an InChI string is hoverable, explained, and linked back to the a
 | MAP-03 (shareable URL) deferred to v2 | Scope management during Phase 6 | — Pending (v2 Active) |
 | getInchi(true) split on AuxInfo= prefix | Concatenated string, not destructurable | ✓ Good — robust parsing |
 | useRef for editor.subscribe handler | Avoids stale closures in event subscription | ✓ Good — prevents subtle bugs |
+| Feedback via prefilled GitHub issues/new URL | No backend; reuses GitHub auth/storage/moderation | ✓ Good (v1.2) — zero new deps |
+| Pure DOM-free buildFeedbackUrl() built/tested first | Isolates all hard logic (encoding, byte budget, truncation) behind a unit-tested seam | ✓ Good (v1.2) — 38 tests |
+| Category as title prefix (labels passed redundantly) | GitHub silently drops labels for non-collaborators | ✓ Good (v1.2) |
+| Real `<a target="_blank" rel="noopener">` click, no await before open | Avoids popup-blocker on the user gesture | ✓ Good (v1.2) |
+| Feedback is ephemeral UI state, dialog is a leaf sibling | Never add store fields / remount KetcherPanel | ✓ Good (v1.2) — canvas never remounts |
+| Preview SMILES via getSmiles() + flushSync on open | Async SMILES must render before showModal to avoid stale flash | ✓ Good (v1.2 gap-closure) |
 
 ## Constraints
 
@@ -121,4 +120,4 @@ Every chunk of an InChI string is hoverable, explained, and linked back to the a
 This document evolves at phase transitions and milestone boundaries.
 
 ---
-*Last updated: 2026-06-17 — v1.2 milestone (in-app feedback) started; v1.1 shipped*
+*Last updated: 2026-06-18 — after v1.2 milestone (in-app feedback) shipped*

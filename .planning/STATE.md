@@ -2,27 +2,26 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: In-app feedback via prefilled GitHub issues
-status: milestone_complete
-last_updated: 2026-06-18T08:07:54.532Z
+status: completed
+last_updated: "2026-06-18T08:12:49.702Z"
 last_activity: 2026-06-18
 progress:
   total_phases: 2
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 6
   completed_plans: 6
-  percent: 50
-stopped_at: Milestone complete (Phase 10 was final phase)
+  percent: 100
 ---
 
 # Project State
 
 **Project:** Explain that InChI
 **Milestone:** v1.2 — In-app feedback via prefilled GitHub issues (roadmap drafted; v1.1 shipped 2026-06-17)
-**Status:** Milestone complete
+**Status:** v1.2 milestone complete
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-06-17)
+See: .planning/PROJECT.md (updated 2026-06-18)
 
 **Core value:** Every chunk of an InChI string is hoverable, explained, and linked back to the atoms in the drawing — demystifying a notation that most chemists treat as opaque.
 **Current focus:** Milestone complete
@@ -73,6 +72,23 @@ See: .planning/PROJECT.md (updated 2026-06-17)
 
 None
 
+## Deferred Items
+
+Acknowledged at v1.2 milestone close on 2026-06-18:
+
+| Category | Item | Status |
+|----------|------|--------|
+| quick_task | 260610-cho-fix-preset-highlight-guard-timing-and-st | completed (v1.0-era; archived record lacks status field) |
+| quick_task | 260610-csa-decouple-layertext-rawtext-from-position | completed (v1.0-era; archived record lacks status field) |
+| quick_task | 260610-d2r-fix-mixed-n-star-semicolon-hover-highlig | completed (v1.0-era; archived record lacks status field) |
+| quick_task | 260610-eci-fix-canonical-to-pool-id-remap-for-multi | completed (v1.0-era; archived record lacks status field) |
+| quick_task | 260610-eoi-fix-readingfor-multi-fragment-text-and-t | completed (v1.0-era; archived record lacks status field) |
+| quick_task | 260610-fn1-scope-formula-layer-h-hover-to-the-hover | completed (v1.0-era; archived record lacks status field) |
+| quick_task | 260610-ist-unify-h-hover-formula-h-count-and-h-laye | completed (v1.0-era; archived record lacks status field) |
+| quick_task | 260610-jyj-replace-preset-cid-with-hardcoded-smiles | completed (v1.0-era; archived record lacks status field) |
+
+All eight are pre-v1.2 quick tasks already recorded as completed (with commits) in the "Quick Tasks Completed" table below. They surface in `audit-open` only because their `quick/` directory records predate the `status:` frontmatter convention. No open work.
+
 ### Quick Tasks Completed
 
 | # | Description | Date | Commit | Directory |
@@ -104,7 +120,11 @@ The 4-task multi-component fix series (260610-d2r, -eci, -eoi) closed all known 
 
 ## Current Position
 
-Phase: 10
-Plan: Not started
-Status: Executing Phase 10
-Last activity: 2026-06-18 -- Phase 10 execution started
+Phase: Milestone v1.2 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-06-18 — Milestone v1.2 completed and archived
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone

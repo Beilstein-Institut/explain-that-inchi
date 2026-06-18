@@ -1,5 +1,20 @@
 # Milestones: Explain that InChI
 
+## v1.2 In-app feedback via prefilled GitHub issues (Shipped: 2026-06-18)
+
+**Phases completed:** 2 phases, 6 plans
+
+**Delivered:** Any visitor can send feedback through a "Send feedback" control that opens a prefilled GitHub `issues/new` page in a new tab — auto-including the current InChI, molecule (SMILES + preset name), and environment (user-agent + app version) — purely client-side, with zero new npm dependencies.
+
+**Key accomplishments:**
+
+- Build-time version/commit injection via a single Vite `define` (`__APP_VERSION__` / `__APP_COMMIT__`), surfaced in the feedback context.
+- Pure, DOM-free `buildFeedbackUrl()`: single-pass `URLSearchParams` encoding, `TextEncoder` ~7.5 KB byte-budget guard, deterministic SMILES-drop → InChI-trim truncation, category title-prefix + redundant `labels=`, `@`-neutralization — 38 requirement-grouped vitest tests.
+- `FeedbackDialog` component: native `<dialog>` modal with category selector, message field, live context preview, submit flow, and clipboard fallback on truncation (9 tests).
+- App wiring: a "Send feedback" pill on the section-label row mounting the dialog as a leaf sibling (Ketcher canvas/store/InChI never remount), with `handleFeedbackSubmit` assembling live `FeedbackContext` from Ketcher WASM, the Zustand store, and `navigator` at submit time.
+- Context-preview SMILES gap closed (Phase 10 gap-closure): preview now shows the molecule's SMILES on dialog open via `getSmiles()` + `flushSync`, with no stale-value flash on reopen.
+- Known deferred items at close: 8 (completed v1.0-era quick tasks; see STATE.md Deferred Items).
+
 ---
 
 ## v1.1 — Post-ship correctness & polish (patch)
