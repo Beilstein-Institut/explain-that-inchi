@@ -85,7 +85,7 @@ Plans:
   5. Mounting the new section does not remount the Ketcher canvas (WASM does not re-initialize) and the existing InChI strip and its tests remain green — the section is a leaf sibling.
 
 **Plans**: 2 plans, 2 waves
-- [ ] 12-01-PLAN.md — Store keyHoverKind field + InchiKeySection strip (colored segments, dimmed hyphens, copy button, 27-char gate) + App wiring (INKEY-03, INKEY-05)
+- [x] 12-01-PLAN.md — Store keyHoverKind field + InchiKeySection strip (colored segments, dimmed hyphens, copy button, 27-char gate) + App wiring (INKEY-03, INKEY-05)
 - [ ] 12-02-PLAN.md — Extend shared Explanation panel with per-segment key card scaffolding + D-04a precedence (INKEY-04)
 **UI hint**: yes
 
@@ -137,7 +137,7 @@ Surfaced here so it isn't mistaken for implementation work (per the v1.2 require
 | 9. Feedback URL builder, config & version injection | v1.2 | 2/2 | Complete | 2026-06-17 |
 | 10. Feedback dialog, context capture & entry point | v1.2 | 4/4 | Complete | 2026-06-18 |
 | 11. Source & Wiring | v1.3 | 3/3 | Complete   | 2026-06-18 |
-| 12. Render & Layout | v1.3 | 0/2 | Planned | - |
+| 12. Render & Layout | v1.3 | 1/2 | In Progress|  |
 | 13. Content & Explanation | v1.3 | 0/0 | Not started | - |
 
 ---
