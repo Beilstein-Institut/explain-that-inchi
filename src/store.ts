@@ -6,6 +6,16 @@ import type { Layer, AuxMap, SubHover } from './lib/parseInchi';
 // hoverIdx and subHover are null until Phase 3 writes them.
 // hAtomPoolIds added in Phase 6 (INCHI-05) for explicit H atom highlighting.
 // inchiKey added in Phase 11 (INKEY-01/02, D-03).
+// keyHoverKind added in Phase 12 (INKEY-03/05, D-04) — NOT wired to highlights (Invariant #2).
+
+/**
+ * The 4 hover zones of the InChIKey strip (D-07/D-08).
+ * 4 zones, NOT 5: flag and version share the 'flagVersion' zone for ergonomic hover targeting
+ * while the parser data stays 5-segment granular (each still individually colored).
+ * NEVER wire this to setHover/setSubHover or useKetcherHighlights (Invariant #2).
+ */
+export type KeyHoverZone = 'skeleton' | 'hash' | 'flagVersion' | 'protonation';
+
 interface InchiState {
   // Data fields
   inchi: string;
@@ -16,10 +26,12 @@ interface InchiState {
   inchiKey: string;
   hoverIdx: number | null;
   subHover: SubHover | null;
+  keyHoverKind: KeyHoverZone | null;
   // Actions
   setInchiData: (inchi: string, layers: Layer[], auxMap: AuxMap, atomElements: Record<number, string>, hAtomPoolIds?: number[], inchiKey?: string) => void;
   setHover: (idx: number | null) => void;
   setSubHover: (sub: SubHover | null) => void;
+  setKeyHoverKind: (kind: KeyHoverZone | null) => void;
 }
 
 // Zustand 5 TypeScript pattern: create<State>()() — double-call required.
@@ -38,9 +50,11 @@ export const useInchiStore = create<InchiState>()(
       inchiKey: '',
       hoverIdx: null,
       subHover: null,
+      keyHoverKind: null,
       setInchiData: (inchi, layers, auxMap, atomElements, hAtomPoolIds = [], inchiKey = '') => set({ inchi, layers, auxMap, atomElements, hAtomPoolIds, inchiKey }),
       setHover: (idx) => set({ hoverIdx: idx }),
       setSubHover: (sub) => set({ subHover: sub }),
+      setKeyHoverKind: (kind) => set({ keyHoverKind: kind }),
     }),
     { name: 'inchi-store' },
   ),

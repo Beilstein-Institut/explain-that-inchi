@@ -5,6 +5,7 @@ import type { Ketcher } from 'ketcher-core';
 import { Header } from './components/Header';
 import { KetcherPanel } from './components/KetcherPanel';
 import { InchiSection } from './components/InchiSection';
+import { InchiKeySection } from './components/InchiKeySection';
 import { Explanation } from './components/Explanation';
 import { parseInchiWithAux, remapAuxToPoolIds } from './lib/parseAuxMapping';
 import { useInchiStore } from './store';
@@ -235,6 +236,7 @@ export default function App() {
         onFeedbackClick={handleFeedbackOpen}
       />
       <InchiSection />
+      <InchiKeySection />
       <Explanation />
     </div>
   );

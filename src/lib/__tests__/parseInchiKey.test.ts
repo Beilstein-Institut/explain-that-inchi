@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseInchiKey, InchiKeySegment } from '../parseInchiKey';
+import { parseInchiKey } from '../parseInchiKey';
 
 const BENZENE_KEY = 'UHOVQNZJYSORNB-UHFFFAOYSA-N';
 
