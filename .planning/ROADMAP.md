@@ -84,7 +84,9 @@ Plans:
   4. The strip renders only when the key matches the full 27-char format; otherwise it shows the same placeholder treatment as the empty InChI strip.
   5. Mounting the new section does not remount the Ketcher canvas (WASM does not re-initialize) and the existing InChI strip and its tests remain green — the section is a leaf sibling.
 
-**Plans**: TBD
+**Plans**: 2 plans, 2 waves
+- [ ] 12-01-PLAN.md — Store keyHoverKind field + InchiKeySection strip (colored segments, dimmed hyphens, copy button, 27-char gate) + App wiring (INKEY-03, INKEY-05)
+- [ ] 12-02-PLAN.md — Extend shared Explanation panel with per-segment key card scaffolding + D-04a precedence (INKEY-04)
 **UI hint**: yes
 
 ### Phase 13: Content & Explanation
@@ -135,10 +137,11 @@ Surfaced here so it isn't mistaken for implementation work (per the v1.2 require
 | 9. Feedback URL builder, config & version injection | v1.2 | 2/2 | Complete | 2026-06-17 |
 | 10. Feedback dialog, context capture & entry point | v1.2 | 4/4 | Complete | 2026-06-18 |
 | 11. Source & Wiring | v1.3 | 3/3 | Complete   | 2026-06-18 |
-| 12. Render & Layout | v1.3 | 0/0 | Not started | - |
+| 12. Render & Layout | v1.3 | 0/2 | Planned | - |
 | 13. Content & Explanation | v1.3 | 0/0 | Not started | - |
 
 ---
 *Roadmap created: 2026-05-18*
 *Updated: 2026-06-18 — v1.3 milestone (InChIKey display & explanation) roadmap added; Phases 11–13*
 *Updated: 2026-06-18 — Phase 11 plans created (3 plans, 2 waves)*
+*Updated: 2026-06-18 — Phase 12 plans created (2 plans, 2 waves)*
