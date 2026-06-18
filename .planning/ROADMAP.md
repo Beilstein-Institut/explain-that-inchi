@@ -42,7 +42,7 @@ Full phase details: `.planning/milestones/v1.2-ROADMAP.md`
 **Granularity:** standard · **Coverage:** 12/12 v1.3 requirements mapped
 
 - [x] **Phase 11: Source & Wiring** - Fetch the verbatim InChIKey from the same WASM source, store it atomically with the InChI, ride the existing race/empty guards (completed 2026-06-18)
-- [ ] **Phase 12: Render & Layout** - Render the verbatim key as color-coded segments with dimmed hyphens, local-state hover, and a copy button — as a leaf sibling that never remounts the canvas
+- [x] **Phase 12: Render & Layout** - Render the verbatim key as color-coded segments with dimmed hyphens, local-state hover, and a copy button — as a leaf sibling that never remounts the canvas (completed 2026-06-18)
 - [ ] **Phase 13: Content & Explanation** - Author per-segment explanation cards and the one-way-hash / collision / standard-flag teaching content
 
 ## Phase Details (v1.3)
@@ -86,7 +86,7 @@ Plans:
 
 **Plans**: 2 plans, 2 waves
 - [x] 12-01-PLAN.md — Store keyHoverKind field + InchiKeySection strip (colored segments, dimmed hyphens, copy button, 27-char gate) + App wiring (INKEY-03, INKEY-05)
-- [ ] 12-02-PLAN.md — Extend shared Explanation panel with per-segment key card scaffolding + D-04a precedence (INKEY-04)
+- [x] 12-02-PLAN.md — Extend shared Explanation panel with per-segment key card scaffolding + D-04a precedence (INKEY-04)
 **UI hint**: yes
 
 ### Phase 13: Content & Explanation
@@ -137,7 +137,7 @@ Surfaced here so it isn't mistaken for implementation work (per the v1.2 require
 | 9. Feedback URL builder, config & version injection | v1.2 | 2/2 | Complete | 2026-06-17 |
 | 10. Feedback dialog, context capture & entry point | v1.2 | 4/4 | Complete | 2026-06-18 |
 | 11. Source & Wiring | v1.3 | 3/3 | Complete   | 2026-06-18 |
-| 12. Render & Layout | v1.3 | 1/2 | In Progress|  |
+| 12. Render & Layout | v1.3 | 2/2 | Complete   | 2026-06-18 |
 | 13. Content & Explanation | v1.3 | 0/0 | Not started | - |
 
 ---
