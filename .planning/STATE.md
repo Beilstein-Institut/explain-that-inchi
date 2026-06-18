@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: InChIKey display & explanation
-status: roadmap_drafted
-last_updated: "2026-06-18T09:00:00.000Z"
-last_activity: 2026-06-18
+status: planning
+last_updated: "2026-06-18T09:03:44.465Z"
+last_activity: 2026-06-18 — v1.3 roadmap created (Phases 11–13)
 progress:
   total_phases: 3
   completed_phases: 0
