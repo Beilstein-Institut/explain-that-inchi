@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: InChIKey display & explanation
 status: verifying
-last_updated: "2026-06-18T12:35:59.378Z"
+last_updated: "2026-06-18T13:04:11.581Z"
 last_activity: 2026-06-18
 progress:
   total_phases: 3
