@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: InChIKey display & explanation
-status: verifying
-last_updated: "2026-06-18T13:04:11.581Z"
-last_activity: 2026-06-18
+status: executing
+last_updated: "2026-06-18T13:25:49.991Z"
+last_activity: 2026-06-18 -- Phase 12 planning complete
 progress:
   total_phases: 3
   completed_phases: 1
-  total_plans: 3
+  total_plans: 5
   completed_plans: 3
   percent: 33
 ---
@@ -17,7 +17,7 @@ progress:
 
 **Project:** Explain that InChI
 **Milestone:** v1.3 — InChIKey display & explanation (roadmap drafted; Phases 11–13)
-**Status:** Phase 11 verified — all plans complete
+**Status:** Ready to execute
 
 ## Project Reference
 
@@ -71,8 +71,8 @@ None
 
 Phase: 11 (source-wiring) — EXECUTING
 Plan: 3 of 3
-Status: Phase complete — ready for verification
-Last activity: 2026-06-18
+Status: Ready to execute
+Last activity: 2026-06-18 -- Phase 12 planning complete
 
 ## Operator Next Steps
 
