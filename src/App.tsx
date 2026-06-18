@@ -22,6 +22,9 @@ export default function App() {
   const [isReady, setIsReady] = useState(false);
   const [selectedMolId, setSelectedMolId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  // smiles is fetched once per dialog-open (handleFeedbackOpen); undefined until the user
+  // opens the dialog or if getSmiles() throws (D-12).
+  const [previewSmiles, setPreviewSmiles] = useState<string | undefined>(undefined);
   // useRef, not useState — storing in state triggers unnecessary re-renders (D-15)
   const ketcherRef = useRef<Ketcher | null>(null);
   // Prevents highlight-triggered editor.update() from re-firing handleChange.
@@ -63,14 +66,27 @@ export default function App() {
   };
 
   // Context snapshot for the FeedbackDialog preview — re-computed on each render so it
-  // reflects the current selectedMolId. smiles is undefined in the preview (live getSmiles()
-  // is only called at submit time per D-12; the dialog renders a placeholder from D-15).
+  // reflects the current selectedMolId. smiles is fetched once per dialog-open
+  // (handleFeedbackOpen); undefined until the user opens the dialog or if getSmiles()
+  // throws (D-12).
   const contextPreview: FeedbackContext = {
     inchi: useInchiStore.getState().inchi || undefined,
-    smiles: undefined,
+    smiles: previewSmiles,
     presetName: MOLECULES.find(m => m.id === selectedMolId)?.name,
     userAgent: navigator.userAgent,
     appVersion: `v${__APP_VERSION__} (${__APP_COMMIT__.slice(0, 7)})`,
+  };
+
+  // Opens the feedback dialog. Fetches SMILES once per open so the preview reflects the
+  // current molecule; falls back to undefined silently if getSmiles() throws (D-12 / T-10-04-02).
+  const handleFeedbackOpen = async () => {
+    try {
+      const smiles = await ketcherRef.current?.getSmiles();
+      setPreviewSmiles(smiles ?? undefined);
+    } catch {
+      setPreviewSmiles(undefined);
+    }
+    dialogRef.current?.showModal();
   };
 
   // Assembles FeedbackContext at submit time with a live getSmiles() call (D-12 / D-13 / D-14).
@@ -200,7 +216,7 @@ export default function App() {
         selectedMolId={selectedMolId}
         onMolSelect={handleMolSelect}
         isLoading={isLoading}
-        onFeedbackClick={() => dialogRef.current?.showModal()}
+        onFeedbackClick={handleFeedbackOpen}
       />
       <InchiSection />
       <Explanation />

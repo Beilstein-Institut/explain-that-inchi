@@ -221,6 +221,21 @@ describe('FeedbackDialog', () => {
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith('full body text');
   });
 
+  it('context preview renders supplied SMILES string (gap-10-UAT-T3)', () => {
+    const dialogRef = makeDialogRef();
+    const onSubmit = makeOnSubmit({ url: 'https://github.com', truncated: false, fullBody: '' });
+    render(
+      <FeedbackDialog
+        dialogRef={dialogRef}
+        onSubmit={onSubmit}
+        contextPreview={{ smiles: 'CC(=O)O' }}
+      />
+    );
+    const pre = document.querySelector('pre');
+    expect(pre?.textContent).toContain('CC(=O)O');
+    expect(pre?.textContent).not.toMatch(/SMILES:.*\(none\)/);
+  });
+
   it('clipboard success shows transient copied message, hides after 3s', async () => {
     vi.useFakeTimers();
     try {
