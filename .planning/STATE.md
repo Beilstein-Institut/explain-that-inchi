@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.2
-milestone_name: In-app feedback via prefilled GitHub issues
-status: completed
-last_updated: "2026-06-18T08:12:49.702Z"
+milestone: v1.3
+milestone_name: InChIKey display & explanation
+status: planning
+last_updated: "2026-06-18T08:24:00.729Z"
 last_activity: 2026-06-18
 progress:
-  total_phases: 2
-  completed_phases: 2
-  total_plans: 6
-  completed_plans: 6
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -120,10 +120,10 @@ The 4-task multi-component fix series (260610-d2r, -eci, -eoi) closed all known 
 
 ## Current Position
 
-Phase: Milestone v1.2 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-06-18 — Milestone v1.2 completed and archived
+Status: Defining requirements
+Last activity: 2026-06-18 — Milestone v1.3 started
 
 ## Operator Next Steps
 

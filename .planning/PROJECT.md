@@ -10,6 +10,18 @@ Shipped as a static build to GitHub Pages (no server, no backend). All InChI com
 
 Every chunk of an InChI string is hoverable, explained, and linked back to the atoms in the drawing — demystifying a notation that most chemists treat as opaque.
 
+## Current Milestone: v1.3 InChIKey display & explanation
+
+**Goal:** Display the molecule's InChIKey below the InChI, with each segment color-coded, hoverable, and explained — mirroring the existing InChI strip treatment.
+
+**Target features:**
+- InChIKey shown below the InChI strip, computed live from the same library source as the InChI
+- Per-segment color-coding + hover explanation cards (skeleton hash / remaining-layers hash / version+flag chars / protonation char)
+- Explanatory content: block structure, purpose, one-way-hash (not reversible, no atom mapping), collision caveat
+- Copy-to-clipboard button matching the InChI (PLSH-04 style)
+
+**Key context:** The InChIKey is a one-way hash — its segments do NOT highlight canvas atoms (unlike InChI layers). Open technical question for research: how to obtain the InChIKey from ketcher-standalone's public API.
+
 ## Current State
 
 **Version:** v1.2 — shipped 2026-06-18 (in-app feedback via prefilled GitHub issues, on the v1.1 polish patch / v1.0 MVP)
@@ -120,4 +132,4 @@ Every chunk of an InChI string is hoverable, explained, and linked back to the a
 This document evolves at phase transitions and milestone boundaries.
 
 ---
-*Last updated: 2026-06-18 — after v1.2 milestone (in-app feedback) shipped*
+*Last updated: 2026-06-18 — milestone v1.3 (InChIKey display & explanation) started*
