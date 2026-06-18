@@ -45,17 +45,17 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INKEY-01 | — | pending |
-| INKEY-02 | — | pending |
-| INKEY-03 | — | pending |
-| INKEY-04 | — | pending |
-| INKEY-05 | — | pending |
-| INKEY-06 | — | pending |
-| INKEY-07 | — | pending |
-| INKEY-08 | — | pending |
-| INKEY-09 | — | pending |
-| INKEY-10 | — | pending |
-| INKEY-11 | — | pending |
-| INKEY-12 | — | pending |
+| INKEY-01 | Phase 11 | pending |
+| INKEY-02 | Phase 11 | pending |
+| INKEY-03 | Phase 12 | pending |
+| INKEY-04 | Phase 12 | pending |
+| INKEY-05 | Phase 12 | pending |
+| INKEY-06 | Phase 11 | pending |
+| INKEY-07 | Phase 13 | pending |
+| INKEY-08 | Phase 13 | pending |
+| INKEY-09 | Phase 13 | pending |
+| INKEY-10 | Phase 13 | pending |
+| INKEY-11 | Phase 13 | pending |
+| INKEY-12 | Phase 13 | pending |
 
 *(Phase column filled by the roadmap.)*

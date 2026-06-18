@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: InChIKey display & explanation
-status: planning
-last_updated: "2026-06-18T08:24:00.729Z"
+status: roadmap_drafted
+last_updated: "2026-06-18T09:00:00.000Z"
 last_activity: 2026-06-18
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -16,39 +16,34 @@ progress:
 # Project State
 
 **Project:** Explain that InChI
-**Milestone:** v1.2 — In-app feedback via prefilled GitHub issues (roadmap drafted; v1.1 shipped 2026-06-17)
-**Status:** v1.2 milestone complete
+**Milestone:** v1.3 — InChIKey display & explanation (roadmap drafted; Phases 11–13)
+**Status:** Roadmap drafted — ready to plan Phase 11
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-06-18)
 
 **Core value:** Every chunk of an InChI string is hoverable, explained, and linked back to the atoms in the drawing — demystifying a notation that most chemists treat as opaque.
-**Current focus:** Milestone complete
+**Current focus:** v1.3 InChIKey display & explanation — extend the chunk-explainer treatment to the InChIKey, teaching that a one-way hash cannot point back to atoms.
 
-## Milestone Archive
+## v1.3 Roadmap (Phases 11–13)
 
-- v1.1 (patch): see `.planning/MILESTONES.md` — 70 commits since v1.0, tag `v1.1`. No separate roadmap/requirements (maintenance release; work logged in "Quick Tasks Completed").
-- Full details: `.planning/MILESTONES.md`
-- Roadmap archive: `.planning/milestones/v1.0-ROADMAP.md`
-- Requirements archive: `.planning/milestones/v1.0-REQUIREMENTS.md`
-- Git tag: `v1.0`
+3 phases, dependency-ordered (Source → Render → Content). All 12 INKEY requirements mapped; no orphans. No phase needs deeper research (the InChIKey source API is resolved with HIGH confidence — `ketcher.getInChIKey()`, zero new deps).
 
-## v1.2 Roadmap (Phases 9–10)
+- **Phase 11: Source & Wiring** — Fetch `ketcher.getInChIKey()` via `Promise.all` alongside the existing debounced `getInchi(true)`; add a verbatim `inchiKey` store field; single atomic write; extend the `generationRef` stale-result guard and empty-canvas guard to the key; pure tested `parseInchiKey.ts` offset parser (returns index ranges only). Requirements: INKEY-01, INKEY-02, INKEY-06.
+- **Phase 12: Render & Layout** — `InchiKeySection` leaf sibling (canvas never remounts); color-coded segment spans by slicing the verbatim string; dimmed hyphens; local `useState` hover index (NOT the Zustand subHover bus → no canvas highlight); copy button (PLSH-04 / StrictMode-safe `mountedRef`); 27-char format gate. Requirements: INKEY-03, INKEY-04, INKEY-05. UI phase.
+- **Phase 13: Content & Explanation** — `inchiKeyInfo.ts` segment blurbs + `InchiKeyExplanation` card; block structure, purpose, one-way-hash (not reversible / no atom mapping / segments don't highlight), collision caveat, same-connectivity→same-first-block, standard-vs-non-standard flag + version detail, one-key-per-assembly. Requirements: INKEY-07–INKEY-12. UI phase.
 
-- **Phase 9: Feedback URL builder, config & version injection** — pure, DOM-free `buildFeedbackUrl()` (encoding, ~7.5 KB byte-budget guard + deterministic truncation, `@`-neutralization, category title-prefix) + build-time version injection. Requirements: FEED-04, FEED-05, FEED-07, FEED-09. Test-anchored keystone, built first.
-- **Phase 10: Feedback dialog, context capture & entry point** — impure submit-time context collector (InChI from store verbatim, SMILES via `getSmiles()`, preset via `MOLECULES.find(selectedMolId)`, trimmed UA, version), native `<dialog>` modal, "Send feedback" entry point, App wiring. Requirements: FEED-01, FEED-02, FEED-03, FEED-06, FEED-08. UI phase.
-- Non-code maintainer checklist (repo-side labels/issue-template/triage) surfaced in ROADMAP.md — not a code phase.
+## v1.3 Key Decisions (carry-forward from research, HIGH confidence)
 
-## v1.2 Key Decisions (carry-forward from research)
-
-- Zero new npm dependencies — native `URL`/`URLSearchParams` + `TextEncoder` + one Vite `define`. Do NOT add `new-github-issue-url` or any feedback SaaS.
-- #1 risk = GitHub's ~8 KB server-side URL cap; budget ~7.5 KB and validate truncation against the multi-fragment repro molecule, not short presets.
-- Categorize via **title prefix** (labels silently drop for non-collaborators); pass `labels=` redundantly.
-- Open the issue via a real `<a target="_blank" rel="noopener">` on the user gesture — no `await` before opening (popup blocker).
-- Three-way context source-of-truth, read imperatively at submit time: InChI from `useInchiStore.getState().inchi` (verbatim, never re-run `getInchi`), SMILES from `ketcherRef.current.getSmiles()`, preset from `MOLECULES.find(m => m.id === selectedMolId)` (`null` = custom).
-- Feedback is ephemeral UI state — add NO fields to the Zustand store. Never remount/wrap KetcherPanel; the modal is a leaf sibling.
-- Fence ALL auto-context in code blocks; neutralize `@` in user prose.
+- **Source:** `ketcher.getInChIKey(): Promise<string>` — a typed public method on installed `ketcher-core@3.12.0`, routing through the same WASM worker as `getInchi()`. Zero new npm deps. Never compute/hash the key in JS; never derive it from the displayed InChI (separate WASM command).
+- **Verbatim passthrough invariant:** displayed key === copied key === raw `getInChIKey()` output. Parser returns `{kind,start,end}` offsets only; renderer slices the stored verbatim string; never re-join segments. (Direct analogue of the InChI `.`-drop passthrough bug — memory `feedback_inchi_passthrough.md`.)
+- **Single pipeline:** fetch concurrently via `Promise.all([getInchi(true), getInChIKey()])` inside the existing 150ms debounced `handleChange`; re-check `thisGen` after the await; one atomic `setInchiData(..., inchiKey)` write; clear to `''` in the empty guard and catch path. No second subscription/timer/generation counter; no `getInChIKey()` in `handleMolSelectLogic`.
+- **No canvas highlighting from key segments:** segments must NOT call `setHover`/`setSubHover` (wired to `useKetcherHighlights`). The absence of highlighting is the central teaching point (INKEY-09). Use a component-local hover index.
+- **Canvas never remounts (D-13):** `InchiKeySection` is a leaf sibling after `InchiSection`; never touch `KetcherPanel` / module-level `structServiceProvider`. Add store fields, don't reshape `setInchiData`.
+- **Segment layout (InChI Trust FAQ):** chars 0–13 skeleton hash, 14 hyphen, 15–22 remaining-layers hash, 23 flag (`S`/`N`), 24 version (`A`)… use verified offsets pinned by a slice-boundary test. (Note: research files vary slightly on the trailing flag/version char order; pin against the live key for presets — flag `S`, version `A` — during Phase 11/13.)
+- **Copy button:** reuse the StrictMode-safe `mountedRef` reset-on-mount pattern (WR-02); a shared `useCopyButton` hook is recommended but optional.
+- **Multi-component:** one key for the whole assembly; explanation must say so; test against an INCHI-06-style multi-fragment fixture.
 
 ## Key Decisions (carry-forward)
 
@@ -62,69 +57,23 @@ See: .planning/PROJECT.md (updated 2026-06-18)
 - `getInchi(true)` returns concatenated string — split on `AuxInfo=`, not destructuring
 - Stale closures in `editor.subscribe` — read state through `useRef` in handler
 
-## Known Open Items at v1.0 Close
+## Milestone Archive
 
-- Phase 8 badge positioning: tweaked but not browser-verified before context exhaustion
-- b-layer highlighting + legend hover trigger: landed in last commit — not browser-verified
-- MAP-03 (shareable URL): deferred to v2
+- v1.2: see `.planning/MILESTONES.md` (Phases 9–10, shipped 2026-06-18, tag `v1.2`); roadmap `.planning/milestones/v1.2-ROADMAP.md`
+- v1.1 (patch): `.planning/MILESTONES.md` — 70 commits since v1.0, tag `v1.1`
+- v1.0: `.planning/milestones/v1.0-ROADMAP.md` / `v1.0-REQUIREMENTS.md`, tag `v1.0`
 
 ## Blockers
 
 None
 
-## Deferred Items
-
-Acknowledged at v1.2 milestone close on 2026-06-18:
-
-| Category | Item | Status |
-|----------|------|--------|
-| quick_task | 260610-cho-fix-preset-highlight-guard-timing-and-st | completed (v1.0-era; archived record lacks status field) |
-| quick_task | 260610-csa-decouple-layertext-rawtext-from-position | completed (v1.0-era; archived record lacks status field) |
-| quick_task | 260610-d2r-fix-mixed-n-star-semicolon-hover-highlig | completed (v1.0-era; archived record lacks status field) |
-| quick_task | 260610-eci-fix-canonical-to-pool-id-remap-for-multi | completed (v1.0-era; archived record lacks status field) |
-| quick_task | 260610-eoi-fix-readingfor-multi-fragment-text-and-t | completed (v1.0-era; archived record lacks status field) |
-| quick_task | 260610-fn1-scope-formula-layer-h-hover-to-the-hover | completed (v1.0-era; archived record lacks status field) |
-| quick_task | 260610-ist-unify-h-hover-formula-h-count-and-h-laye | completed (v1.0-era; archived record lacks status field) |
-| quick_task | 260610-jyj-replace-preset-cid-with-hardcoded-smiles | completed (v1.0-era; archived record lacks status field) |
-
-All eight are pre-v1.2 quick tasks already recorded as completed (with commits) in the "Quick Tasks Completed" table below. They surface in `audit-open` only because their `quick/` directory records predate the `status:` frontmatter convention. No open work.
-
-### Quick Tasks Completed
-
-| # | Description | Date | Commit | Directory |
-|---|-------------|------|--------|-----------|
-| 260610-cho | Fix preset-highlight guard timing and stale-result guard in handleChange | 2026-06-10 | 25ddba0 | [260610-cho-fix-preset-highlight-guard-timing-and-st](./quick/260610-cho-fix-preset-highlight-guard-timing-and-st/) |
-| 260610-csa | Decouple LayerText rawText from positional rawParts index in InchiSection | 2026-06-10 | 4736a28 | [260610-csa-decouple-layertext-rawtext-from-position](./quick/260610-csa-decouple-layertext-rawtext-from-position/) |
-| 260610-d2r | Fix mixed N*...;N*... hover-highlight bug in LayerText (c/h layers) — pre-existing v1.0 bug | 2026-06-10 | e212dde | [260610-d2r-fix-mixed-n-star-semicolon-hover-highlig](./quick/260610-d2r-fix-mixed-n-star-semicolon-hover-highlig/) |
-| 260610-eci | Fix canonical→pool-ID remap for multi-component molecules (coordinate matching via AuxInfo /rC:) — fixes wrong-fragment canvas highlights | 2026-06-10 | 079d12c | [260610-eci-fix-canonical-to-pool-id-remap-for-multi](./quick/260610-eci-fix-canonical-to-pool-id-remap-for-multi/) |
-| 260610-eoi | Fix readingFor multi-fragment explanation text (formula/c/h/t offsets) + t-layer `?` undefined stereocenters (highlight + interactivity) | 2026-06-10 | 4eb0fd6 | [260610-eoi-fix-readingfor-multi-fragment-text-and-t](./quick/260610-eoi-fix-readingfor-multi-fragment-text-and-t/) |
-
-| 260610-fn1 | Scope formula-layer 'H' hover to the hovered fragment via canonRange (was highlighting explicit H in all fragments) | 2026-06-10 | 46cc077 | [260610-fn1-scope-formula-layer-h-hover-to-the-hover](./quick/260610-fn1-scope-formula-layer-h-hover-to-the-hover/) |
-| 260610-ist | Unify H-hover: formula H-count + /h-layer tokens highlight explicit H atoms only and render implicit-H badges, fragment-scoped, no heavy-atom fill/bonds | 2026-06-10 | ff7c4ea | [260610-ist-unify-h-hover-formula-h-count-and-h-laye](./quick/260610-ist-unify-h-hover-formula-h-count-and-h-laye/) |
-| 260610-ist (fix) | /gsd-fast follow-up: /h-layer hover resolves explicit H via bond traversal from heavy atoms (benzene /h1-6H with explicit H highlighted nothing) | 2026-06-10 | eda10f5 | (see 260610-ist) |
-
-| copy-fix | /gsd-fast: "Copied!" auto-hide → 3s, then fixed mountedRef stuck-false under StrictMode (Copied! never disappeared) | 2026-06-10 | 49253d1 | (InchiSection) |
-| 260610-jyj | Replace preset `cid` with hardcoded isomeric SMILES; load via setMolecule, drop runtime PubChem fetch (SMILES sourced once from PUG REST) | 2026-06-10 | 943bad1 | [260610-jyj-replace-preset-cid-with-hardcoded-smiles](./quick/260610-jyj-replace-preset-cid-with-hardcoded-smiles/) |
-
-| 260610-ist (fix2) | /gsd-fast: formula-H badges now include mobile-H (H,5,6) groups — hovering H-count showed no "H?" badge for the OH/COOH proton (e.g. alanine) | 2026-06-10 | e655971 | (useKetcherHighlights) |
-
-| stereo-hue | /gsd-verify-work 8 UAT fix: give undefined '?' parity a distinct hue (--c-stereo → lime 112; was identical to + red) | 2026-06-17 | f6e3dc6 | (src/styles.css) |
-
-| coi+favicon | /gsd-fast: fix coi-serviceworker.js path (%BASE_URL% → relative; was 404) + add project favicon.svg (benzene ring, color-coded vertices) | 2026-06-17 | 7ffeec3 | (index.html, public/favicon.svg) |
-
-Last activity: 2026-06-18
-
-### Multi-fragment support (now complete)
-
-The 4-task multi-component fix series (260610-d2r, -eci, -eoi) closed all known multi-fragment bugs: hover-highlight token offsets (d2r), canonical→pool-ID canvas mapping for non-sequential pools (eci), and explanation-card text + undefined-stereo handling (eoi). No outstanding multi-fragment follow-ups.
-
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 11 — Source & Wiring (not started)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-06-18 — Milestone v1.3 started
+Status: Roadmap drafted — ready to plan Phase 11
+Last activity: 2026-06-18 — v1.3 roadmap created (Phases 11–13)
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Plan the first phase with `/gsd:plan-phase 11`
