@@ -143,13 +143,22 @@ export default function App() {
         // Increment before the async call; capture for stale-result comparison after
         const thisGen = ++generationRef.current;
         try {
-          const raw = await ketcher.getInchi(true);
+          const [inchiResult, keyResult] = await Promise.allSettled([
+            ketcher.getInchi(true),
+            ketcher.getInChIKey(),
+          ]);
           // Discard if a newer draw event fired while this WASM call was in flight
           if (thisGen !== generationRef.current) return;
+          // D-02: rejected InChI blanks both inchi and inchiKey — asymmetric treatment
+          if (inchiResult.status === 'rejected') {
+            useInchiStore.getState().setInchiData('', [], {}, {}, [], '');
+            return;
+          }
+          const raw = inchiResult.value;
           const result = parseInchiWithAux(raw);
           // D-12/D-13: empty canvas guard — no formula layer means empty or disconnected
           if (result.layers.length < 2) {
-            useInchiStore.getState().setInchiData('', [], {}, {}, []);
+            useInchiStore.getState().setInchiData('', [], {}, {}, [], '');
             return;
           }
           // parseInchiWithAux returns canonical → 0-based mol-file rank (from AuxInfo N: field).
@@ -184,13 +193,15 @@ export default function App() {
             liveAtoms,
             poolIds,
           );
-          useInchiStore.getState().setInchiData(result.inchi, result.layers, actualAuxMap, result.atomElements, hAtomPoolIds);
+          // D-02: rejected key call produces '' — it does NOT blank the InChI result
+          const inchiKey = keyResult.status === 'fulfilled' ? keyResult.value : '';
+          useInchiStore.getState().setInchiData(result.inchi, result.layers, actualAuxMap, result.atomElements, hAtomPoolIds, inchiKey);
         } catch {
           // Discard if a newer draw event fired while this WASM call was in flight —
           // a stale rejection must not blank the store under a newer generation.
           if (thisGen !== generationRef.current) return;
           // getInchi() can throw on empty or disconnected canvas — reset to empty (D-12)
-          useInchiStore.getState().setInchiData('', [], {}, {}, []);
+          useInchiStore.getState().setInchiData('', [], {}, {}, [], '');
         }
       }, 150);
     };
