@@ -106,7 +106,7 @@ Phases execute in numeric order: 9 → 10
 | 7. Multi-Fragment Highlighting, p-Layer, and Copy | v1.0 | 3/3 | Complete | 2026-06-01 |
 | 8. Hydrogen Implicit & Explicit Highlight | v1.0 | 2/2 | Complete | 2026-06-05 |
 | 9. Feedback URL builder, config & version injection | v1.2 | 2/2 | Complete | 2026-06-17 |
-| 10. Feedback dialog, context capture & entry point | v1.2 | 3/3 | Complete   | 2026-06-17 |
+| 10. Feedback dialog, context capture & entry point | v1.2 | 4/4 | Complete   | 2026-06-18 |
 
 ---
 *Roadmap created: 2026-05-18*
