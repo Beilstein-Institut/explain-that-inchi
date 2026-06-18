@@ -54,10 +54,14 @@ Full phase details: `.planning/milestones/v1.2-ROADMAP.md`
 **Success Criteria** (what must be TRUE):
   1. When a user draws or loads a molecule, an InChIKey value appears in the store, computed via `ketcher.getInChIKey()` from the same WASM source as the InChI, updating in sync with the molecule.
   2. The stored InChIKey is the verbatim library output string — a test asserts the stored value equals the raw `getInChIKey()` output, with no reconstruction or re-joining.
-  3. Under rapid edits, the InChIKey never lags or overwrites with a stale value — it rides the existing `generationRef` stale-result guard and is fetched concurrently with `getInchi(true)` via `Promise.all` in the same debounced `handleChange` tick.
+  3. Under rapid edits, the InChIKey never lags or overwrites with a stale value — it rides the existing `generationRef` stale-result guard and is fetched concurrently with `getInchi(true)` via `Promise.allSettled` in the same debounced `handleChange` tick.
   4. Clearing the canvas (or an empty/invalid/disconnected structure) resets the InChIKey to empty in the same atomic write and in the catch path — no lingering key, no error.
   5. A pure `parseInchiKey.ts` returns segment offset ranges only (`{kind, start, end}`) and tolerates malformed/short keys without throwing — unit-tested, never returns reassembled text.
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 11-01-PLAN.md — parseInchiKey.ts pure offset parser + 6-group unit test suite
+- [ ] 11-02-PLAN.md — Extend Zustand store with inchiKey field and setInchiData trailing arg
+- [ ] 11-03-PLAN.md — Wire Promise.allSettled concurrent fetch in handleChange; propagate inchiKey to all setInchiData call sites
 
 ### Phase 12: Render & Layout
 **Goal**: The user sees the InChIKey rendered below the InChI strip as color-coded segments they can hover and copy — visually consistent with the InChI strip but with no canvas highlighting, and without ever remounting the Ketcher canvas.
@@ -92,7 +96,7 @@ Project-memory and research invariants that gate this milestone:
 1. **Verbatim passthrough** — displayed key === copied key === raw `getInChIKey()` output. Never reconstruct or re-join from parsed segments. (Phase 11 store contract, Phase 12 render/copy.)
 2. **No canvas highlighting from key segments** — segments must NOT call `setHover`/`setSubHover`; the absence of highlighting is the central teaching point. (Phases 12 + 13.)
 3. **Canvas never remounts** (D-13) — the InChIKey strip is a leaf sibling; never touch `KetcherPanel` / module-level `structServiceProvider`. (Phase 12.)
-4. **Single pipeline, single atomic write** — fetch via `Promise.all` inside the existing debounced `handleChange`; extend `generationRef` and the empty-canvas guard; do not add a parallel subscription/timer or a `handleMolSelectLogic` key fetch. (Phase 11.)
+4. **Single pipeline, single atomic write** — fetch via `Promise.allSettled` inside the existing debounced `handleChange`; extend `generationRef` and the empty-canvas guard; do not add a parallel subscription/timer or a `handleMolSelectLogic` key fetch. (Phase 11.)
 
 **No phase needs deeper research.** The one open question (InChIKey source API) is resolved with HIGH confidence: `ketcher.getInChIKey(): Promise<string>` is a typed public method on the installed `ketcher-core@3.12.0`, routing through the same WASM worker as `getInchi()`. Zero new dependencies. Deferred to v2: INKEY-F1 (web/PubChem search link), INKEY-F2 (charged-species preset), INKEY-F3 (hash-build deep dive).
 
@@ -116,10 +120,11 @@ Surfaced here so it isn't mistaken for implementation work (per the v1.2 require
 | 8. Hydrogen Implicit & Explicit Highlight | v1.0 | 2/2 | Complete | 2026-06-05 |
 | 9. Feedback URL builder, config & version injection | v1.2 | 2/2 | Complete | 2026-06-17 |
 | 10. Feedback dialog, context capture & entry point | v1.2 | 4/4 | Complete | 2026-06-18 |
-| 11. Source & Wiring | v1.3 | 0/0 | Not started | - |
+| 11. Source & Wiring | v1.3 | 0/3 | Not started | - |
 | 12. Render & Layout | v1.3 | 0/0 | Not started | - |
 | 13. Content & Explanation | v1.3 | 0/0 | Not started | - |
 
 ---
 *Roadmap created: 2026-05-18*
 *Updated: 2026-06-18 — v1.3 milestone (InChIKey display & explanation) roadmap added; Phases 11–13*
+*Updated: 2026-06-18 — Phase 11 plans created (3 plans, 2 waves)*
