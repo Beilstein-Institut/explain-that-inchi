@@ -12,6 +12,7 @@ describe('useInchiStore', () => {
       layers: [],
       auxMap: {},
       atomElements: {},
+      inchiKey: '',
       hoverIdx: null,
       subHover: null,
     });
@@ -22,6 +23,7 @@ describe('useInchiStore', () => {
     expect(state.inchi).toBe('');
     expect(state.layers).toEqual([]);
     expect(state.auxMap).toEqual({});
+    expect(state.inchiKey).toBe('');
     expect(state.hoverIdx).toBeNull();
     expect(state.subHover).toBeNull();
   });
@@ -39,6 +41,20 @@ describe('useInchiStore', () => {
     expect(state.inchi).toBe('InChI=1S/C6H6/...');
     expect(state.layers).toBe(fakeLayers);
     expect(state.auxMap).toBe(fakeMap);
+  });
+
+  it('setInchiData stores inchiKey verbatim — no reconstruction or transformation', () => {
+    const fakeLayers: Layer[] = [
+      { type: 'version', prefix: '', text: '1S', atoms: [], bonds: [] },
+      { type: 'formula', prefix: '', text: 'C6H6', atoms: [1,2,3,4,5,6], bonds: [] },
+    ];
+    const fakeMap: AuxMap = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5 };
+    const rawInchiKey = 'UHOVQNZJYSORNB-UHFFFAOYSA-N';
+
+    useInchiStore.getState().setInchiData('InChI=1S/C6H6/c1-2-4-6-5-3-1/h1-6H', fakeLayers, fakeMap, {}, [], rawInchiKey);
+
+    const state = useInchiStore.getState();
+    expect(state.inchiKey).toBe(rawInchiKey);
   });
 
   it('setHover updates hoverIdx to a number', () => {
