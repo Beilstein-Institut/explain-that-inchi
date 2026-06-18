@@ -1,0 +1,119 @@
+/* InChIKey strip CSS Module
+   Mirror of InchiSection.module.css with verbatim values (D-12).
+   Class roots renamed to .inchiKeySection / .inchiKeyDisplay.
+   Sub-token / formula-element / parity / hydro / .sectionLabel / .hint rules NOT copied (D-06).
+   All values match the InChI strip exactly for visual consistency.
+*/
+
+/* Section wrapper */
+.inchiKeySection {
+  margin-top: 12px;
+}
+
+/* InChIKey string display box */
+.inchiKeyDisplay {
+  background: var(--bg-canvas);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 14px;
+  padding-right: 40px;
+  font-family: var(--font-mono);
+  font-size: 19px;
+  line-height: 1.6;
+  letter-spacing: -0.005em;
+  word-break: break-all;
+  cursor: default;
+  min-height: calc(1.6em + 16px);
+  position: relative;
+}
+
+/* InChIKey prefix (dimmed inline identifier, D-09) */
+.inchiPrefix {
+  color: var(--ink-faint);
+}
+
+/* Dimmed hyphen separators at index-14 and index-25 boundaries (mirrors .inchiSlash /) */
+.inchiSlash {
+  color: var(--ink-faint);
+  margin: 0 1px;
+}
+
+/* Segment chip (hoverable, individually colored) */
+.inchiLayer {
+  display: inline;
+  padding: 2px 4px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.active {
+  /* background applied via inline style using segment's accent-bg token */
+}
+
+.dim {
+  opacity: 0.35;
+  transition: opacity 160ms ease;
+}
+
+/* Empty state — always renders the box but dims it (D-10 / PLSH-01 parity) */
+.inchiKeyDisplay[data-empty="true"] {
+  opacity: 0.45;
+  border-color: var(--line-soft);
+  cursor: default;
+  pointer-events: none;
+}
+
+.emptyHint {
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  display: block;
+  text-align: center;
+  padding: 4px 0;
+}
+
+/* Copy-to-clipboard button (D-11 / PLSH-04 parity) */
+.copyBtn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ink-faint);
+  padding: 4px;
+  border-radius: 3px;
+  transition: color 160ms;
+  line-height: 0;
+}
+
+.copyBtn:hover {
+  color: var(--c-formula);
+}
+
+.copyBtn:focus-visible {
+  outline: 2px solid var(--c-formula);
+  outline-offset: 2px;
+  color: var(--c-formula);
+}
+
+.copyBtn svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+/* "Copied!" confirmation feedback */
+.copiedFeedback {
+  position: absolute;
+  right: 36px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--c-formula);
+  white-space: nowrap;
+  pointer-events: none;
+}
