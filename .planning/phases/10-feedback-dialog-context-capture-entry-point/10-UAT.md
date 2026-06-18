@@ -42,8 +42,8 @@ result: pass
 ## Summary
 
 total: 6
-passed: 5
-issues: 1
+passed: 6
+issues: 0
 pending: 0
 skipped: 0
 blocked: 0
@@ -52,7 +52,8 @@ blocked: 0
 
 <!-- YAML format for plan-phase --gaps consumption -->
 - truth: "The feedback context-preview panel should display the current molecule's SMILES when a structure is drawn/loaded, consistent with how it already shows the InChI."
-  status: failed
+  status: resolved
+  resolved_by: 10-04
   reason: "User reported: if I have drawn a molecule, shouldn't the smiles be shown in the what-gets-attached panel? You show the inchi correctly, why not show the SMILES?"
   severity: minor
   test: 3
