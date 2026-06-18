@@ -9,11 +9,11 @@
 ### InChIKey display (INKEY)
 
 - [ ] **INKEY-01**: A live InChIKey appears below the InChI strip, computed from the same in-browser WASM source as the InChI (`ketcher.getInChIKey()`), updating in sync with the molecule.
-- [ ] **INKEY-02**: The displayed and copied InChIKey is the verbatim library output string — never reconstructed or re-joined from parsed segments.
+- [x] **INKEY-02**: The displayed and copied InChIKey is the verbatim library output string — never reconstructed or re-joined from parsed segments.
 - [ ] **INKEY-03**: The InChIKey is rendered as color-coded segments — skeleton hash (14), remaining-layers hash (8), flag + version chars, protonation char — with the two hyphens visually dimmed/de-emphasized.
 - [ ] **INKEY-04**: Hovering a segment surfaces a per-segment explanation card, mirroring the InChI strip's hover behaviour.
 - [ ] **INKEY-05**: A copy-to-clipboard control copies the verbatim InChIKey with visual confirmation, matching the InChI copy button (PLSH-04 parity).
-- [ ] **INKEY-06**: An empty or invalid structure shows a placeholder (no key, no error), matching the InChI strip's empty state (PLSH-01 parity).
+- [x] **INKEY-06**: An empty or invalid structure shows a placeholder (no key, no error), matching the InChI strip's empty state (PLSH-01 parity).
 
 ### InChIKey explanation content (INKEY)
 
@@ -46,11 +46,11 @@
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | INKEY-01 | Phase 11 | pending |
-| INKEY-02 | Phase 11 | pending |
+| INKEY-02 | Phase 11 | Complete |
 | INKEY-03 | Phase 12 | pending |
 | INKEY-04 | Phase 12 | pending |
 | INKEY-05 | Phase 12 | pending |
-| INKEY-06 | Phase 11 | pending |
+| INKEY-06 | Phase 11 | Complete |
 | INKEY-07 | Phase 13 | pending |
 | INKEY-08 | Phase 13 | pending |
 | INKEY-09 | Phase 13 | pending |

@@ -3,28 +3,28 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: InChIKey display & explanation
 status: executing
-last_updated: "2026-06-18T12:16:39.710Z"
-last_activity: 2026-06-18 -- Phase 11 planning complete
+last_updated: "2026-06-18T12:26:20.638Z"
+last_activity: 2026-06-18 -- 11-01 parseInchiKey parser complete
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 3
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 33
 ---
 
 # Project State
 
 **Project:** Explain that InChI
 **Milestone:** v1.3 — InChIKey display & explanation (roadmap drafted; Phases 11–13)
-**Status:** Ready to execute
+**Status:** Executing Phase 11 — Plan 2 of 3
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-06-18)
 
 **Core value:** Every chunk of an InChI string is hoverable, explained, and linked back to the atoms in the drawing — demystifying a notation that most chemists treat as opaque.
-**Current focus:** v1.3 InChIKey display & explanation — extend the chunk-explainer treatment to the InChIKey, teaching that a one-way hash cannot point back to atoms.
+**Current focus:** Phase 11 — source-wiring
 
 ## v1.3 Roadmap (Phases 11–13)
 
@@ -69,11 +69,11 @@ None
 
 ## Current Position
 
-Phase: 11 — Source & Wiring (not started)
-Plan: —
-Status: Ready to execute
-Last activity: 2026-06-18 -- Phase 11 planning complete
+Phase: 11 (source-wiring) — EXECUTING
+Plan: 2 of 3
+Status: Executing Phase 11
+Last activity: 2026-06-18 -- 11-01 complete; parseInchiKey parser + 19 tests green; INKEY-02/06 requirements marked complete
 
 ## Operator Next Steps
 
-- Plan the first phase with `/gsd:plan-phase 11`
+- Execute plan 11-02 with `/gsd-execute-phase`
