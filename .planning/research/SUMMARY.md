@@ -1,159 +1,156 @@
 # Project Research Summary
 
-**Project:** Explain that InChI — v1.2 "Send feedback" feature
-**Domain:** Client-side prefilled-GitHub-issue feedback in a static, no-backend React/Vite/Ketcher SPA (GitHub Pages)
-**Researched:** 2026-06-17
+**Project:** Explain that InChI
+**Domain:** In-browser InChIKey display & explanation (v1.3) — educational chemistry SPA
+**Researched:** 2026-06-18
 **Confidence:** HIGH
 
 ## Executive Summary
 
-The v1.2 feedback feature is a **purely client-side URL construction problem**, not an integration problem. All four research agents converged on the same verdict: a small "Send feedback" control opens a lightweight in-app modal (native `<dialog>`), collects a category + short message, snapshots the current app context (InChI, SMILES, preset name, browser UA, app version), and opens a **prefilled `github.com/cm-beilstein/explain-that-inchi/issues/new` URL in a new tab**. No backend, no API token, no network call until the user clicks through. The implementation needs **zero new npm dependencies** — native `URL`/`URLSearchParams` plus one Vite build-time `define` for version injection. The agents are explicit and unanimous: **do NOT add `new-github-issue-url`** (a trivial native-API wrapper) or any feedback SaaS.
+**The milestone's one open technical question is RESOLVED, and the answer is the cheapest possible one.** The InChIKey is already obtainable from the public Ketcher API the app ships today: `ketcher.getInChIKey(): Promise<string>` is a typed, public method on the same `Ketcher` instance the app already holds (verified directly in installed `ketcher-core@3.12.0` source, `ketcher.d.ts:52`). It routes through the same `StandaloneStructServiceProvider` WASM worker as the existing `getInchi()`, backed by the same already-loaded `indigo-ketcher@1.40.0` build. There is **no backend, no new npm dependency, no new WASM asset, no direct `indigo-ketcher` import** — this mirrors the "zero new deps" outcome of v1.2. This single fact reshapes nothing downstream and de-risks the entire milestone.
 
-The single dominant risk, agreed across STACK, FEATURES, ARCHITECTURE, and PITFALLS, is **GitHub's ~8 KB (8191-byte) server-side URL cap**. Multi-fragment InChI strings — the app's whole reason to exist — plus SMILES, UA, version, and percent-encoding overhead (each special char becomes 3 bytes) can blow past this, yielding a 414 error or a silently-clipped body missing the very InChI it was meant to carry. The mitigation is a **`TextEncoder` byte-budget guard (~7-7.5 KB)** inside a pure, testable URL builder, with **deterministic truncation of auto-context only (never the user's message)** and a **clipboard fallback** for pathological molecules. The secondary risks all have clean, well-understood fixes: single-`URLSearchParams` encoding (no double-encoding), fenced code blocks for all auto-context plus `@`-mention neutralization in user prose, synchronous/anchor-based tab opening to dodge popup blockers, title-prefix categorization (because `labels=` is silently dropped for non-collaborators), and honest "this opens a PUBLIC GitHub issue, account required" copy.
+The recommended approach is a **clean additive leaf strip**: fetch the InChIKey concurrently with the existing debounced `getInchi(true)` via `Promise.all` inside the *same* `handleChange` tick, store one verbatim `inchiKey: string` field (committed atomically with the InChI), and render color-coded segments by **slicing the verbatim string by index offset** — never reconstructing it. The InChIKey is a fixed 27-char string `AAAAAAAAAAAAAA-BBBBBBBBFV-P` (14-char skeleton hash, hyphen, 8-char remaining-layers hash + flag char `S`/`N` + version char `A`, hyphen, protonation char) with exactly **two hyphens** and a **10-char visible middle segment**. Crucially, because the key is a one-way hash, its segments do **NOT** drive canvas highlights — and that deliberate divergence from the InChI strip is itself the central teaching moment.
 
-Architecturally the feature is **purely additive and drops in cleanly**. The keystone is a pure `buildFeedbackUrl(message, category, context) -> { url, truncated }` module with no DOM/React/async — the testable seam where all the hard logic (encoding, byte cap, templating, label mapping) lives. The only non-obvious decision is the **three-way split of context source-of-truth**: InChI from the Zustand store (verbatim passthrough — never re-run `getInchi`, per the MEMORY rule), SMILES from `ketcher.getSmiles()`, preset name from `MOLECULES.find(selectedMolId)` in App.tsx local state (`null` = custom). All three are read **imperatively at submit time** (`getState()` / `ketcherRef.current`) to honor the existing stale-closure discipline. The Ketcher canvas, store, highlight pipeline, and InChI parse path are all untouched.
+The dominant risks are not technical-feasibility risks (those are gone) but **discipline risks** — repeating known project bugs in a new place. The standing no-reconstruct rule must hold (slice verbatim, never re-join segments); the key must ride the existing `generationRef` stale-result guard and empty-canvas guard (no parallel pipeline); the new strip must be a leaf sibling so the canvas never remounts (D-13); the copy button must reuse the StrictMode-safe `mountedRef` pattern; and the explanation prose must never imply the key is reversible, atom-mappable, or collision-proof. All of these have proven prevention patterns already in the codebase.
 
 ## Key Findings
 
 ### Recommended Stack
 
-Zero new runtime dependencies. The feature is built from platform-native browser APIs plus the existing Vite build. See `STACK.md` for the full GitHub query-param API table and the version-injection snippet.
+See [STACK.md](./STACK.md). **No new dependencies.** Everything needed already ships in the installed 3.12.0 Ketcher packages. The InChIKey comes from the exact same WASM module that already produces the InChI, so there is no second cheminformatics engine, no bundle growth, and no risk of a divergent key. Segment splitting is pure app-code string slicing on a fixed grammar — no parsing library required.
 
-**Core technologies:**
-- **`URL` + `URLSearchParams` (native)**: build/encode the `issues/new` query string — correct percent-encoding of newlines, markdown, `/ + ; , ( ) # =` with one mechanism, zero deps.
-- **`TextEncoder` (native)**: measure encoded **byte** length (not `.length`) to enforce the ~8 KB cap.
-- **Vite `define` (build-time)**: inject app version + git SHA (`git describe --tags --always`, with `$GITHUB_SHA` CI fallback) — reuses the existing `processShim` define; `package.json` version is `0.0.0` and must be bumped.
-- **GitHub `issues/new` query-param API**: the submission target — just a URL opened in a new tab; no API, no auth.
-
-**Explicitly rejected:** `new-github-issue-url`, `@octokit`/REST clients, `axios`/`fetch` to GitHub, analytics/error SDKs (Sentry), `qs`/`query-string`, hardcoded SHA.
+**Core technologies (confirm, don't add):**
+- **ketcher-core 3.12.0** (installed): exposes `Ketcher.getInChIKey(): Promise<string>` and the `Ketcher` type — the InChIKey API lives here
+- **ketcher-standalone 3.12.0** (installed): `StandaloneStructServiceProvider` → WASM `IndigoService.getInChIKey` (`Command.GetInChIKey = 11`) — WASM-backed, no backend
+- **indigo-ketcher 1.40.0** (transitive, installed): underlying WASM that hashes structure → InChIKey — already loaded for `getInchi()`; **do NOT import directly**
+- **React 18 / Zustand 5 / CSS Modules + oklch tokens** (all installed): one new `inchiKey: string` store field; reuse the existing token palette and Vitest setup
 
 ### Expected Features
 
-The mechanism is decided; the resolved design questions are entry-point, modal-vs-deeplink, categories, privacy, and a11y. See `FEATURES.md` for the full prioritization matrix and app-state dependency table.
+See [FEATURES.md](./FEATURES.md). No existing tool teaches the *anatomy* of an InChIKey interactively — that gap is exactly this milestone's value. The InChIKey strip mirrors the InChI strip's hover/color/copy treatment but with fewer, simpler regions (5 colored segments + dimmed hyphens) because it is "just a hash."
 
 **Must have (table stakes):**
-- Discoverable "Send feedback" entry point — header/footer text link (NOT a floating widget).
-- Prefilled title + body with auto-captured context (InChI, SMILES, preset, UA, version).
-- Opens in a **new tab** (`target="_blank" rel="noopener"`) — navigating away would destroy the in-progress drawing.
-- Graceful empty-canvas handling (omit/label the context block when `inchi === ''`).
-- Plain "this opens a PUBLIC GitHub issue" disclosure.
-- On-brand styling (oklch tokens, IBM Plex).
+- Live InChIKey displayed below the InChI strip, computed from the same WASM source
+- Correct 27-char, 5-segment rendering with exact boundaries (two hyphens only; 10-char visible middle)
+- Per-segment color-coding (reuse oklch tokens; echo the corresponding InChI layer color where one exists)
+- Per-segment hover explanation cards (skeleton hash / remaining-layers hash / flag+version / protonation)
+- Explanatory content: fixed-length & purpose, one-way hash (not reversible, no atom mapping), collision caveat
+- Explicit "segments don't highlight atoms because it's a hash" teaching note
+- Copy-to-clipboard parity (PLSH-04), verbatim key
+- Empty/invalid structure → placeholder (PLSH-01 parity)
 
-**Should have (competitive, low cost):**
-- Modal-first flow (native `<dialog>`: focus trap, Escape, `aria-labelledby` for free).
-- Category selector -> title prefix + best-effort label.
-- Context preview ("what will be included") + a single "include molecule & environment" opt-out checkbox.
-- URL-length guard with truncate-marker + clipboard fallback.
+**Should have (competitive differentiators):**
+- "First block = same skeleton" DB-search insight (one sentence in the block-1 card)
+- Standard-vs-non-standard (`S`/`N`) and version (`A`) explained inside the flag/version card
+- The hash-as-lesson framing that turns *absence* of highlighting into pedagogy
 
-**Defer (v1.x / v2+):**
-- Contextual "report this layer" affordance (high product fit, needs hover/layer hooks — defer).
-- Optional public GitHub @handle field.
-- YAML issue *forms* with per-field prefill (raw `?body=` markdown is recommended for v1.2; forms add repo surface and ignore `body`).
+**Defer (v2+):**
+- "Search this InChIKey on the web / PubChem" outbound link (trigger: users ask how to look it up)
+- Charged-species preset to live-demo the protonation char (ties into CONT-01 preset expansion)
+- First-block partial-match interactive / "how the hash is built" deep dive
+
+**Anti-features (explicitly NOT built):** canvas highlight on key-segment hover (impossible & misleading), decode/reconstruct molecule from a pasted key (one-way hash), editable paste-in key field, in-app database/substructure search.
 
 ### Architecture Approach
 
-Additive: one pure lib module, one config module, one optional impure collector, one modal component, one trigger, and small edits to `App.tsx` + `vite.config.ts`/`vite-env.d.ts`. The feature adds **no fields to the Zustand store** (feedback is ephemeral UI state). See `ARCHITECTURE.md` for the component diagram, the source-of-truth decision block, and the TDD-first build order.
+See [ARCHITECTURE.md](./ARCHITECTURE.md). The feature is a clean additive strip that reuses the existing **CSS/visual pattern** but **NOT** the `LayerText`/highlight machinery (that exists only to drive canvas highlights, which the key has none). The no-reconstruct rule is enforced *by construction*: the parser returns only `{kind, start, end}` index ranges, and the renderer slices the stored verbatim string — there is no code path that joins segment text.
 
 **Major components:**
-1. **`lib/feedbackUrl.ts`** (NEW, PURE) — `buildFeedbackUrl(message, category, context) -> { url, truncated }`. Owns templating, label mapping, encoding, and the byte-cap truncation. No DOM/async/React — the unit-testable crown jewel.
-2. **`lib/feedbackConfig.ts`** (NEW) — repo slug constant, category->label/prefix maps, `URL_BYTE_CAP`.
-3. **`getFeedbackContext` callback** (in App, or `lib/getFeedbackContext.ts`) — impure submit-time snapshot: InChI from `useInchiStore.getState().inchi`; SMILES from `ketcherRef.current.getSmiles()`; preset from `MOLECULES.find(m => m.id === selectedMolId)`; UA from `navigator.userAgent`; version from `import.meta.env.VITE_APP_VERSION`.
-4. **`FeedbackModal.tsx` + `.module.css`** (NEW) — native `<dialog>` form (message, category, preview, opt-out, public-issue disclosure); leaf sibling, never wraps KetcherPanel.
-5. **`FeedbackButton`** (NEW) — trigger, likely in `Header`.
-6. **`vite.config.ts` / `vite-env.d.ts`** (MODIFIED) — build-time version injection.
+1. **`App.tsx`** (modified) — add `getInChIKey()` via `Promise.all` alongside `getInchi(true)` in the existing debounced handler; pass key into `setInchiData`
+2. **`store.ts`** (modified) — add `inchiKey: string` field; append optional arg to `setInchiData` for one atomic write per generation
+3. **`lib/parseInchiKey.ts`** (new, pure) — `parseInchiKeySegments(key)` returns offset ranges only; unit-tested, no DOM, malformed-tolerant
+4. **`lib/inchiKeyInfo.ts`** (new) — segment titles/blurbs/swatches map (mirrors `layerInfo.ts`)
+5. **`components/InchiKeySection.tsx`** (new) — verbatim-slice render, color spans, local hover index, copy button — NO canvas coupling
+6. **`components/InchiKeyExplanation.tsx`** (new) — per-segment card reusing `Explanation.module.css`
+
+Key pattern: **local `useState` hover index**, NOT the Zustand `subHover` bus (which is observed by `useKetcherHighlights` and would fire spurious canvas highlights and collide with the InChI strip's `hoverIdx`).
 
 ### Critical Pitfalls
 
-Top items from `PITFALLS.md` (10 total, with a phase mapping and a "looks done but isn't" checklist):
+See [PITFALLS.md](./PITFALLS.md). The top risks are all repeats of solved project bugs, now in a new surface:
 
-1. **~8 KB URL cap -> 414 / silent clip** (P1, the #1 real risk) — build URL, measure `new TextEncoder().encode(url).length`, budget ~7.5 KB, truncate auto-context deterministically (drop SMILES -> trim InChI with `...[truncated]` marker -> keep user message intact), clipboard fallback. Test against the multi-fragment repro molecule from HANDOFF.md, not short presets.
-2. **Encoding / double-encoding** (P2) — use exactly one `URLSearchParams`; never pre-encode values fed into it. Unencoded `#` truncates the body as a fragment. Gate with a round-trip parse test over `+ / ; , ( ) # =`.
-3. **Markdown injection / `@`-mention pings** (P3) — fence ALL auto-context in code blocks; neutralize `@` in user prose; build no raw HTML.
-4. **Popup/tab blocked** (P4) — no `await` before opening; prefer a real `<a href target=_blank rel="noopener noreferrer">` triggered by the user gesture, or synchronous `window.open(..., 'noopener')`.
-5. **`labels=` silently dropped for non-collaborators** (P9) — categorize via **title prefix** (`[Bug]`, `[Explanation]`, `[Highlighting]`, `[Suggestion]`, `[Feedback]`) with `labels=` as a redundant best-effort. Plus: empty-canvas body (P7), public/account-required copy (P5), privacy over-capture / trim UA (P6), repo-slug + base-path correctness (P8), mobile-app deeplink steals prefill (P10).
+1. **Reconstructing the key from segments** (repeat of the InChI `.`-drop passthrough bug) — slice the verbatim `getInChIKey()` output by fixed offset for coloring only; never re-join. Assert `displayed === raw` and `copyPayload === raw` in tests.
+2. **Parallel pipeline / desync race** — issue `getInChIKey()` inside the *existing* `handleChange` debounce, in the same `generationRef` window, re-check `thisGen` after the await, write atomically. No second subscription, timer, or generation counter.
+3. **Wrong/empty key on empty/disconnected/multi-component structures** — gate behind the same empty guard; clear key to `''` in the same atomic write and in the catch path; validate full 27-char format (`/^[A-Z]{14}-[A-Z]{8}-[A-Z]{3}$/`) before slicing; state that multi-component molecules get ONE key for the whole assembly.
+4. **Canvas remount** (D-13 invariant) — add `InchiKeySection` as a leaf sibling after `InchiSection`; never touch `KetcherPanel`/`structServiceProvider`; add store fields, don't reshape existing ones.
+5. **Implying reversibility / atom-mapping / collision-proof** — key segments must NOT call `setHover`/`setSubHover`; prose states one-way hash, not reversible, no atom mapping, collisions improbable-but-real.
+
+Secondary: serial WASM cost (use `Promise.all`), StrictMode copy-confirmation bug (reuse `mountedRef` reset-on-mount), preset-load stale timing (inherited correctly by riding `handleChange`), mislabeled segment boundaries (pin offsets with constants + test).
 
 ## Implications for Roadmap
 
-The TDD-first build order from ARCHITECTURE.md and the pitfall-to-phase mapping align almost perfectly. Suggested structure (this is a small, single-milestone feature — phases are lightweight slices):
+All four research files independently converged on the **same three-phase shape**: Source & wiring → Render & layout → Content & explanation. This ordering puts the (now de-risked) external-dependency piece first, the tested-pure-seam second, and the prose last.
 
-### Phase 1: Pure URL builder + config (the testable core)
-**Rationale:** Everything hard lives here, it's fully DOM-free, fastest to land, and de-risks the #1 pitfall before any UI exists. ARCHITECTURE explicitly names it the keystone and step 1-2 of the build order.
-**Delivers:** `lib/feedbackConfig.ts` (repo slug, category prefix/label maps, byte cap) + `lib/feedbackUrl.ts` with `buildFeedbackUrl() -> { url, truncated }`, fully unit-tested.
-**Addresses:** auto-captured context templating, category->prefix/label, single-`URLSearchParams` encoding.
-**Avoids:** P1 (byte-budget + truncation), P2 (round-trip encoding), P3 (fenced context + `@` neutralization), P7 (empty-canvas body), P9 (title-prefix categorization). Tests use the multi-fragment repro molecule and a special-char round-trip.
+### Phase 1: Source & Wiring
+**Rationale:** Although the API is confirmed, fetching/storing/syncing the key gates everything downstream and carries every sync/race/empty-state pitfall. Lock the verbatim-passthrough invariant into the store contract *before* any rendering.
+**Delivers:** `inchiKey` store field; `getInChIKey()` fetched via `Promise.all` inside the existing debounced `handleChange`; atomic write with the InChI; empty/invalid + catch-path clearing; stale-generation guard extended to the key.
+**Addresses:** "Live InChIKey computed from the same source" (P1 table stakes); pure `parseInchiKey.ts` offset parser + tests (build the tested seam first, per the v1.2 precedent).
+**Avoids:** Pitfalls 1 (reconstruct), 2 (derive-from-InChI mismatch), 3 (desync race), 4 (empty/multi-component), 5 (serial WASM cost), 10 (preset-load stale timing).
 
-### Phase 2: Build-time version injection
-**Rationale:** Independent, tiny, and a context field the builder consumes. Bump `package.json` from `0.0.0`.
-**Delivers:** `vite.config.ts` `define` for `import.meta.env.VITE_APP_VERSION` (`git describe --tags --always` / `$GITHUB_SHA` fallback) + `vite-env.d.ts` typing.
-**Uses:** existing Vite `define`/`processShim` mechanism.
-**Avoids:** P8 (version via build, not page-URL parsing).
+### Phase 2: Render & Layout
+**Rationale:** With a verbatim key in the store and a tested parser, build the visible strip as a leaf sibling that cannot remount the canvas.
+**Delivers:** `InchiKeySection` rendering verbatim slices as color-coded spans (reuse oklch tokens + `InchiSection.module.css`), dimmed hyphens, local hover index, copy button via a shared StrictMode-safe `useCopyButton` hook, empty-state placeholder, 27-char format gate before slicing.
+**Uses:** React 18 local `useState`, existing CSS Modules token system, `navigator.clipboard`.
+**Implements:** `InchiKeySection` + its CSS module; the no-canvas-coupling architecture edge.
+**Avoids:** Pitfalls 6 (canvas remount / break InChI strip), 9 (copy confirmation StrictMode), and the rendering half of 4 (length validation) and 8 (no highlight wiring on key segments).
 
-### Phase 3: Context collector + modal UI + entry point
-**Rationale:** Depends on Phases 1-2; the pure builder is already proven so component tests stay light. Groups the impure submit-time snapshot with the `<dialog>` form and trigger.
-**Delivers:** submit-time `getFeedbackContext` (3-way source split), `FeedbackModal.tsx` + `.module.css` (message, category, preview, opt-out, public-issue disclosure), `FeedbackButton`/Header slot, and `App.tsx` wiring (`feedbackOpen` state, mount modal as leaf sibling).
-**Implements:** the modal-first flow, a11y via native `<dialog>`, source-of-truth reads.
-**Avoids:** P4 (anchor/synchronous open — recommend reactive `<a href>`), P5 (account-required copy), P6 (trimmed UA + preview), P7 (graceful empty canvas), Anti-Pattern 1 (never remount Ketcher), Anti-Pattern 2/3 (imperative submit-time reads; never re-run `getInchi`).
-
-### Phase 4 (repo-side, non-code): Labels, issue template, triage
-**Rationale:** Some mitigations live in repo settings, not app code, and can run in parallel/after.
-**Delivers:** create `explanation`/`highlighting`/`feedback` labels (or accept title-prefix-only), optional `.github/ISSUE_TEMPLATE/config.yml`, optional auto-label workflow, interaction limits.
-**Avoids:** P9 (labels exist), spam/abuse mitigation.
+### Phase 3: Content & Explanation
+**Rationale:** Prose depends on finalized segments; authored last against the verified spec.
+**Delivers:** `inchiKeyInfo.ts` blurbs (skeleton hash / remaining-layers hash / flag `S`-`N` + version `A` / protonation `N`/`O…`/`M…`); `InchiKeyExplanation` card; cross-cutting "one-way hash, not reversible, no atom mapping, collision caveat, one key per whole assembly" copy; slice-boundary + label unit test.
+**Addresses:** All explanatory-content table stakes + the hash-as-lesson differentiator.
+**Avoids:** Pitfalls 7 (mislabeled boundaries/meaning) and 8 (false reversibility/atom-map/collision-proof claims).
 
 ### Phase Ordering Rationale
-- **Pure-before-impure:** the URL builder has no dependencies and absorbs every critical pitfall, so it goes first and is proven by tests before UI is written.
-- **Version injection is independent** and small — sequence it early so Phase 3's collector has a real version string.
-- **Collector + modal + wiring group together** because they share the submit-time data flow and the modal can't be meaningfully tested without the builder.
-- **Repo-side config is decoupled** from code and flagged separately so it isn't mistaken for an implementation task.
+- **Dependency-driven:** the key value must exist in the store before it can be rendered, and segments must be finalized before prose is authored. Source → Render → Content is the only valid topological order.
+- **Risk-front-loaded:** the single external-dependency step is first (now confirmed safe), so no surprise reshapes downstream work — and every sync/race/empty pitfall is contained in one phase with the existing generation-guard tests as the regression gate.
+- **Reuse-aligned:** Phase 2 reuses CSS + copy pattern; Phase 3 reuses the explanation-card markup — neither requires new infrastructure, keeping the milestone LOW–MEDIUM complexity overall.
 
 ### Research Flags
 
-Phases with standard patterns (skip `--research-phase`):
-- **Phase 1:** GitHub query-param API and `TextEncoder` byte budgeting are fully documented in STACK/PITFALLS — execute directly.
-- **Phase 2:** Vite `define` injection is a known, in-repo pattern — execute directly.
-- **Phase 3:** Native `<dialog>` a11y, the source-of-truth split, and popup mitigation are all resolved in ARCHITECTURE/FEATURES/PITFALLS — execute directly.
-- **Phase 4:** Standard GitHub repo settings — no research.
+Phases likely needing deeper research during planning:
+- **None.** The one open question (how to obtain the key) is resolved with HIGH confidence against installed source. The InChIKey format spec is stable and triple-sourced. No phase warrants `--research-phase`.
 
-No phase needs deeper research. The only project-specific uncertainty (the exact byte cutover) is handled empirically by the budget guard, not by more research.
+Phases with standard patterns (skip research-phase):
+- **Phase 1:** the debounce/generation-guard/atomic-store pipeline is established and tested (D-05); the API call is a one-line sibling to `getInchi(true)`.
+- **Phase 2:** leaf-sibling layout (D-13), CSS token reuse, and the StrictMode copy pattern (WR-02) are all proven in the existing codebase.
+- **Phase 3:** content authoring against the verified, citable spec in FEATURES.md Part 1 — no further research needed.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Native APIs + documented GitHub params; the ~8 KB exact number is MEDIUM (empirical/undocumented) but the existence of a hard cap is HIGH. |
-| Features | HIGH | Pattern is well-trodden; modal a11y and GitHub params documented; only the precise byte-budget cutover is project-specific (MEDIUM). |
-| Architecture | HIGH | Grounded in the real source files; purely client-side, additive; no external API dependency. |
-| Pitfalls | HIGH | GitHub URL limit + prefill params officially documented; encoding/popup/markdown are established web-platform facts. |
+| Stack | HIGH | API verified by reading installed `ketcher-core`/`ketcher-standalone` 3.12.0 source directly, not just docs; zero new deps |
+| Features | HIGH | InChIKey segment structure cross-verified across the IUPAC paper, Wikipedia, and the InChI Trust Technical FAQ |
+| Architecture | HIGH | Designed against the real codebase (`App.tsx`, `store.ts`, `InchiSection.tsx`, `useKetcherHighlights.ts`); reuses proven v1.0–v1.2 patterns |
+| Pitfalls | HIGH | Each pitfall mapped to a documented prior bug/decision (passthrough rule, D-05, D-13, WR-02, INCHI-06) with verified prevention |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
-- **Exact byte cap (MEDIUM):** treat 8191 bytes as empirical; budget ~7.5 KB for headroom and validate the truncation path against the HANDOFF.md multi-fragment repro fixture rather than trusting a precise number.
-- **Label existence (MEDIUM):** `explanation`/`highlighting`/`feedback` labels may not exist in the repo; verify in repo settings (Phase 4) or rely on title-prefix categorization — a one-line settings action, never a code blocker.
-- **Mobile-app deeplink (MEDIUM):** GitHub mobile app may ignore the prefill; document as a known limitation with a clipboard fallback rather than over-engineering (mobile is secondary per PROJECT.md).
-- **`getSmiles()` async + popup gesture:** confirm during Phase 3 whether to pre-fetch SMILES on modal-open into a reactive `<a href>` (recommended) vs. detect a blocked `window.open` and show a fallback link.
+
+- **`getInChIKey()` behavior on empty/disconnected canvas** (reject vs `''` vs degenerate): wrap in the existing try/catch and clear-to-empty path; confirm the exact behavior in the Phase 1 smoke test rather than assuming. (LOW risk — same behavior class as `getInchi()`.)
+- **Protonation char ±12 saturation to `A`** (extremely rare edge): footnote in content, not foreground; no test fixture required. (MEDIUM-confidence detail, negligible impact.)
+- **Card placement** (inside the strip vs. its own panel row): a design-handoff decision deferred to Phase 2 planning, not a research gap.
+- **Whether to extract a shared `useCopyButton` hook** (touches `InchiSection`, one extra modified file) vs. copy the helper: a Phase 2 implementation choice; extraction is recommended but optional.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- GitHub Docs — creating an issue with query parameters (title/body/labels/template, permission gates) — https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-an-issue
-- GitHub community discussion #15477 — issue-form field prefill (`template=` + field id; `body` ignored for forms)
-- GitHub CLI issue #1575 — real-world HTTP 414 on long prefilled body
-- MDN — HTTP 414 URI Too Long (4-8 KB common server limits)
-- W3C WAI-ARIA APG Dialog (Modal) pattern — focus/Escape/aria
-- sindresorhus/new-github-issue-url — reference impl confirming native-URL approach (cited as what NOT to add)
-- Project source (read directly): `src/App.tsx`, `src/store.ts`, `src/components/Header.tsx`, `src/components/InchiSection.tsx`, `src/data/molecules.ts`, `src/lib/handleMolSelectLogic.ts`, `vite.config.ts`
-- MEMORY: "never reconstruct InChI — always display verbatim Ketcher output" (drives read-InChI-from-store)
+- Installed `ketcher-core@3.12.0` source — `ketcher.d.ts:52` (`getInChIKey(): Promise<string>`), `structService.types.d.ts:150`, `index.js:59610` (delegates to `structService.getInChIKey`)
+- Installed `ketcher-standalone@3.12.0` source — `main.js:761` (`IndigoService.getInChIKey`, `Command.GetInChIKey=11`), `main.js:625` (maps `ChemicalMimeType.InChIKey`); `indigo-ketcher@1.40.0` (Apache-2.0, already vendored)
+- IUPAC InChI paper (Heller et al., *J. Cheminformatics* 2015) — segment definitions & protonation mapping: https://jcheminf.biomedcentral.com/articles/10.1186/s13321-015-0068-4
+- InChI Trust Technical FAQ — char counts, `S`/`N` flag, version `A`, protonation incl. ±12 saturation, one-way hash, real-world collisions: https://www.inchi-trust.org/technical-faq/
+- Existing codebase patterns — `src/App.tsx` (debounce + `generationRef` D-05, `isHighlightingRef`, `isSettingMoleculeRef`, module-level `structServiceProvider` D-13), `src/components/InchiSection.tsx:28-44` (StrictMode `mountedRef` copy WR-02, verbatim slice), `src/store.ts`, `src/lib/handleMolSelectLogic.ts`
+- Project memory `feedback_inchi_passthrough.md` (no-reconstruct rule); PROJECT.md Key Decisions
 
 ### Secondary (MEDIUM confidence)
-- github/docs issue #5136 — undocumented ~8191-byte server-side URL cap (existence HIGH, exact number empirical)
-- GitHub community discussion #113726 — mobile app intercepts prefilled new-issue links, ignores prefill
-- GitHub community discussion #22946 — passing long body to issues/new
-- Vite `define` build-time constant injection — https://vite.dev/config/shared-options.html#define
-- Usersnap / Qualaroo — industry feedback-widget practice (used to argue AGAINST a floating widget)
+- Wikipedia, *International Chemical Identifier* (InChIKey section) — format string, collision estimate (matches IUPAC paper): https://en.wikipedia.org/wiki/International_Chemical_Identifier
+- InChIKey collision-resistance study, *J. Cheminformatics* 2012: https://jcheminf.biomedcentral.com/articles/10.1186/1758-2946-4-39
+- NCI/CADD InChIKey resolver blog (real-world lookup use): https://cactus.nci.nih.gov/blog/?tag=inchikey-resolver
 
 ### Tertiary (LOW confidence)
-- None — all findings are documented or source-verified.
+- (none — all findings corroborated by at least two sources or installed source)
 
 ---
-*Research completed: 2026-06-17*
+*Research completed: 2026-06-18*
 *Ready for roadmap: yes*

@@ -1,212 +1,164 @@
 # Stack Research
 
-**Domain:** In-app "Send feedback" → prefilled GitHub new-issue link (static client-side React/Vite app, no backend)
-**Researched:** 2026-06-17 (v1.2 milestone)
-**Confidence:** HIGH
+**Domain:** In-browser InChIKey display & explanation (v1.3) for the "Explain that InChI" single-page tool
+**Researched:** 2026-06-18
+**Confidence:** HIGH (verified against the actual installed `ketcher-core` / `ketcher-standalone` 3.12.0 source in `node_modules`, not just docs)
 
-## TL;DR
+## TL;DR — The Critical Answer
 
-**No new npm dependencies are needed.** This feature is built entirely with platform-native
-`URL` / `URLSearchParams` (browser built-ins) plus one tiny Vite build-time `define` to inject
-the app version + git commit SHA. GitHub's `issues/new` endpoint accepts `title`, `body`,
-`labels`, `template`, `assignees`, `milestone`, `projects` as query params. The single real
-constraint is the **~8 KB total URL length cap** (server-side, GitHub/proxy), which a long
-InChI/SMILES + user-agent body can exceed — mitigate by **building the URL, measuring its
-encoded byte length, and truncating/omitting the auto-captured context block before it crosses
-~7 KB**, with a clipboard fallback for pathological molecules.
+**The InChIKey is already obtainable from the Ketcher public API you ship today. ZERO new dependencies required.**
+
+The `Ketcher` class (the same object returned from `<Editor onInit={(ketcher) => …}>`) exposes:
+
+```ts
+getInChIKey(): Promise<string>
+```
+
+This is a typed, public method (`ketcher-core/dist/application/ketcher.d.ts:52`). It is fully wired through the standalone WASM worker — it does **not** require a backend, and it does **not** require importing `indigo-ketcher` directly. It is the exact in-browser analogue of the `getInchi()` method the project already uses.
+
+```ts
+// Already available on the ketcher instance the app holds:
+const inchiKey = await ketcher.getInChIKey(); // e.g. "RYYVLZVUVIJVGH-UHFFFAOYSA-N"
+```
+
+Verdict: **Use `ketcher.getInChIKey()`. Add nothing.** This mirrors the v1.2 "zero new npm deps" outcome.
+
+## How It Works (verified call chain)
+
+Traced through the installed 3.12.0 source:
+
+1. **`Ketcher.getInChIKey()`** — `ketcher-core/dist/index.js:59610`
+   Serializes the current editor struct to KET, then delegates to `this.structService.getInChIKey(struct)`.
+   ```js
+   value: function getInChIKey() {
+     // ... await getStructure(..., SupportedFormat.ket)
+     return this.structService.getInChIKey(struct);
+   }
+   ```
+
+2. **`StructService.getInChIKey(struct)`** interface — `ketcher-core/dist/domain/services/struct/structService.types.d.ts:150`
+   ```ts
+   getInChIKey: (struct: string) => Promise<string>;
+   ```
+
+3. **Standalone (WASM) implementation** — `ketcher-standalone/dist/main.js:761` (`IndigoService.getInChIKey`)
+   Posts `{ type: Command.GetInChIKey, data: { struct } }` to the Indigo web worker and resolves with `msg.payload` (the InChIKey string). `Command.GetInChIKey = 11`; `WorkerEvent.GetInChIKey = "getInChIKey"`.
+
+4. **Worker → indigo-ketcher 1.40.0 WASM** — the worker maps `ChemicalMimeType.InChIKey` → `SupportedFormat.InChIKey` (`"inchi-key"`) and runs the conversion via the same Indigo WASM module that already produces your InChI (`ketcher-standalone/dist/main.js:625`).
+
+So the InChIKey comes from the **same indigo-ketcher 1.40.0 WASM build** that is already loaded for `getInchi()`. Same provider, same `StandaloneStructServiceProvider`, same module-level instance, same worker. No new WASM, no new asset to copy, no new bundle weight.
+
+> Note: There is also a `RemoteStructService.getInChIKey` (posts to `indigo/convert` with `output_format: InChIKey`). That is the **backend** path and is irrelevant here — the project uses `StandaloneStructServiceProvider`, which routes to the WASM `IndigoService` above. No backend is invoked.
 
 ## Recommended Stack
 
-### Core Technologies
+### Core Technologies (all already installed — confirm, don't add)
 
 | Technology | Version | Purpose | Why Recommended |
 |------------|---------|---------|-----------------|
-| `URLSearchParams` (Web API) | native (browser) | Build the query string with correct percent-encoding of `title`/`body`/`labels` | Zero-dependency; correctly encodes newlines (`%0A`), spaces, markdown, commas. Spec-stable, supported in all target browsers. |
-| `URL` (Web API) | native (browser) | Assemble base + query into one canonical string | Native; single string to length-check against the 8 KB cap. |
-| Vite `define` (build-time) | Vite 8 (already in stack) | Inject `__APP_VERSION__` + `__GIT_SHA__` constants at build | No backend; values baked into the static bundle. Reuses the existing `define` mechanism already in `vite.config.ts`. |
-| GitHub `issues/new` query-param API | github.com (live) | The submission target — opens a prefilled new-issue page | Already the decided mechanism; purely a URL the browser opens via anchor `href` / `window.open`. |
+| ketcher-core | 3.12.0 (installed) | Provides `Ketcher.getInChIKey(): Promise<string>` and the `Ketcher` type | The InChIKey API lives here; already a direct dependency |
+| ketcher-standalone | 3.12.0 (installed) | `StandaloneStructServiceProvider` → WASM `IndigoService.getInChIKey` | WASM-backed InChIKey, no backend; already wired and initialized at module level |
+| indigo-ketcher (transitive) | 1.40.0 (installed) | Underlying WASM that hashes InChI → InChIKey | Already loaded for `getInchi()`; **do NOT import directly** (see What NOT to Use) |
+| React | ^18.2 (installed) | UI for the InChIKey strip + explanation cards | Existing |
+| Zustand | ^5.0 (installed) | Hold `inchiKey` string in the existing store | Existing — add at most one field |
+| CSS Modules + oklch tokens | built-in (installed) | Segment color-coding + hover cards matching the InChI strip | Existing token system; no new styling dep |
 
 ### Supporting Libraries
 
-**None required.** Explicitly do not add a library for this (see "What NOT to Use").
+| Library | Version | Purpose | When to Use |
+|---------|---------|---------|-------------|
+| (none) | — | — | **No new library is needed for v1.3.** |
+
+The InChIKey is a fixed, well-known **27-character format** (`AAAAAAAAAAAAAA-BBBBBBBBFV-P`) that you split **for display/coloring only** — never compute. Segment parsing is pure string slicing on a fixed grammar; do it in app code, mirroring the existing InChI parsers ported from `molecules.js`. No parsing library required.
 
 ### Development Tools
 
 | Tool | Purpose | Notes |
 |------|---------|-------|
-| `git rev-parse --short HEAD` | Produce the short commit SHA at build time | Run inside `vite.config.ts` via `node:child_process`; fall back to GitHub Actions `$GITHUB_SHA`. |
-| `package.json` `version` field | Human-readable app version | Currently `0.0.0` — bump to a real version (e.g. `1.2.0`) so the feedback body carries a meaningful version string. |
-
-## GitHub `issues/new` Query-Param API (verified)
-
-Base URL for this repo:
-`https://github.com/cm-beilstein/explain-that-inchi/issues/new`
-
-| Param | Effect | Encoding / format notes |
-|-------|--------|-------------------------|
-| `title` | Prefills issue title | Plain percent-encoded text. |
-| `body` | Prefills issue body (markdown) | Markdown rendered. **Newlines must be `%0A`** (LF). `URLSearchParams` encodes `\n` → `%0A` automatically. Spaces encode as `+` (GitHub accepts both `+` and `%20`). |
-| `labels` | Adds labels | **Comma-separated** in a single param: `labels=bug,feedback`. Each label must already exist in the repo AND the visitor needs triage permission for labels to stick — for anonymous public visitors, labels may be silently dropped. Also encode the category as a `title` prefix. |
-| `template` | Selects a template from `.github/ISSUE_TEMPLATE/` | Value is the template filename, e.g. `template=feedback.yml`. |
-| `assignees` | Comma-separated usernames | Permission-gated; not needed here. |
-| `milestone` | Milestone number/name | Permission-gated; not needed here. |
-| `projects` | Adds to a project | Not needed here. |
-
-**Key behavioral facts (verified):**
-- `labels`, `assignees`, `milestone`, `projects` only apply if the submitting user has the
-  relevant repo permission. Anonymous / non-collaborator visitors → these are **dropped silently**.
-  → **Do not rely on `labels` for categorization. Encode category in the `title` prefix and/or
-  body, and treat `labels` as a best-effort nicety for maintainers.**
-- `template` vs `body`: if you point at a YAML **issue form**, the `body` param is ignored and
-  you instead prefill **individual form fields by their `id`** (e.g.
-  `?template=feedback.yml&inchi=InChI%3D1S...&smiles=...`). With a plain markdown template or no
-  template, use the single `body` param. (Confirmed via GitHub community discussion #15477.)
-- The GitHub **mobile app**, if installed, can intercept the link and **fail to prefill** fields
-  (community discussion #113726). Accepted known limitation; desktop web works correctly.
-
-### URL length limit — THE constraint and its mitigation
-
-- **Issue body storage limit:** 65,536 codepoints (NOT the binding constraint here).
-- **Binding constraint — total request URL length:** GitHub's server (and intermediate
-  proxies/browsers) reject overly long request URIs. The widely-reported practical ceiling is
-  **~8,192 bytes (~8 KB) for the whole URL**, producing a "URL too long" / 414-class failure.
-  GitHub's own docs issue (github/docs#5136) requests this be documented; it is **not officially
-  documented**, so treat 8 KB as empirical (MEDIUM confidence on the exact number; HIGH
-  confidence that a hard cap in this range exists).
-- **Why it matters here:** A large/polymeric molecule's InChI plus full SMILES plus the
-  user-agent string can each be hundreds–thousands of chars; percent-encoding roughly **triples**
-  the byte cost of the many non-alphanumeric characters in InChI/SMILES (`=`, `/`, `(`, `)`, `+`
-  all → `%XX`). Even a ~2.5 KB raw context block can approach the cap once encoded.
-
-**Mitigation (implement all three, in this order):**
-1. **Budget + measure:** After building the full URL string, check its **encoded byte length**
-   (`new TextEncoder().encode(url).length`, not `.length`). Target a safe ceiling of **~7,000
-   bytes** (headroom below the 8 KB cap).
-2. **Graceful degradation of the context block:** If over budget, drop lowest-value fields first:
-   (a) truncate/omit the SMILES, (b) truncate the InChI with a clear
-   `…(truncated — paste full string below)` marker, (c) always keep the InChI prefix + formula.
-   Never let the link silently break.
-3. **Clipboard fallback:** If even the minimal body exceeds budget (rare), open the issue page
-   with only `title` + a short note and copy the full context block to the clipboard (reuse the
-   existing PLSH-04 clipboard pattern), instructing the user to paste it. Robust for any molecule
-   size, zero backend.
-
-### Issue forms (`.yml`) vs raw `?body=` — recommendation
-
-| Approach | Pros | Cons | Verdict |
-|----------|------|------|---------|
-| **Raw `?body=` (markdown)** | Single param; full layout control; no repo file to maintain; works anonymously; trivial to assemble client-side | All context in one free-text blob; no enforced structure | **Recommended for v1.2.** Simplest, zero new repo surface, robust. |
-| **YAML issue form (`?template=feedback.yml&field=…`)** | Structured fields; nicer triage; required-field validation | Must author + commit a `.yml` form; prefill is per-field-`id` (more URL plumbing); `body` ignored; same 8 KB cap; mobile interception still applies | Optional future polish; marginal gain. |
-
-→ **Use raw `?body=` with a hand-authored markdown template string in code.** Optionally add a
-`.github/ISSUE_TEMPLATE/config.yml` later if maintainers want a labeled chooser; not required.
-
-## Build-time version/commit injection (Vite, no backend)
-
-Extend the **existing** `define` block in `vite.config.ts` (it already uses `define` for the
-process shim, so this is minimal and idiomatic):
-
-```ts
-import { execSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
-
-const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8'));
-
-function gitSha(): string {
-  // Prefer CI-provided SHA (GitHub Actions sets GITHUB_SHA); fall back to local git.
-  const ci = process.env.GITHUB_SHA;
-  if (ci) return ci.slice(0, 7);
-  try {
-    return execSync('git rev-parse --short HEAD').toString().trim();
-  } catch {
-    return 'unknown';
-  }
-}
-
-const appMeta = {
-  __APP_VERSION__: JSON.stringify(pkg.version),
-  __GIT_SHA__: JSON.stringify(gitSha()),
-};
-// then: defineConfig({ define: { ...processShim, ...appMeta }, ... })
-```
-
-Declare the globals once for TypeScript (e.g. `src/vite-env.d.ts`):
-```ts
-declare const __APP_VERSION__: string;
-declare const __GIT_SHA__: string;
-```
-
-Usage: `` `v${__APP_VERSION__} (${__GIT_SHA__})` ``.
-
-**Notes:**
-- The default `actions/checkout` provides git for `git rev-parse`, but the `GITHUB_SHA` env
-  fallback makes it robust to shallow/odd checkouts. HIGH confidence: `GITHUB_SHA` is always set
-  in Actions.
-- Alternative `import.meta.env`: only exposes `VITE_`-prefixed vars from `.env`/shell. You could
-  do `VITE_GIT_SHA=$(git rev-parse --short HEAD) vite build`, but the `define` approach keeps
-  everything self-contained in `vite.config.ts` with a local-dev fallback — prefer `define`.
-- User-agent needs no build injection — read `navigator.userAgent` at runtime in the browser.
+| Vitest 3 | Unit-test the InChIKey segment splitter + store wiring | Use the existing `vitest.config.ts`; mock `getInChIKey` in component tests as you already mock `getInchi` |
+| TypeScript ^5 | `getInChIKey` is already typed `(): Promise<string>` | No `@types` shim needed |
 
 ## Installation
 
 ```bash
-# No runtime dependencies to install.
-# No dev dependencies to install (git + node:child_process are already available).
+# Core
+# (nothing — getInChIKey ships in the ketcher-core/ketcher-standalone 3.12.0 you already have)
+
+# Supporting
+# (none)
+
+# Dev dependencies
+# (none — reuse existing Vitest setup)
 ```
+
+## InChIKey Segment Structure (for the display layer — informational, HIGH confidence)
+
+The InChIKey is **27 characters**, `AAAAAAAAAAAAAA-BBBBBBBBFV-P`, three hyphen-separated blocks:
+
+| Segment | Chars | Name | Meaning (for the explanation cards) |
+|---------|-------|------|-------------------------------------|
+| Block 1 | 14 (positions 1–14) | Skeleton hash | Truncated SHA-256 of the **connectivity layer** (the molecular skeleton). Uppercase A–Z only. |
+| Block 2 | first 8 of block 2 (positions 16–23) | Remaining-layers hash | Truncated SHA-256 of the **remaining InChI layers** (proton/stereo/isotope/charge etc.). Uppercase A–Z only. |
+| Flag chars | positions 24–25 (`FV`) | Version + flags | One char encodes which **layers/flags** were present; the next encodes the InChI **version** (`S` = standard InChI v1, current). |
+| Block 3 | position 27 (`P`) | Protonation char | Single char encoding net **(de)protonation** of the InChI; `N` = no adjustment (neutral). |
+
+Key teaching points for the explanation content (matches PROJECT.md target features):
+- It is a **one-way hash** (SHA-256 based) — **not reversible**, cannot be decoded back to a structure, and its segments do **NOT** map to canvas atoms (unlike the InChI layers). This is the central UX distinction from the InChI strip.
+- It is **fixed-length** (always 27 chars) — useful for databases/URLs where the full InChI is too long.
+- **Collision caveat**: the skeleton hash is a truncation, so collisions are theoretically possible (astronomically rare in practice); the InChIKey is a lookup/index key, not a guaranteed-unique identifier.
+
+> Recommendation: derive segment boundaries by splitting on `-` and slicing — never by re-hashing. And, consistent with the project memory rule ("never reconstruct InChI"), **display the verbatim `getInChIKey()` output string**; only slice it for coloring, never rebuild it.
 
 ## Alternatives Considered
 
 | Recommended | Alternative | When to Use Alternative |
 |-------------|-------------|-------------------------|
-| Native `URLSearchParams` | `new-github-issue-url` (sindresorhus) | Never for this project — a ~20-line wrapper over the same native API; adds a dependency + supply-chain surface for zero gain. |
-| Vite `define` for version/SHA | `vite-plugin-package-version` / git plugins | Never needed — a 10-line inline function in the existing config is clearer and dependency-free. |
-| Raw `?body=` markdown | `.yml` issue form + per-field prefill | If maintainers later want structured, validated triage fields. Adds repo files; defer. |
-| `title`-prefix categorization | `labels=` param | Use `labels` additionally (best-effort) but never rely on it — dropped for anonymous visitors. |
+| `ketcher.getInChIKey()` | Import `indigo-ketcher` WASM directly and call its conversion API | **Never for this project** — violates the CLAUDE.md "no direct indigo-ketcher import" constraint, duplicates an already-loaded WASM module, and bloats the bundle. Only relevant if you were *not* using ketcher-standalone. |
+| `ketcher.getInChIKey()` | A standalone JS InChIKey lib (e.g. the official InChI Emscripten/WASM build, or `openchemlib`'s InChI support) | Only if Ketcher did not expose the key. It does, so adding any of these is pure dead weight (extra MB of WASM, extra init, second source of truth that could disagree with the InChI you already show). |
+| Compute key in app | Hard-code/derive the key from the displayed InChI string by hand | **Impossible** — it's a SHA-256-derived hash; it cannot be computed without a hashing implementation. The library must produce it. `getInChIKey()` does. |
 
 ## What NOT to Use
 
 | Avoid | Why | Use Instead |
 |-------|-----|-------------|
-| `new-github-issue-url` (npm) | Trivial native-API wrapper; unnecessary dependency + supply-chain risk | `URL` + `URLSearchParams` |
-| `@octokit/*` / GitHub REST API client | Requires auth tokens + a backend/secret store — violates no-backend constraint | Plain prefilled-URL link (no API call) |
-| `axios` / `fetch` to GitHub | No network call is made; the feature only opens a URL | `window.open(url, '_blank', 'noopener')` or anchor `href` |
-| Analytics / error-reporting SDK (Sentry, etc.) | Out of scope; adds backend + privacy surface | The manual prefilled-issue link |
-| `qs` / `query-string` npm packages | `URLSearchParams` covers all needed encoding natively | `URLSearchParams` |
-| Hardcoding the commit SHA in source | Goes stale every commit; merge noise | Build-time `define` injection |
-| Relying on `labels=` for category routing | Silently dropped for non-collaborator visitors | Encode category in `title` prefix + body; `labels` best-effort only |
+| Direct `import` of `indigo-ketcher` | Forbidden by CLAUDE.md ("only the ketcher public API"); it's already loaded transitively, so importing it duplicates a multi-MB WASM module and creates a second InChI source that can drift from the displayed InChI | `ketcher.getInChIKey()` |
+| `openchemlib` / `openchemlib-js` for InChIKey | Adds a large second cheminformatics engine + WASM just to re-hash a structure Ketcher already hashed; risk of producing a *different* InChIKey than the InChI shown | `ketcher.getInChIKey()` |
+| Official InChI library WASM (inchi-wasm / Emscripten InChI build) | Same problem: a second InChI engine to compute one string already available; extra bundle/init cost; potential version mismatch with indigo's InChI | `ketcher.getInChIKey()` |
+| Any pure-JS "InChIKey from InChI" snippet | The key is a truncated SHA-256 of normalized InChI sub-strings with flag/protonation encoding — non-trivial and easy to get subtly wrong; reimplementing it is a correctness liability | `ketcher.getInChIKey()` |
+| `RemoteStructService.getInChIKey` / `indigo/convert` HTTP path | That's the **backend** code path; the project is backend-free and uses `StandaloneStructServiceProvider` | `ketcher.getInChIKey()` (resolves to the WASM `IndigoService`) |
+| A new Zustand store or store refactor | Overkill; v1.2 added a whole feature with no store growth | Add at most one `inchiKey: string` field (or derive it alongside the existing InChI fetch) |
 
 ## Stack Patterns by Variant
 
-**If the encoded URL stays under ~7 KB:**
-- Use a single `?title=…&body=…&labels=…` raw-body link. Simplest path.
+**If computing InChIKey alongside the existing live InChI (recommended):**
+- In the same debounced handler that calls `getInchi(true)` on the `editor.subscribe('change', …)` event, also `await ketcher.getInChIKey()`.
+- Run them concurrently (`Promise.all([ketcher.getInchi(true), ketcher.getInChIKey()])`) so the InChIKey adds no extra latency to the existing ≤150ms debounce.
+- Because both go to the same single WASM worker, they will be serialized by the worker regardless — `Promise.all` just avoids an extra round-trip in app code. Either way it is cheap (the structure is already loaded).
 
-**If the molecule is large (long InChI/SMILES) and the URL would exceed ~7 KB:**
-- Truncate SMILES → then InChI (with explicit truncation marker) → finally fall back to
-  clipboard-copy of full context + a minimal prefilled link.
-
-**If maintainers later want structured triage:**
-- Add `.github/ISSUE_TEMPLATE/feedback.yml` issue form, switch to
-  `?template=feedback.yml&<fieldId>=…` per-field prefill (note: `body` param then ignored).
+**If the structure is empty/invalid:**
+- `getInChIKey()` will reject or return empty for an empty canvas (same behavior class as `getInchi()` on empty). Reuse the existing PLSH-01 placeholder pattern — show the empty/invalid placeholder, do not surface an error.
 
 ## Version Compatibility
 
-| Item | Compatible With | Notes |
-|------|-----------------|-------|
-| `URLSearchParams` / `URL` | All target evergreen browsers | Same baseline Ketcher WASM already requires; no polyfill. |
-| Vite `define` injection | Vite 8 (current) | Reuses existing `define` in `vite.config.ts`; no plugin needed. |
-| `GITHUB_SHA` env | GitHub Actions (current CD) | Always set; safe CI fallback for `git rev-parse`. |
-| GitHub query-param API | github.com (cm-beilstein/explain-that-inchi) | Live web feature; no pinning. Mobile-app interception is a known, accepted edge case. |
+| Package A | Compatible With | Notes |
+|-----------|-----------------|-------|
+| ketcher-core@3.12.0 | ketcher-standalone@3.12.0 | `getInChIKey` is present and identically typed in both; keep all ketcher packages pinned to 3.12.0 as already decided |
+| ketcher-standalone@3.12.0 | indigo-ketcher@1.40.0 | The InChIKey is produced by this exact WASM build (already used for InChI); no version action needed |
+| ketcher.getInChIKey() | React 18, Zustand 5, Vite 8 | API-surface only (returns `Promise<string>`); no framework constraints |
 
 ## Sources
 
-- GitHub Docs — Creating an issue / automation with query parameters (title, body, labels, milestone, assignees, template, projects) — https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-an-issue — HIGH
-- GitHub Docs issue #5136 "Document GitHub serverside limit on URL length" (confirms undocumented ~8 KB request-URL cap) — https://github.com/github/docs/issues/5136 — MEDIUM (exact byte number empirical)
-- dead-claudia/github-limits (issue body max 65,536 codepoints; comment 262,144 bytes) — https://github.com/dead-claudia/github-limits — HIGH (body limits); does not document URL cap
-- GitHub community discussion #15477 "Pre-populate issue forms HTTP supplied values" (issue-form field prefill via `template=` + field `id`; `body` ignored for forms) — https://github.com/orgs/community/discussions/15477 — HIGH
-- GitHub community discussion #113726 (mobile app intercepts prefilled new-issue links; fields not prefilled) — https://github.com/orgs/community/discussions/113726 — MEDIUM
-- sindresorhus/new-github-issue-url (reference impl confirming native-URL approach; cited as what NOT to add) — https://github.com/sindresorhus/new-github-issue-url — HIGH
-- Vite `define` config (build-time constant injection) — existing project `vite.config.ts` + https://vite.dev/config/shared-options.html#define — HIGH
+- **Installed `ketcher-core` 3.12.0 source** (authoritative — read directly):
+  - `node_modules/ketcher-core/dist/application/ketcher.d.ts:52` — `getInChIKey(): Promise<string>` on the `Ketcher` class — **HIGH**
+  - `node_modules/ketcher-core/dist/domain/services/struct/structService.types.d.ts:150` — `getInChIKey: (struct: string) => Promise<string>` interface — **HIGH**
+  - `node_modules/ketcher-core/dist/index.js:59610` — implementation (serialize KET → `structService.getInChIKey`) — **HIGH**
+- **Installed `ketcher-standalone` 3.12.0 source** (authoritative):
+  - `node_modules/ketcher-standalone/dist/main.js:761` — `IndigoService.getInChIKey` posts `Command.GetInChIKey` to the WASM worker — **HIGH**
+  - `node_modules/ketcher-standalone/dist/main.js:625` — worker maps `ChemicalMimeType.InChIKey` → `SupportedFormat.InChIKey` (`"inchi-key"`) — **HIGH**
+  - `node_modules/ketcher-standalone/package.json` — `"indigo-ketcher": "1.40.0"` — **HIGH**
+- `node_modules/indigo-ketcher/package.json` — version 1.40.0, license **Apache-2.0** (already vendored; no new license obligation) — **HIGH**
+- InChIKey 27-char block structure (skeleton/remaining hash, version+flag, protonation char) — IUPAC InChI technical manual / widely documented standard — **HIGH** (stable spec, not version-sensitive)
 
 ---
-*Stack research for: in-app prefilled-GitHub-issue feedback (v1.2)*
-*Researched: 2026-06-17*
+*Stack research for: in-browser InChIKey display & explanation (v1.3)*
+*Researched: 2026-06-18*

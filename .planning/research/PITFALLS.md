@@ -1,284 +1,295 @@
-# Pitfalls Research: v1.2 In-app Feedback (prefilled GitHub issue)
+# Pitfalls Research
 
-**Domain:** Client-side prefilled GitHub-issue URL feedback in a static, no-backend React/Vite/GitHub-Pages SPA
-**Researched:** 2026-06-17
-**Confidence:** HIGH — GitHub's 8191-byte URL limit and prefill query params are officially documented; encoding/popup/markdown behaviors are well-established web-platform facts; repo-specific details from PROJECT.md / CLAUDE.md.
+**Domain:** Adding a live InChIKey display + per-segment hover explanations + copy button to the existing in-browser InChI explainer (Vite 8 + React 18 + TS + Ketcher 3.12.0 WASM + Zustand 5 + CSS Modules, static GitHub Pages, no backend)
+**Researched:** 2026-06-18
+**Confidence:** HIGH (API + InChIKey structure verified against ketcher-core/ketcher-standalone source and InChI Trust FAQ; integration pitfalls verified against current `App.tsx` / `InchiSection.tsx` / `store.ts`)
 
-> NOTE: This file was rewritten for the **v1.2 feedback milestone**. The prior contents (v1.0 Ketcher/WASM/Vite pitfalls) are preserved in git history (`PITFALLS.md` at commits up to `cd24091`). If both sets are needed, restore the v1.0 version as `PITFALLS-v1-ketcher.md`.
+## Key verified facts (read these first)
 
-> Scope: "Explain that InChI" is served at `/explain-that-inchi/` on GitHub Pages, repo `cm-beilstein/explain-that-inchi`. The feature builds a `https://github.com/cm-beilstein/explain-that-inchi/issues/new?...` URL entirely client-side from on-screen state (current InChI string, molecule SMILES + preset name, UA, app version) plus a user message + category. No network call leaves the page until the user clicks through to GitHub.
-
----
+- **The API exists and is independent.** `ketcher.getInChIKey(): Promise<string>` is declared in `node_modules/ketcher-core/dist/application/ketcher.d.ts:52` and routes to `StandaloneStructServiceProvider`'s WASM worker as a **separate command** (`Command.GetInChIKey = 11` in `ketcher-standalone/dist/main.js:38`). It is `output_format: 'inchi-key'` — Indigo computes the key from the current struct, **not** from the InChI string the app already holds. This is the load-bearing fact for the whole feature: the key is fetched, never derived in JS.
+- **Standard InChIKey is a fixed 27-char string:** `AAAAAAAAAAAAAA-BBBBBBBB-FVP` → 14-char skeleton hash, hyphen, 8-char "remaining layers" hash (stereo/isotope/protonation-ish), hyphen, then **F** = standard flag (`S` standard / `N` non-standard), **V** = version (`A` = InChI v1), **P** = protonation indicator (`N` neutral, then `O`, `M`, etc.). One-way hash: **not reversible, not atom-mappable.** Collisions are improbable but **do occur** in practice.
+- **No store fields exist for the key yet.** `store.ts` has `inchi`, `layers`, `auxMap`, `atomElements`, `hAtomPoolIds`, `hoverIdx`, `subHover`. Adding the key means a deliberate store-shape decision (see Pitfall 5 / 6).
+- **The existing debounce+generation guard lives in `App.tsx` `handleChange`** (150 ms timer, `generationRef` stale-result guard, `isHighlightingRef`, `isSettingMoleculeRef`). The InChIKey must ride this same pipeline, not a parallel one.
 
 ## Critical Pitfalls
 
-### Pitfall 1: URL exceeds GitHub's 8191-byte server-side limit → 414 / silent truncation
+### Pitfall 1: Reconstructing the InChIKey from parsed segments (violates the standing no-reconstruct rule)
 
 **What goes wrong:**
-GitHub's new-issue endpoint enforces a server-side limit of **8191 bytes** for the full request URL. Multi-fragment InChI strings (the app's recurring test molecule is ~190 chars; pathological structures are far longer) plus SMILES + UA + version + the user's prose + percent-encoding overhead (each special char → 3 bytes, each newline → `%0A`) can blow past this. Result: either a `414 URI Too Long` GitHub error page instead of a prefilled issue, or a body that GitHub/the browser silently clips — producing a broken issue missing the InChI it was meant to carry. Since the product's whole value is multi-fragment InChI, this is the single most likely real-world failure.
+The team renders the key as four color-coded spans, then "helpfully" rebuilds the displayed/copied string by concatenating the parsed `block1 + '-' + block2 + '-' + flags`. Any off-by-one in segment boundaries, a dropped hyphen, or a non-standard `N` flag the slicer didn't anticipate produces a corrupted key shown/copied to the user.
 
 **Why it happens:**
-Devs test with short single-component presets (benzene, caffeine) where the URL is ~1KB and never nears the cap, then ship. Encoded length is non-obvious: a 1500-char body of InChI/SMILES encodes to 3000+ bytes once `+ / ; , ( ) #` and newlines are percent-encoded, plus a fixed ~120 bytes of repo slug + param scaffold.
+Direct analogue of the documented InChI bug (memory `feedback_inchi_passthrough.md`): InChI mixtures contain `.` characters the layer parsers don't model, and re-joining `layer.text` silently drops them. The InChIKey is even more seductive because it *looks* perfectly regular (fixed 27 chars), tempting a "just rebuild it" shortcut.
 
 **How to avoid:**
-- Build the final URL, then measure `new TextEncoder().encode(url).length` (byte length — NOT `.length`, which counts UTF-16 units and undercounts). Budget **~7500 bytes** (headroom below 8191 for GitHub redirect params / future scaffold growth).
-- When over budget, **degrade deterministically**: truncate the InChI/SMILES context block with an explicit `…[truncated — paste full InChI manually]` marker; keep the user's prose + category intact (the human message matters more than auto-context). Shrink auto-context first (drop SMILES, keep InChI; trim UA) before touching the user's words. Never silently drop content.
-- Offer "copy InChI to clipboard" in the over-budget path so the user can paste manually (reuse PLSH-04's existing copy-to-clipboard).
+Treat the verbatim string from `getInChIKey()` as the single source of truth for both **display text** and **copy payload**. Slice it **by fixed byte offset** for coloring only (chars 0–13 skeleton, 15–22 second block, 24 flag, 25 version, 26 protonation), exactly like `InchiSection` slices the raw `inchi`. Never join segment text back into a string. Add a unit test asserting `displayedKey === rawKeyFromLibrary` and `copyPayload === rawKeyFromLibrary`.
 
-**Warning signs:** Feedback issues with empty / mid-string-cut bodies; users reporting a GitHub error page after clicking; QA only ever testing the 10 short presets.
+**Warning signs:**
+A function named `buildInchiKey`, `joinKeySegments`, or any code path where the rendered/copied value is derived from segment arrays rather than the raw string.
 
-**Phase to address:** URL-construction / context-capture phase. Add a budget-check unit test using the recurring multi-fragment repro molecule from HANDOFF.md as the worst-case fixture.
+**Phase to address:**
+Earliest phase — the source/store phase. Bake the verbatim-passthrough invariant into the store contract and the copy handler before any rendering work.
 
 ---
 
-### Pitfall 2: Improper / double `encodeURIComponent` mangles the InChI and SMILES
+### Pitfall 2: Assuming the key derives from the displayed InChI (standard vs non-standard mismatch)
 
 **What goes wrong:**
-InChI/SMILES are dense with chars that are reserved or special in query strings: `+` (decodes to space if unencoded), `/` (InChI layer separator `1S/C12H19N...`), `;` (component separator), `,` `(` `)` `#` `=` (SMILES). Without encoding, GitHub sees `+`→space, `/` splitting the path, or `#` truncating the body as a URL fragment — corrupting the exact InChI the feature exists to send. The mirror bug is **double-encoding**: pre-encoding a value with `encodeURIComponent` and then feeding it to `URLSearchParams` (which encodes again), so the issue shows literal `%2F`/`%2B` instead of `/`/`+`.
+The team computes the key client-side from the already-displayed InChI string, or assumes `getInChIKey()` always returns an `S`-flagged (standard) key matching the `getInchi(true)` output. If the two WASM calls ever use different option sets (e.g. one standard, one not), the key's flag char (`S`/`N`) and even its hash can disagree with the InChI strip directly above it — the user sees an internally inconsistent pair.
 
 **Why it happens:**
-Manual concat (`'?title=' + v + '&body=' + v`) without encoding "works" for alphanumeric test input; a later refactor adds `URLSearchParams` to one param but leaves a hand-encoded value → double-encoding. The `#` case is the nastiest: everything after an unencoded `#` is dropped as a fragment and never reaches the server, silently ending the body early.
+`getInchi()` and `getInChIKey()` are **two separate WASM commands** computed independently from the struct (verified in `ketcher-standalone/dist/main.js`). Developers assume "the key is just a hash of the InChI" and don't realize they're two independent Indigo conversions that *should* agree but are produced separately.
 
 **How to avoid:**
-- Use **exactly one** encoding mechanism. Recommended: a single `URLSearchParams` object (`params.set('title', rawTitle); params.set('body', rawBody)`) — never pre-encode values you put into it. `.toString()` handles all reserved chars. (It encodes space as `+`, which GitHub accepts.)
-- Add a round-trip unit test: encode an InChI containing `+ / ; , ( ) # =`, then `new URL(built).searchParams.get('body')` must equal the original raw string.
+Always obtain the key from `ketcher.getInChIKey()` — never hash or transform the InChI string in JS. Both calls are issued against the same struct in the same `handleChange` tick (after `setMolecule`/draw settles), so they describe the same molecule. In the explanation copy, state that this is the **Standard InChIKey** and surface the flag character (`S`) as the live proof. Add an assertion/test that for the preset molecules the returned key's flag char is `S` and version char is `A`.
 
-**Warning signs:** Issues showing `%2F`/`%2B`/`%23` literals (double-encoded), or bodies ending abruptly at the first `#` (unencoded fragment cutoff); InChI separators turning into spaces.
+**Warning signs:**
+Any code importing a JS hashing/base-something library; an explanation card that claims "the key is computed from the InChI above."
 
-**Phase to address:** URL-construction phase. The round-trip test is the gate.
+**Phase to address:**
+Source phase — lock in `getInChIKey()` as the only key source; verification in the same phase.
 
 ---
 
-### Pitfall 3: Markdown injection / accidental @-mention pings via unfenced context
+### Pitfall 3: Key not in sync with the debounced InChI (parallel pipeline / race)
 
 **What goes wrong:**
-The issue `body` renders as GitHub-Flavored Markdown. If captured InChI/SMILES or the user's free text is dropped in unfenced: backticks break out of code spans; a line-leading `#` renders as an H1; `@username`/`@org/team` sends a **real notification ping**; `- [ ]` becomes a task list; `1.` starts a list. InChI/SMILES rarely contain `@`, but user prose can ("@maintainer this is broken"), and a malicious user could weaponize the prefill to mass-ping. SMILES legitimately contains `#` (triple bond) and `[N+]` brackets that interact with markdown.
+A separate `useEffect`/subscription or its own debounce timer is added for the key. Result: the InChI strip and the InChIKey update on different ticks — the strip shows molecule B while the key still shows molecule A for a frame or longer. Worse, a slow `getInChIKey()` call for an old struct resolves *after* a newer draw and overwrites the store with a stale key.
 
-**Why it happens:** Treating the body as plain text. Auto-context feels "safe" because it's machine-generated; the user message is fully attacker-controlled.
+**Why it happens:**
+`getInChIKey()` is async and the obvious first instinct is "give it its own effect." The app already solved this exact class of bug for InChI with the `generationRef` stale-result guard in `App.tsx` (D-05), but a new contributor may not extend that guard to the key.
 
 **How to avoid:**
-- Wrap **all** auto-captured context (InChI, SMILES, UA, version) in fenced code blocks (```` ``` ````); markdown is inert inside a fence. Guard the rare case where content contains a closing fence by using a longer fence (` ```` `).
-- Neutralize `@` in user prose so it renders visibly but doesn't notify (e.g. insert a zero-width space after `@`, or backtick-wrap mention-like tokens). At minimum, never place user text where `@` can ping.
-- Don't build any raw HTML.
+Issue `getInChIKey()` **inside the existing `handleChange` debounce**, in the same `thisGen = ++generationRef.current` window as `getInchi(true)`. Run both with `Promise.all`, then re-check `if (thisGen !== generationRef.current) return;` **after** the await before writing to the store, and write inchi + key in a **single `setInchiData`-style action** so they commit atomically. Do not add a second subscription, second debounce timer, or second generation counter.
 
-**Warning signs:** A SMILES `#` became a heading in a test issue; a maintainer pinged from a test submission; user message rendered as a giant H1.
+**Warning signs:**
+A new `ketcher.editor.subscribe('change', ...)`; a second `setTimeout` debounce; a `setInchiKey` action called from a different tick than `setInchiData`; the key visibly lagging the strip by a frame when dragging atoms.
 
-**Phase to address:** Body-templating phase. Tests asserting context is fenced and `@` is neutralized.
+**Phase to address:**
+Source/wiring phase — extend the existing pipeline, verified with a "rapid edit" stale-result test mirroring the existing generation-guard tests.
 
 ---
 
-### Pitfall 4: Popup/tab blocked because navigation isn't a direct user gesture
+### Pitfall 4: Wrong/empty key on empty, invalid, or disconnected structures
 
 **What goes wrong:**
-`window.open(url, '_blank')` from inside an async callback (e.g. after `await ketcher.getInchi(true)` or a `setTimeout`/debounce) loses the user-activation token browsers require → the popup is **silently blocked**. User clicks "Send feedback," nothing happens, no error. Safari/Firefox are strictest.
+On an empty canvas or a structure Indigo can't key, `getInChIKey()` either rejects, returns `''`, or returns a degenerate key. If unhandled, the segment renderer slices an empty/short string and shows garbled spans or throws; or a stale key persists after the canvas is cleared. Multi-component/salt structures (the project's historical correctness sore spot, INCHI-06) compute a **single** key for the whole mixture — there is no per-component key, and the protonation char reflects net charge of the assembly.
 
-**Why it happens:** The InChI capture is async (app already uses `getInchi(true)` → Promise). The intuitive approach awaits InChI then opens — but by resolve time the gesture is "used up." Any `await` before `window.open` in the same handler breaks it.
+**Why it happens:**
+The existing empty-canvas guard in `App.tsx` keys off `result.layers.length < 2` and resets the InChI store to empty — but a naively added key fetch may not be inside that guard, so it runs (and can throw) even when the InChI path already bailed. Disconnected structures historically broke atom mapping; the key path has its own edge behavior.
 
 **How to avoid:**
-- Capture context **synchronously from already-computed Zustand state** at click time (the live InChI/SMILES/preset are already in the store — do NOT recompute InChI in the click handler). Build the URL synchronously, open in the same tick.
-- Preferred: render a real `<a href={builtUrl} target="_blank" rel="noopener noreferrer">` with a reactively-updated `href` — native navigation, never blocked. If a `<button>` is needed for styling, call `window.open(url, '_blank', 'noopener')` synchronously in `onClick` with no preceding `await`.
-- Always pass `noopener` (anchor `rel` or `window.open` features) so the GitHub tab can't reach `window.opener`.
+Gate the key fetch behind the **same** empty/disconnected guard already used for InChI: if the InChI path resets to empty, the key must reset to empty in the same atomic write. Wrap `getInChIKey()` in the existing try/catch and, on throw, write empty key (do not blank under a stale generation — reuse the `thisGen` check in the catch, exactly as the InChI path does). Render the segment strip only when the key is a full 27-char standard key (`/^[A-Z]{14}-[A-Z]{8}-[A-Z]{3}$/`); otherwise show the same placeholder treatment as the empty InChI strip. For multi-component molecules, explicitly state in the explanation that the key represents the **entire** drawn assembly (one key, no per-fragment keys) — and add a multi-component preset to the test matrix.
 
-**Warning signs:** "Nothing happens when I click feedback"; works in dev Chrome but blocked in Safari/Firefox; the open call sits after an `await`.
+**Warning signs:**
+Console errors on canvas clear; a key lingering after "erase all"; `key.slice(15,23)` producing `undefined`/short spans; assuming each `.`-separated InChI component would yield its own key.
 
-**Phase to address:** Entry-point/UI phase. Verify anchor approach; manual cross-browser click test.
-
----
-
-## Moderate Pitfalls
-
-### Pitfall 5: Pretending feedback is anonymous when it requires a GitHub account
-
-**What goes wrong:** An accountless visitor clicks through, lands on GitHub's sign-in/sign-up wall — their feedback evaporates and they feel tricked. The audience (chemists/students) frequently has no GitHub account.
-
-**Why it happens:** Devs all have GitHub accounts and forget the public audience doesn't; the accepted "no backend" tradeoff is invisible unless surfaced.
-
-**How to avoid:** Set expectations **before** the click: e.g. "Opens a public GitHub issue — a free GitHub account is required to submit." Don't label it "anonymous." Consider an accountless fallback: a `mailto:` link or copy-to-clipboard of the prefilled body (mailto has its own length limits — same budget discipline applies).
-
-**Warning signs:** Drop-off; "I clicked feedback and it asked me to sign up."
-
-**Phase to address:** UX/copy phase.
+**Phase to address:**
+Source phase (guard + empty handling) and rendering phase (length validation before slicing). Multi-component correctness verified in the same phase that closed INCHI-06.
 
 ---
 
-### Pitfall 6: Privacy — over-capturing context or hiding that the issue is PUBLIC
+### Pitfall 5: Recomputing the key adds WASM cost / blocks the existing InChI on every keystroke
 
-**What goes wrong:** Auto-including more than what's on screen (verbose UA with OS build, screen resolution, locale; or anything from localStorage/clipboard) leaks data the user didn't consent to publish. GitHub issues are world-readable, so captured data becomes permanently public and indexed.
+**What goes wrong:**
+Adding `getInChIKey()` as a second sequential `await` after `getInchi(true)` in `handleChange` roughly doubles WASM round-trips per edit and can make the InChI strip feel laggier under rapid drawing, even though both are debounced at 150 ms.
 
-**Why it happens:** "More context = better bug reports" instinct; dumping full `navigator.userAgent` + every `navigator` field; not registering the destination is a public repo.
+**Why it happens:**
+Sequential `await getInchi(); await getInChIKey();` serializes two independent worker calls. Each is a postMessage round-trip to the WASM worker (`ketcher-standalone/dist/main.js`).
 
-**How to avoid:** Capture **only** what PROJECT.md scopes — current InChI, SMILES + preset name, a **minimal** browser/version string, app version/commit. No storage/cookies/IP/geolocation reads. Show a **preview of the exact body** before submit, and state plainly "This creates a PUBLIC GitHub issue visible to anyone." Trim UA to browser family + major version.
+**How to avoid:**
+Fire both concurrently with `Promise.all([ketcher.getInchi(true), ketcher.getInChIKey()])` inside the single debounce tick, so the added latency is `max(a,b)` not `a+b`. Keep the 150 ms debounce; do not lower it. The atom-mapping/`render.ctab` work already in `handleChange` runs after, unchanged. At this app's scale (one molecule, interactive single user) this is the only performance concern that matters — no need to cache or memoize keys.
 
-**Warning signs:** UA includes data beyond browser/version; no "public" warning; any `localStorage`/`geolocation` read in the feedback path.
+**Warning signs:**
+Visible input lag while dragging; profiler showing two serial worker messages per debounce tick; a `getInChIKey()` call placed outside the debounce (e.g. on every `change` synchronously).
 
-**Phase to address:** Context-capture + UX/copy phases.
-
----
-
-### Pitfall 7: Empty / invalid canvas state produces a broken or misleading body
-
-**What goes wrong:** User clicks "Send feedback" before drawing (or with an invalid structure where InChI is empty/errored). The body interpolates `undefined`/empty into "Current InChI:" → a confusing empty fenced block, or the code throws on null InChI and the button appears dead.
-
-**Why it happens:** Happy-path assumption that an InChI always exists. The app explicitly has an empty/placeholder state (PLSH-01), so feedback must mirror it.
-
-**How to avoid:** Treat each context field as optional — omit the InChI/SMILES block (or render `_(no structure drawn)_`) when empty rather than emitting an empty fence. Guard against `null`/`undefined`; never call string methods on a possibly-null InChI. Feedback must be submittable with zero structure context.
-
-**Warning signs:** Empty code fences in issues; button throws on empty canvas; "Current InChI:" followed by nothing.
-
-**Phase to address:** Body-templating phase. Test the empty-state body shape.
+**Phase to address:**
+Source/wiring phase — concurrent fetch is the default implementation, not an optimization to retrofit.
 
 ---
 
-### Pitfall 8: Hardcoded repo slug / base-path mistakes
+### Pitfall 6: Remounting the Ketcher canvas or breaking the existing InChI strip
 
-**What goes wrong:** Two traps:
-1. **GitHub target slug** typo'd — owner (`cmbeilstein` vs `cm-beilstein`), wrong repo, or a fork — sends feedback into the void / wrong repo.
-2. **App base path** confusion: the app is served under Vite `base: '/explain-that-inchi/'`. Naively building relative URLs or deriving things from `window.location` can pick up the base path. The GitHub URL is absolute so it's mostly immune, but app-version/commit injection and any internal links are not.
+**What goes wrong:**
+Restructuring the layout to fit the new key strip causes `KetcherPanel` to remount, which re-initializes the WASM worker (multi-second reload, lost canvas state). Or store-shape changes ripple into selectors that `InchiSection` depends on, breaking the working InChI strip / highlight wiring.
 
-**Why it happens:** Copy-paste of owner/repo; assuming root-served app; mixing the absolute GitHub URL with the Pages base path.
+**Why it happens:**
+The project has an explicit, hard-won invariant: the `StandaloneStructServiceProvider` is module-level and `KetcherPanel` must never remount (D-13, and the v1.2 feedback feature was deliberately built as a leaf sibling for exactly this reason — "Feedback is ephemeral UI state, dialog is a leaf sibling… canvas never remounts"). A new InChIKey section sibling to `InchiSection` is safe; restructuring the `App` tree around the canvas is not.
 
-**How to avoid:** Define the GitHub target as one constant (`const FEEDBACK_REPO = 'cm-beilstein/explain-that-inchi'`) used everywhere. Inject app version/commit via Vite `import.meta.env`/`define` at build time (e.g. `__APP_VERSION__`, `__GIT_SHA__`), not by parsing the page URL. Keep `https://github.com/${FEEDBACK_REPO}/issues/new` fully qualified; verify `base` is never prepended to a feedback link.
+**How to avoid:**
+Add the InChIKey display as a **new sibling component** (e.g. `InchiKeySection`) placed after `InchiSection` in `App.tsx`, reading from the store via its own selectors — mirroring how `InchiSection` and `FeedbackDialog` are independent leaves. Do not touch `KetcherPanel`, the `structServiceProvider`, or the `onInit` path. When extending the store, **add** fields (`inchiKey`) rather than changing existing field shapes/actions; keep `setInchiData`'s existing signature working (add an optional param or a sibling `setInchiKey` written in the same atomic tick).
 
-**Warning signs:** 404 on GitHub; link resolving to `cm-beilstein.github.io/explain-that-inchi/github.com/...`; wrong owner casing.
+**Warning signs:**
+The canvas flashes/reloads when the new section appears; WASM "initializing" state re-triggers after the key feature lands; existing `InchiSection.test.tsx` starts failing.
 
-**Phase to address:** URL-construction phase + build-config (version injection).
-
----
-
-### Pitfall 9: Labels query param silently ignored (permission gate)
-
-**What goes wrong:** `&labels=bug` only applies if the **submitting user has triage/write permission** on the repo. External contributors (the whole audience) don't, so the label is silently dropped — the category→label mapping doesn't work for the people who'll actually use it.
-
-**Why it happens:** Tested by the maintainer (who has write access), so labels appear and seem to work; fails for everyone else.
-
-**How to avoid:** Don't rely on `labels=` for external categorization. Encode the category in the **title prefix** (`[Bug] …`, `[Suggestion] …`, `[Unclear explanation] …`) — always survives — and/or use a GitHub **issue template** (`template=` param). Maintainers can auto-label via a workflow. If you also send `labels=`, treat it as best-effort.
-
-**Warning signs:** Issues from non-maintainers arrive unlabeled despite the param.
-
-**Phase to address:** Category-mapping phase.
+**Phase to address:**
+Rendering/layout phase — establish the leaf-sibling structure first; the existing canvas-never-remounts tests are the regression gate.
 
 ---
 
-### Pitfall 10: GitHub mobile-app deeplink steals the prefill
+### Pitfall 7: Mislabeling segment boundaries / meaning of the flag/version/protonation chars
 
-**What goes wrong:** On a device with the GitHub mobile app installed, clicking a `github.com/.../issues/new?...` link can deep-link into the app, which historically **ignores the prefill query params** (community discussion #113726) — the user gets a blank form, losing all auto-context.
+**What goes wrong:**
+The explanation cards state wrong lengths or wrong meanings: e.g. calling the second block "stereochemistry only" (it also carries isotope + protonation-derived info), calling `V` the protonation char, or slicing 13/8/3 instead of 14/8/3 — producing both wrong color spans and wrong prose.
 
-**Why it happens:** OS-level universal-link interception; out of the web app's control.
+**Why it happens:**
+The 27-char layout is dense and the trailing `FVP` triplet is easy to mis-attribute. Training-data summaries of InChIKey are often vague about which block holds what.
 
-**How to avoid:** Largely unavoidable from client code; mitigate with a "copy feedback to clipboard" fallback so mobile-app users can paste. PROJECT.md notes Ketcher's canvas is poor on touch (mobile is secondary), so document this as a known limitation rather than over-engineering.
+**How to avoid:**
+Use the verified layout (InChI Trust FAQ): chars **0–13** = 14-char skeleton hash (connectivity / Mobile-H layer); char **14** = hyphen; chars **15–22** = 8-char hash of the remaining layers (stereo + isotope + protonation-state contributions); char **23** = hyphen; char **24** = **F** flag (`S` standard / `N` non-standard); char **25** = **V** version (`A` = InChI v1); char **26** = **P** protonation indicator (`N` neutral net charge, other letters for ±1, ±2…). Encode these offsets as named constants with a unit test pinning each segment's slice and label. Keep prose factual and source-cited.
 
-**Warning signs:** Mobile users reporting blank issue forms.
+**Warning signs:**
+Color spans that don't align with the hyphens; a card calling char 25 "protonation"; segment lengths that don't sum to 27.
 
-**Phase to address:** UX/copy phase.
+**Phase to address:**
+Content/explanation phase — segment offsets and copy authored against the verified spec, with a slice-boundary unit test.
 
 ---
+
+### Pitfall 8: Implying the key is reversible, atom-mappable, or collision-proof
+
+**What goes wrong:**
+The explanation says or implies the InChIKey can be decoded back to a structure, or — fatal for this app's mental model — that hovering a key segment highlights atoms (as InChI layers do). Or it overstates uniqueness ("guaranteed unique, no two molecules share a key").
+
+**Why it happens:**
+By analogy with the existing InChI strip, where every layer hover highlights canvas atoms (INCHI-03), users/devs expect the same of the key. But the key is a **one-way hash** — segments correspond to *hashed* layers, not to atoms.
+
+**How to avoid:**
+Explicitly design the key segments to **not** wire into `useKetcherHighlights`/`setHover` — they have no `auxMap` and must not call the highlight store actions. The hover cards explain meaning only. Copy must state: one-way hash, **not reversible** (recovery needs a lookup database), **no atom mapping**, and collisions are *highly improbable but not impossible* (FAQ confirms real-world collisions exist, especially for stereochemically complex molecules). This is called out as a first-class design constraint in PROJECT.md milestone notes ("its segments do NOT highlight canvas atoms").
+
+**Warning signs:**
+Key segment `onMouseEnter` calling `setHover`/`setSubHover`; canvas atoms lighting up on key hover; copy using the words "unique" or "decode" without qualification.
+
+**Phase to address:**
+Content/explanation phase (prose) and rendering phase (ensure no highlight wiring on key segments).
+
+---
+
+### Pitfall 9: Copy-button confirmation timing under React StrictMode
+
+**What goes wrong:**
+The new "copy key" button's "Copied!" state either never resets, or `setCopied(false)` fires on an unmounted component. Under React 18 StrictMode dev double-invoke (mount → cleanup → mount), a naive `mountedRef` left `false` after the first cleanup blocks the reset — the exact v1.1 bug (WR-02) already fixed in `InchiSection`.
+
+**Why it happens:**
+Copy-pasting the existing `handleCopy`/`setTimeout` pattern without copying the StrictMode-safe `mountedRef` reset-on-mount logic. The fix in `InchiSection.tsx:28-32` sets `mountedRef.current = true` **on every mount** (not just once) precisely to survive the double-invoke.
+
+**How to avoid:**
+Reuse the exact proven pattern from `InchiSection`: a `mountedRef` set to `true` in a `useEffect` mount callback (so StrictMode's remount re-arms it), cleanup sets it `false`, and the 3 s `setTimeout` reset checks `if (mountedRef.current)` before `setCopied(false)`. Better: extract the copy-with-confirmation into a shared hook (`useCopyButton`) so both the InChI and InChIKey buttons share one tested implementation. Copy the **verbatim** key string (Pitfall 1).
+
+**Warning signs:**
+"Copied!" never disappears in dev; a React "setState on unmounted component" warning; the confirmation getting stuck after toggling the section.
+
+**Phase to address:**
+Rendering phase — ideally via a shared `useCopyButton` hook authored with a StrictMode-double-mount test.
+
+---
+
+### Pitfall 10: Preset-load stale timing (mirroring the prior preset-highlight bug)
+
+**What goes wrong:**
+After clicking a preset, the key briefly shows the previous molecule's key, or the key fails to update because the `change` event fired during `setMolecule()` was treated as a free-draw and bailed. This is the same class as the prior preset-highlight timing bug (`isSettingMoleculeRef`).
+
+**Why it happens:**
+`setMolecule()` triggers a `change` event that `handleChange` must process to fetch InChI **and** the key. The `isSettingMoleculeRef` guard exists to prevent the preset selection from being cleared by that event — but the key fetch must still run on that tick.
+
+**How to avoid:**
+Because the key fetch is added **inside** the same `handleChange` (Pitfall 3), it automatically inherits the correct preset-load behavior — the guard only suppresses `setSelectedMolId(null)`, not the InChI/key fetch. Do **not** add a manual `getInChIKey()` call inside `handleMolSelectLogic` (the doc comment there explicitly warns a manual `getInchi` call would create a race — the same applies to the key). Verify with the preset-load test path that already exists for InChI.
+
+**Warning signs:**
+Key lags one molecule behind after preset clicks; a `getInChIKey()` call added to `handleMolSelectLogic`; flicker of the old key on preset switch.
+
+**Phase to address:**
+Source/wiring phase — verified against the existing preset-load + generation-guard tests.
 
 ## Technical Debt Patterns
 
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| Manual string concat instead of `URLSearchParams` | Fewer lines | Encoding / double-encoding bugs; breaks on `#`/`+`/`/` (P2) | Never |
-| Recompute InChI in the click handler via `await getInchi()` | "Always fresh" | Breaks popup gesture (P4); slow click | Never — read store synchronously |
-| Skip the byte-length budget check | Ships faster | 414s / truncated bodies on real multi-fragment molecules (P1) | Never — most likely real failure |
-| Hardcode repo slug inline in JSX | Quick | Drift/typos; hard to audit (P8) | Only if extracted to one constant |
-| Full `navigator.userAgent` dump | One line | Privacy over-capture (P6) | Acceptable only if trimmed + previewed |
+| Reconstruct key string from parsed segments for display/copy | "Cleaner" render code | Corrupted key shown/copied (repeat of the InChI `.`-drop bug); silent data integrity loss | **Never** — verbatim passthrough is a project invariant |
+| Separate `useEffect`/debounce for the key | Decoupled, easy to reason about in isolation | InChI/key desync + stale-result races; duplicates the generation-guard logic | **Never** — ride the existing `handleChange` |
+| Sequential `await getInchi(); await getInChIKey();` | Trivial to write | Doubles per-edit latency | Acceptable only as a throwaway spike; ship `Promise.all` |
+| New copy button without the StrictMode `mountedRef` reset-on-mount | Fewer lines | Re-introduces the v1.1 WR-02 stuck-confirmation bug in dev | Never — reuse the proven pattern / shared hook |
+| Wire key segments into the highlight store "for consistency" | Visual parity with InChI strip | Implies false reversibility/atom-mapping; misleads chemists | Never — key is a one-way hash |
 
 ## Integration Gotchas
 
 | Integration | Common Mistake | Correct Approach |
 |-------------|----------------|------------------|
-| GitHub new-issue prefill | Relying on `labels=` for external categorization | Title prefix and/or issue template; labels are write-gated (P9) |
-| GitHub new-issue prefill | Assuming any body length works | Respect 8191-byte cap; budget ~7500 encoded (P1) |
-| GitHub Markdown rendering | Treating body as plain text | Fence all auto-context; neutralize `@` (P3) |
-| Browser popup policy | `window.open` after `await` | Synchronous open or `<a target=_blank rel=noopener>` (P4) |
-| GitHub mobile universal links | Expecting prefill on mobile app | Clipboard fallback; document limitation (P10) |
-| Vite `base` path | Relative feedback URL picks up `/explain-that-inchi/` | Fully-qualified absolute `https://github.com/...` (P8) |
+| `ketcher.getInChIKey()` (WASM worker) | Assuming it derives from the displayed InChI string | It's an independent Indigo conversion (`output_format: 'inchi-key'`); call it directly, never hash the InChI in JS |
+| Existing `handleChange` debounce in `App.tsx` | Adding a parallel subscription/timer for the key | Fetch key inside the same debounce tick with `Promise.all`; reuse `generationRef` + empty-canvas guard; commit atomically |
+| Zustand store | Mutating `setInchiData` signature or field shapes | Add an `inchiKey` field + write it in the same atomic action; keep existing selectors/tests green |
+| `App` component tree / `KetcherPanel` | Restructuring layout in a way that remounts the canvas | Add `InchiKeySection` as a leaf sibling after `InchiSection`; never touch `KetcherPanel`/`structServiceProvider` (D-13) |
+| Clipboard copy | Copying a re-joined segment string | Copy the verbatim key from the library; reuse the StrictMode-safe copy pattern |
 
 ## Performance Traps
 
 | Trap | Symptoms | Prevention | When It Breaks |
 |------|----------|------------|----------------|
-| Rebuilding the feedback URL on every keystroke | Jank in the message textarea | Memoize URL build; recompute on submit or debounced | Negligible at this scale; only matters with a long message + reactive `<a href>` |
-
-(Performance is essentially a non-issue — pure client-side string work, no network/runtime scaling. Listed for completeness.)
+| Serial WASM calls per edit | Input lag while dragging atoms | `Promise.all([getInchi(true), getInChIKey()])` in one debounce tick | Noticeable during rapid free-draw even with one user |
+| Key fetch outside the debounce | Worker flooded on every `change` | Key fetch lives inside the 150 ms `setTimeout`, behind the highlight guard | Immediately, on any continuous drag |
 
 ## Security Mistakes
 
 | Mistake | Risk | Prevention |
 |---------|------|------------|
-| Unfenced user text in body | `@`-mention pings real users/teams; markdown injection | Fence context; neutralize `@` (P3) |
-| `window.open` without `noopener` | Opened GitHub tab accesses `window.opener` (reverse tabnabbing) | `rel="noopener noreferrer"` / `noopener` feature (P4) |
-| Capturing more than on-screen state | Publishing PII to a world-readable issue | Capture only scoped fields; show preview (P6) |
-| Public prefilled link enables spam | Junk issues in the repo | Repo-side mitigations (below) — not solvable in app code |
-
-**Spam / abuse mitigation (repo-side, NOT app code):**
-- Add GitHub **issue templates / issue forms** so the prefill targets a structured template.
-- Configure repo **issue interaction limits**; sign-in is inherently required.
-- Use a **label + GitHub Action** to auto-triage/label feedback by title prefix.
-- Document these as maintainer configuration tasks, separate from the code phase.
+| (Low relevance — static, no backend, no user input beyond the molecule) | n/a | The key is a derived hash of in-browser data; no new attack surface. Do not log keys to any external endpoint. |
 
 ## UX Pitfalls
 
 | Pitfall | User Impact | Better Approach |
 |---------|-------------|-----------------|
-| Implying anonymity / no preview | Surprised by sign-in wall + public visibility | "Opens a PUBLIC GitHub issue; free account required"; show body preview (P5, P6) |
-| Dead button on empty canvas | Confusion | Submittable with no structure; omit empty context (P7) |
-| Silent failure when over budget | Lost feedback | Truncate-with-marker + clipboard fallback (P1) |
-| Category that doesn't survive (labels) | Maintainer can't triage | Title-prefix categorization (P9) |
+| Key segments look hoverable-into-canvas like InChI layers | Chemists expect atom highlight, get nothing, assume it's broken | Visually/behaviorally distinguish: explanation-only hover cards; copy states "one-way hash, no atom mapping" |
+| Showing a stale/blank/garbled key on empty or mid-load canvas | Looks buggy; undermines trust in a teaching tool | Validate full 27-char standard format before rendering; reuse the empty-strip placeholder |
+| Implying uniqueness/reversibility | Chemists are the expert audience; overstatement damages credibility | State collisions are improbable-but-real and the key is not decodable without a database |
+| No indication the key covers the whole multi-component assembly | Confusion on salts/mixtures (the app's historical weak spot) | Explanation explicitly notes: one key for the entire drawing, no per-fragment keys |
 
 ## "Looks Done But Isn't" Checklist
 
-- [ ] **URL builder:** Often missing the **byte-length** check — verify with `TextEncoder` on the multi-fragment repro molecule (HANDOFF.md), not just short presets.
-- [ ] **Encoding:** Often double-encodes — verify a round-trip test reconstructs raw InChI containing `+ / ; , ( ) # =`.
-- [ ] **Markdown:** Often unfenced — verify a SMILES `#` doesn't become a heading and `@x` doesn't ping.
-- [ ] **Popup:** Often blocked in Safari/Firefox — verify the open is synchronous / native anchor, no `await` before it.
-- [ ] **Empty state:** Often throws on null InChI — verify feedback works before any molecule is drawn.
-- [ ] **Account expectation:** Often missing the "public / account required" note — verify copy is present pre-click.
-- [ ] **Repo slug:** Often typo'd — verify exact `cm-beilstein/explain-that-inchi`, absolute URL, no base-path prefix.
-- [ ] **Labels:** Often relied upon — verify category still works as a title prefix for a logged-in non-collaborator.
+- [ ] **Verbatim passthrough:** displayed text AND copy payload both equal the raw `getInChIKey()` output — verify with a `displayed === raw` test, not eyeballing.
+- [ ] **Sync:** key and InChI always describe the same molecule even under rapid edits — verify stale-result generation guard covers the key.
+- [ ] **Empty/clear:** clearing the canvas resets the key (no lingering key) — verify it rides the existing empty guard.
+- [ ] **Multi-component:** a salt/mixture preset shows one valid standard key and the explanation says so — verify against an INCHI-06-style fixture.
+- [ ] **No canvas remount:** the canvas does not reload when the key section mounts — verify WASM init does not re-trigger.
+- [ ] **Copy confirmation:** "Copied!" resets after 3 s and survives StrictMode double-mount — verify in dev.
+- [ ] **No highlight wiring:** hovering a key segment does NOT light up canvas atoms — verify the segments don't call `setHover`/`setSubHover`.
+- [ ] **Segment boundaries:** color spans align exactly with the two hyphens (14/8/3) — verify slice constants with a test.
+- [ ] **Flag/version chars:** for preset molecules the flag is `S` and version is `A` — verify with a fixture assertion.
 
 ## Recovery Strategies
 
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| Over-budget URL shipped (414s) | LOW | Add `TextEncoder` budget check + truncation marker; redeploy (static, fast) |
-| Double-encoding shipped | LOW | Collapse to single `URLSearchParams`; redeploy |
-| `@`-ping incident | LOW | Patch `@` neutralization; sent pings can't be unsent — fix forward |
-| Wrong repo slug | LOW | Fix constant; redeploy; manually migrate any misfiled issues |
-| Spam flood | MEDIUM | Add issue template + interaction limits + auto-label workflow (repo settings) |
+| Reconstructed/corrupted key shipped | MEDIUM | Replace render+copy source with raw string; add `displayed === raw` regression test (same fix shape as the InChI passthrough fix) |
+| InChI/key desync or stale key | MEDIUM | Move key fetch into `handleChange`; extend `generationRef` post-await check to the key; commit atomically |
+| Canvas remount introduced | HIGH | Revert layout change; reinstate `InchiKeySection` as a leaf sibling; confirm `structServiceProvider` stays module-level |
+| Copy confirmation stuck (StrictMode) | LOW | Port the `mountedRef` reset-on-mount pattern from `InchiSection`; ideally extract `useCopyButton` |
+| False reversibility/atom-map UX | LOW | Remove highlight wiring from key segments; correct explanation prose |
 
 ## Pitfall-to-Phase Mapping
 
+Suggested phase shape: **(A) Source & wiring** → **(B) Render & layout** → **(C) Content & explanation**. Mapping below uses these labels.
+
 | Pitfall | Prevention Phase | Verification |
 |---------|------------------|--------------|
-| 1. URL byte-length cap | URL-construction / context-capture | `TextEncoder` budget test on multi-fragment repro; truncation marker present |
-| 2. Encoding / double-encoding | URL-construction | Round-trip test with all special chars |
-| 3. Markdown injection / @-ping | Body-templating | Fenced-context + `@`-neutralization tests |
-| 4. Popup blocking | Entry-point/UI | Synchronous-open / anchor; cross-browser manual click |
-| 5. Account expectation | UX/copy | Copy review; "account required" note present |
-| 6. Privacy over-capture | Context-capture + UX/copy | Audit captured fields; body preview shown |
-| 7. Empty/invalid state | Body-templating | Empty-canvas body-shape test |
-| 8. Repo slug / base path | URL-construction + build-config | Constant audit; absolute-URL assertion; env version injection |
-| 9. Labels permission gate | Category-mapping | Title-prefix categorization verified for non-collaborator |
-| 10. Mobile deeplink | UX/copy | Documented limitation + clipboard fallback |
-
-## Testing Pitfalls (project-specific)
-
-- **Asserting on raw encoded URLs is brittle.** Don't string-match `%2F`/`%2B` — parse with `new URL(built)` and assert `url.searchParams.get('body')`/`get('title')` against the **decoded** expected value. Survives any valid encoding scheme and catches double-encoding.
-- **`window.open` in jsdom:** jsdom doesn't implement `window.open` navigation (returns `null`, logs "Not implemented"). Mock it (`vi.spyOn(window, 'open').mockReturnValue(null)`) and assert called once with the expected URL + `'noopener'`. With the `<a>` approach, assert on rendered `href`/`rel`/`target` — cleaner, no mock.
-- **Byte-length tests** must use `new TextEncoder().encode(url).length`, not `url.length`.
-- **Reuse the recurring repro molecule** from `src/lib/__tests__/remapAuxToPoolIds.realRepro.test.ts` / HANDOFF.md as the large-input fixture so the budget path is exercised against a realistic worst case.
+| 1 — Reconstructing key from segments | A (Source) | `displayed === raw` and `copyPayload === raw` unit tests |
+| 2 — Derive-from-InChI / standard mismatch | A (Source) | Flag char `S`, version `A` asserted on presets; key sourced only from `getInChIKey()` |
+| 3 — Key not in sync (race) | A (Source) | Rapid-edit stale-result test reusing the generation guard |
+| 4 — Wrong/empty key on empty/disconnected/multi-component | A (Source) + B (Render) | Empty-canvas reset test; 27-char regex gate before slicing; multi-component fixture |
+| 5 — WASM recompute cost | A (Source) | `Promise.all` concurrent fetch; no lag in manual drag test |
+| 6 — Canvas remount / break InChI strip | B (Render/layout) | Canvas-never-remounts regression; existing `InchiSection.test.tsx` stays green |
+| 7 — Mislabeled segment boundaries/meaning | C (Content) | Slice-boundary + label unit test against verified 14/8/3 layout |
+| 8 — Implying reversible/atom-map/collision-proof | C (Content) + B (Render) | Key segments verified to NOT call highlight actions; prose review against FAQ facts |
+| 9 — Copy confirmation under StrictMode | B (Render) | StrictMode double-mount test; shared `useCopyButton` hook |
+| 10 — Preset-load stale timing | A (Source) | Preset-load path test; no manual key fetch in `handleMolSelectLogic` |
 
 ## Sources
 
-- GitHub server-side URL length limit (8191 bytes → 414): https://github.com/github/docs/issues/5136
-- Passing long body to issues/new (length discussion): https://github.com/orgs/community/discussions/22946
-- GitHub mobile app ignores prefill query params: https://github.com/orgs/community/discussions/113726
-- Creating an issue with query parameters (title/body/labels/template, permission gates): https://docs.github.com/en/issues/tracking-your-work-with-issues/creating-an-issue
-- new-github-issue-url (reference client-side prefill impl): https://github.com/sindresorhus/new-github-issue-url
-- HTTP 414 URI Too Long (MDN): https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/414
-- Project context: `.planning/PROJECT.md`, `.planning/HANDOFF.md` (multi-fragment repro molecule), `CLAUDE.md` (Vite base `/explain-that-inchi/`, static GitHub Pages, no backend)
+- ketcher-core API surface — `node_modules/ketcher-core/dist/application/ketcher.d.ts:51-52` (`getInchi`, `getInChIKey`) and `dist/index.js:58366` / `:59610` (`getInChIKey(struct)` → `structService`); `output_format: ChemicalMimeType.InChIKey`. HIGH.
+- ketcher-standalone worker — `node_modules/ketcher-standalone/dist/main.js:38,55,68,761` (`Command.GetInChIKey`, `WorkerEvent.GetInChIKey`, `SupportedFormat.InChIKey`, async `getInChIKey`). Confirms key is a separate WASM command, not derived from InChI. HIGH.
+- InChIKey structure / reversibility / collisions — InChI Trust Technical FAQ (https://www.inchi-trust.org/technical-faq/): 27-char `AAAAAAAAAAAAAA-BBBBBBBB-FVP`, one-way hash, real-world collisions. HIGH.
+- Existing implementation patterns — `src/App.tsx` (debounce + `generationRef` D-05, `isHighlightingRef`, `isSettingMoleculeRef`, module-level `structServiceProvider` D-13), `src/components/InchiSection.tsx:28-44` (StrictMode `mountedRef` copy pattern WR-02, verbatim slice rendering), `src/store.ts` (store shape), `src/lib/handleMolSelectLogic.ts` (preset-load guard, "no manual getInchi" race warning). HIGH.
+- Project history — `.planning/PROJECT.md` Key Decisions (D-13 canvas-never-remount, feedback-as-leaf-sibling, INCHI-06 multi-fragment correctness, getInChIKey open question in v1.3 milestone notes); memory `feedback_inchi_passthrough.md` (no-reconstruct rule). HIGH.
 
 ---
-*Pitfalls research for: v1.2 client-side prefilled-GitHub-issue feedback*
-*Researched: 2026-06-17*
+*Pitfalls research for: adding live InChIKey display to the InChI explainer*
+*Researched: 2026-06-18*

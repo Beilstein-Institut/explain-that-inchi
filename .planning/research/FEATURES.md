@@ -1,249 +1,233 @@
-# Feature Research — v1.2 In-app Feedback (prefilled GitHub issue)
+# Feature Research — v1.3 InChIKey Display & Explanation
 
-**Domain:** In-app "Send feedback" feature for a static/client-side educational web tool (opens a prefilled GitHub issue; no backend)
-**Researched:** 2026-06-17
-**Confidence:** HIGH (mechanism is a well-trodden pattern; GitHub URL params and modal a11y are documented; only the precise byte-budget cutover for long InChI/SMILES is project-specific and flagged MEDIUM)
+**Domain:** Educational chemistry web tool — adding a color-coded, hoverable, explained InChIKey strip below the existing InChI strip in "Explain that InChI"
+**Researched:** 2026-06-18
+**Confidence:** HIGH (InChIKey segment structure cross-verified across the IUPAC InChI paper, Wikipedia, and the InChI Trust Technical FAQ)
 
-> Note: `.planning/research/FEATURES.md` holds the v1.0 milestone feature research and was intentionally NOT overwritten.
-> This file is the v1.2-scoped feature research.
+> Supersedes the v1.2 feedback research previously in this file (preserved in the v1.2 milestone archive). This file is scoped to the v1.3 InChIKey feature.
 
-## Scope note
+---
 
-This research covers ONLY the v1.2 feedback feature. The mechanism is already decided: a "Send feedback" control opens
-`github.com/cm-beilstein/explain-that-inchi/issues/new` prefilled with title/body/labels, client-side only, no backend.
-The open design questions are: entry-point UX, modal-first vs direct deep-link, fields/categories, privacy/transparency,
-and accessibility. Recommendations below resolve each.
+## Part 1 — The InChIKey Structure (Authoritative Reference)
 
-## Headline recommendation
+This is the citable, segment-by-segment ground truth the explanation-content authors must encode. **All character counts are confirmed across three authoritative sources.**
 
-**Modal-first, not direct deep-link.** A small "Send feedback" link in the header/footer opens a lightweight in-app
-modal that collects (1) a category, (2) a short free-text message, and (3) shows the auto-captured context for review,
-then builds the prefilled GitHub URL and opens it in a new tab on submit. Rationale below in *Differentiators* and
-*Anti-Features*. The native HTML `<dialog>` element gives focus-trap, Escape-to-close, and backdrop inertness almost for
-free, so "modal" here is low-cost, not heavyweight.
+### Canonical format
 
-## App-state dependencies (for downstream requirements / executor)
+```
+AAAAAAAAAAAAAA - BBBBBBBB F V - P
+└────14─────┘  ╵ └──8──┘ │ │ ╵ └1┘
+  block 1     hyphen  block2 │ │ hyphen  protonation
+                            flag version
+```
 
-The feedback feature must read live app state. What exists today and how to get each piece:
+Worked example — **L-alanine: `QNAYBMKLOCPYGJ-REOHCLBHSA-N`**
 
-| Context to capture | Source | Availability | Notes |
-|--------------------|--------|--------------|-------|
-| Current InChI string | `useInchiStore.getState().inchi` (Zustand, `src/store.ts`) | Present today | Empty string `''` when canvas empty / no valid structure. Already the verbatim Ketcher output per MEMORY (never reconstruct). |
-| Layers / parse state | `useInchiStore` `layers` | Present today | Not needed in the issue body, but indicates whether InChI is valid. |
-| SMILES of current molecule | `ketcher.getSmiles()` (async, Ketcher API) — **not in the store today** | NEW read needed | The store has no SMILES field. Either call `ketcher.getSmiles()` at submit time, or (cheaper) capture the preset SMILES when a preset is active. Live-drawn molecules have no SMILES in the store → must call the Ketcher API. |
-| Preset name | `selectedMolId` — **component-local state in `App.tsx`, not in the store** | NEW plumbing needed | Maps to `MOLECULES` (`src/data/molecules.ts`) for `name`/`smiles`. `null` when the user free-draws or edits a preset. Either lift `selectedMolId` into the store, or pass it down to the feedback component as a prop. |
-| App version / commit | Build-time env (e.g. Vite `import.meta.env` / `define`) — **does not exist today** | NEW build wiring | No app version string is currently surfaced. Inject `__APP_VERSION__`/commit SHA via Vite `define` at build time. Header hardcodes "InChI v1.06" but that is the InChI *standard* version, not the app version. |
-| Browser / user-agent | `navigator.userAgent` | Free | No new dependency. Consider a trimmed summary rather than the raw UA for readability. |
+| Segment | Chars | This example | Meaning |
+|---------|-------|--------------|---------|
+| First block | 14 | `QNAYBMKLOCPYGJ` | skeleton / connectivity hash |
+| (hyphen) | 1 | `-` | separator |
+| Second block | 8 | `REOHCLBH` | hash of remaining ("minor") layers: stereo, isotope, etc. |
+| Flag char | 1 | `S` | standard (`S`) vs non-standard (`N`) InChI |
+| Version char | 1 | `A` | InChI algorithm version (`A` = version 1) |
+| (hyphen) | 1 | `-` | separator |
+| Protonation char | 1 | `N` | net proton change (`N` = neutral) |
 
-**Key plumbing finding:** Of the six context fields, only `inchi` and `userAgent` are trivially available. `SMILES`,
-`preset name`, and `app version` each require a small piece of new wiring (a Ketcher API call, lifting/threading
-`selectedMolId`, and a Vite build-time define respectively). This is the main hidden cost of the feature and should be
-an explicit requirement, not assumed free.
+**Total: 14 + 1 + 8 + 1 + 1 + 1 + 1 = 27 characters, always.** Letters only (A–Z), no digits, no lowercase, fully ASCII — deliberately chosen to be URL- and database-search-friendly.
 
-## Feature Landscape
+> **CRITICAL FORMATTING NOTE for content authors:** The flag (`F`) and version (`V`) characters are **appended directly onto the end of the 8-char second block with NO internal hyphen** — they are positions 24 and 25 of the string. The full string has exactly **two hyphens** (after char 14, and after char 25). Do NOT render `...-S-A-N`; it is `...REOHCLBHSA-N`. The visible middle segment between the two hyphens is therefore **10 characters**: 8 hash chars + `S`/`N` flag + `A` version. (Confidence: HIGH — verified against the L-alanine reference example.)
+
+### Segment 1 — First block (14 chars): skeleton / connectivity hash
+
+- A **truncated SHA-256 (SHA-2, 256-bit) hash**, base-26 encoded (A–Z) for readability. (HIGH)
+- Encodes the **molecular skeleton / connectivity** — the InChI main layer: chemical formula, atom connections (`/c`), the hydrogen layer (`/h`), and the charge `/q` sublayer. It captures the constitution of the molecule **without** stereochemistry or isotope detail. (HIGH)
+- Teach this consequence: **two molecules sharing the first 14 chars are constitutional matches** (same skeleton) — which is why first-block / partial-key search is a common database technique. Stereoisomers and isotopologues of one compound share block 1 but differ in block 2.
+- No natural sub-token boundary inside block 1 — it is one opaque hash. Color as a single unit.
+
+### Segment 2 — Second block (8 chars): remaining-layers hash
+
+- Also a **truncated SHA-256 hash**, base-26 encoded. (HIGH)
+- Encodes the **"minor" layers**: stereochemistry, isotopic substitution, and (for non-standard InChI) the exact position of mobile/tautomeric hydrogens and metal-ligation data. (HIGH)
+- Teach this: a molecule with **no stereo/isotope info still has a non-empty second block** — the hash of "no minor layers" is itself a fixed string; it is never blank. Different stereoisomers differ here while sharing block 1.
+- No natural sub-token boundary inside the 8 hash chars. Color as a single unit.
+
+### Segment 3 — Flag character (1 char, position 24): standard vs non-standard
+
+- `S` = **Standard InChIKey** (generated from a Standard InChI — the default, overwhelmingly common case). (HIGH)
+- `N` = **Non-standard InChIKey** (generated from a non-default InChI). (HIGH)
+- This tool uses Ketcher/WASM standard InChI, so this char will essentially always be `S`. The card should still teach what `N` means.
+
+### Segment 4 — Version character (1 char, position 25): InChI algorithm version
+
+- `A` = **version 1** of the InChI algorithm (the only version in production use). `B` is reserved for a future version 2. (HIGH)
+- Always `A` in practice today. Teach as "which generation of the InChI software produced this key."
+
+> The flag (`S`/`N`) and version (`A`) are two distinct 1-char fields sitting adjacent with no separator. Combining them into one "version/flag" hover region is the recommended simplification (see Part 3).
+
+### Segment 5 — Protonation character (1 char, position 27): net protonation
+
+- Encodes the **net protonation / deprotonation of the core parent structure**, corresponding to the InChI `/p` charge sublayer. Protonation is deliberately **NOT hashed** — it is carried as this separate trailing flag so protonation variants of one compound differ only in the last character. (HIGH)
+- Full mapping (HIGH — confirmed in the IUPAC paper + InChI Trust FAQ):
+
+  | Char | Net protons | | Char | Net protons |
+  |------|-------------|-|------|-------------|
+  | `N`  | 0 (neutral) | | | |
+  | `O`  | +1 | | `M` | −1 |
+  | `P`  | +2 | | `L` | −2 |
+  | `Q`  | +3 | | `K` | −3 |
+  | `R`  | +4 | | `J` | −4 |
+  | ...  | up the alphabet adds protons | | ... | down the alphabet removes protons |
+
+  Mnemonic: `N` is the neutral center; walk **up** the alphabet (`O, P, Q…`) to **add** protons, **down** (`M, L, K…`) to **remove** them.
+- Edge case to footnote (not foreground): if the net change exceeds ±12 protons the flag saturates to `A` and can no longer distinguish further. Extremely rare. (MEDIUM)
+
+### Properties to teach (already scoped IN — confirmed correct)
+
+- **Fixed 27-character length** regardless of molecule size — a 6-atom molecule and a 600-atom protein both yield a 27-char key. This is the headline "why it's useful" point. (HIGH)
+- **Derived hash, web/DB-search friendly:** letters-only, fixed length, no problematic characters → ideal as a Google search token, a database key, or a URL fragment. This is the *primary real-world use* of an InChIKey. (HIGH)
+- **One-way / not reversible:** being a truncated cryptographic hash, **the InChI (and thus the molecule) cannot be reconstructed from the InChIKey.** A structure is only recoverable via a resolver/lookup service that already has the key→structure mapping indexed (PubChem, the NCI/CADD resolver). (HIGH)
+- **No atom mapping:** unlike the InChI layers in this tool, InChIKey segments are hashes — **they do NOT map to specific atoms/bonds.** The explanation must say this explicitly so users don't expect canvas highlighting on hover. This is the central UX contrast with the InChI strip (see Dependencies). (HIGH)
+- **Collision caveat:** collisions are *theoretically* possible (it is a lossy hash) but vanishingly rare. Citable framings: ~1 duplication per 75 databases of 1 billion unique structures each (Wikipedia); resistance on the order of ~2.2×10¹⁵ structures; an experimental study of ~77 million real+generated structures found effectively no real-world collisions (a couple of contrived/computer-generated stereoisomer edge cases are documented). **Teaching framing: the InChIKey is for lookup and indexing, not a cryptographic proof of identity — always confirm a hit against the full InChI.** (HIGH)
+
+---
+
+## Part 2 — Feature Landscape
 
 ### Table Stakes (Users Expect These)
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| A discoverable "Send feedback" entry point | Users can't report what they can't find; a polished tool is expected to have an obvious channel | LOW | Header or footer link. A header/footer link is table stakes; a floating widget is not. |
-| Prefilled issue **title** and **body** | The whole value of the feature; raw `issues/new` with empty fields is no better than a plain link | LOW | GitHub supports `?title=`, `?body=`, `?labels=` query params (all `encodeURIComponent`'d). Confirmed via GitHub docs + sindresorhus/new-github-issue-url. |
-| Auto-captured context in the body (InChI, molecule, env) | The decided core value: reporters shouldn't hand-copy the InChI string | MEDIUM | See app-state dependency table — this is where the real work is. |
-| Opens in a **new tab** (`target="_blank"`, `rel="noopener"`) | Don't destroy the user's in-progress drawing by navigating away | LOW | Critical: navigating the same tab loses canvas state (no persistence in v1). |
-| Graceful empty-canvas behavior | Tool starts empty; "no InChI yet" must not produce a broken/garbage issue | LOW | When `inchi === ''`, omit the InChI/molecule block or label it "(no molecule drawn)". Bug reports unrelated to a molecule are valid. |
-| Clear statement that it opens a **public** GitHub issue | Ethical baseline; users must not be surprised that their text becomes world-readable | LOW | One line of copy in the modal. Table stakes, not a differentiator — surprising users with publicity is a trust failure. |
-| On-brand styling (oklch tokens, IBM Plex type) | Project fidelity constraint is "high"; a default/unstyled widget would visibly clash | LOW-MEDIUM | Reuse existing CSS-variable token system and card styling from explanation/legend cards. |
+| InChIKey displayed live below the InChI strip | The milestone's whole point; mirrors the existing InChI display | LOW | Computed from same WASM source as the InChI (open question: ketcher API to obtain the key) |
+| Correct 27-char segmentation rendered | Educational accuracy is the product; wrong counts = broken tool | LOW | Use the exact boundaries in Part 1; remember only TWO hyphens |
+| Per-segment color-coding | The InChI strip sets this expectation; visual parity required | LOW | Reuse the oklch token system; tokens per Part 3 |
+| Per-segment hover explanation card | Core value ("every chunk hoverable, explained") | MEDIUM | Reuse the existing left explanation-card component + reading-code pattern |
+| Copy-to-clipboard button (verbatim key) | InChI already has PLSH-04; asymmetry would feel broken | LOW | Clone PLSH-04; copy the exact key string with visual confirmation |
+| Explain block structure + purpose + one-way-hash + collision caveat | Explicitly scoped in; this IS the educational payload | MEDIUM | Content from Part 1; the work is concise, correct prose |
+| Empty/invalid structure → placeholder, not error | Matches PLSH-01 behavior of the InChI strip | LOW | Reuse the existing placeholder pattern; the key is absent when the canvas is empty |
 
 ### Differentiators (Competitive Advantage)
 
-These are where a small educational tool can feel notably more polished than the typical "link to issues" approach.
-
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| **Modal-first flow** (category + message captured before building URL) | Produces well-structured, triaged issues instead of empty-bodied "New issue" pages; reduces back-and-forth | MEDIUM | Native `<dialog>` keeps cost low. The message + category become the issue title prefix + label. |
-| **Feedback category selector** mapped to labels/title prefix | Auto-triages reports into bug / suggestion / "explanation wrong or confusing" / "wrong highlighting" / general — directly actionable for a solo maintainer | LOW | See category mapping below. Labels via `?labels=`; a title prefix is a robust fallback (labels silently drop if the label doesn't exist or the submitter lacks perms). |
-| **Context preview / review before submit** | User sees exactly what InChI/SMILES/UA will be posted publicly — builds trust, prevents accidental disclosure | MEDIUM | A collapsible "What will be included" block showing the rendered context. Strong privacy-UX win for a public tool. |
-| **Contextual "report this explanation" affordance** | A small "flag" on a layer/explanation card lets users report the exact layer that's wrong, pre-selecting the "explanation wrong" category and capturing which layer | MEDIUM-HIGH | High product fit (the app's core value is per-layer explanations) but higher cost: needs per-layer hooks into the hover/layer state. Recommend as a v1.x follow-on, not launch. |
-| **Opt-out / edit of captured context** | Lets a privacy-conscious user uncheck "include molecule" before it goes public | LOW-MEDIUM | A single "Include current molecule & environment" checkbox (default on) is sufficient; full per-field editing is over-engineering. |
-| **URL-length guard for long InChI/SMILES** | Prevents a broken/"414 Request-URI Too Long" experience for large molecules (atorvastatin-scale or multi-fragment) | MEDIUM | Real constraint: browser/GitHub URI limits commonly 4–8KB (confirmed via GitHub CLI issue #1575, MDN 414). If the assembled URL exceeds a safe budget (~6–7KB), truncate the InChI in the body with a "(truncated — paste full string below)" note and copy the full InChI to the clipboard. |
+| Explicit "this is a hash → no atoms highlight" teaching moment | Turns the *absence* of canvas highlighting into a lesson, pre-empting confusion | LOW | A short note in the idle/hover card; cheap, high pedagogical value |
+| "First block = same skeleton" insight | Teaches the practical DB-search technique (first-block / partial match) | LOW | One sentence in the block-1 card |
+| Protonation-char live demo via a charged preset | If a preset is charged/protonated, the last char visibly changes — memorable | MEDIUM | Depends on a charged species being among presets; else a static explanation |
+| "Search this key on the web / PubChem" affordance | The killer real-world use is pasting the key into Google/PubChem | LOW–MED | A small outbound link; just an external link, consistent with the no-backend/static ethos |
+| Standard-vs-nonstandard (`S`/`A`) explained even though always `S`/`A` here | Completeness; rewards curious users without cluttering the common path | LOW | Keep inside the flag/version card, not the main strip prose |
 
 ### Anti-Features (Commonly Requested, Often Problematic)
 
 | Feature | Why Requested | Why Problematic | Alternative |
 |---------|---------------|-----------------|-------------|
-| Persistent floating "feedback" bubble (bottom-right widget) | Industry default; "best click rates" | Spammy/SaaS-y for a focused educational tool; covers the Ketcher canvas or legend; visually fights the clean handoff design | A quiet header/footer text link. Floating widgets suit conversion-funnel SaaS, not a one-screen explainer. |
-| Third-party feedback SaaS (Usersnap, Canny, Sentry user-feedback, etc.) | Turnkey, screenshots, analytics | Adds a runtime dependency, external network calls, cookies/PII, and a privacy-policy burden — all contrary to the "no backend, only what's on the page" constraint | The decided GitHub-issue deep-link: zero dependencies, zero data collection by us. |
-| Requiring login / OAuth / GitHub App auth before feedback | "Verify the reporter" | Impossible without a backend; GitHub already requires the submitter to be logged in *on github.com* to file the issue — re-implementing auth client-side is wasted and infeasible | Accept the decided tradeoff: submitting needs a GitHub account; we add nothing. |
-| Collecting email / name / "contact me" field | Lets the maintainer follow up | Becomes PII posted to a **public** issue; GDPR/disclosure risk; the GitHub issue thread already provides a reply channel via the submitter's account | No PII field. If contact is wanted, one *optional* "GitHub @handle (optional, public)" field — but default to none. |
-| Screenshot / canvas-image capture | "A picture of the bug" | Heavy (html2canvas / Ketcher render export), large data that won't fit in a URL, and the InChI+SMILES already fully describe the molecule | Capture InChI + SMILES (exact, compact, reproducible) instead of pixels. |
-| Auto-submitting the issue via GitHub API token | "One click, no GitHub tab" | Requires storing a token client-side (security hole) or a backend (banned by constraints) | Open the prefilled `issues/new` page; the user clicks "Submit" on GitHub. |
-| Rich text / markdown editor for the message | "Nicer formatting" | Over-engineering a 1–3 sentence message box; GitHub renders the body's markdown anyway | A plain `<textarea>`; we wrap the captured context in a markdown code block ourselves. |
-| Rating / NPS / star-survey prompt | "Measure satisfaction" | Off-mission for an explainer tool; nags users; no backend to store responses | Out of scope. |
+| Highlight canvas atoms on InChIKey-segment hover | The InChI strip does it, so symmetry is assumed | **Impossible & misleading** — segments are one-way hashes with no atom correspondence; faking it teaches a falsehood | Explicitly explain *why no highlight*; this is the core hash lesson |
+| Reconstruct / "decode" the molecule from a pasted InChIKey | Looks like the natural inverse feature | One-way hash — impossible locally; would need a resolver backend, violating the no-backend constraint | Link out to an external resolver (PubChem / NCI) as documentation, not a built-in feature |
+| Show the raw SHA-256 hex / base-26 math | "Show your work" appeal | Adds noise, implies the hash is reversible/inspectable, distracts from the lesson | One sentence: "truncated SHA-256, base-26 encoded"; link to the spec for the curious |
+| InChIKey-based substructure/database search in-app | Feels like a natural companion | Out of scope per PROJECT.md; shifts product identity, needs data/backend | External "search the web for this key" link only |
+| Editable / paste-in InChIKey field | Users may want to look up an arbitrary key | Cannot derive a structure from it (one-way); produces nothing locally | Keep input via the Ketcher canvas only; output-only key display |
+| Animating/decomposing the hash | Visual flair | Misrepresents hashing as a stepwise reversible transform | Static color-coded segments with explanations |
 
-## Entry-point analysis (question 1)
+---
 
-| Pattern | Verdict | Rationale |
-|---------|---------|-----------|
-| Header link ("Send feedback" near the title meta) | **Recommended — table stakes** | Discoverable, on-brand, doesn't obscure the canvas. `Header` already has a `.meta` block (`src/components/Header.tsx`) with an external link — a natural home. |
-| Footer link | Acceptable alternative / additional | Conventional for "report an issue / source on GitHub"; lower discoverability than header. Pairing footer "View source / report issue" with the header control is fine. |
-| Persistent floating button | **Not recommended** | Visual noise that risks covering the single-screen UI. Anti-feature above. |
-| Contextual "report this layer" affordance | **Differentiator, defer to v1.x** | Best product fit but highest cost; not launch-critical. |
+## Part 3 — Color-Coding & Sub-Token Boundaries
 
-## Interaction model: modal-first vs direct deep-link (question 2)
+InChIKey segments are **hashes, not semantic layers** — so unlike the InChI strip there are NO meaningful sub-tokens inside the two hash blocks. The natural color boundaries are exactly the structural segments:
 
-**Recommendation: modal-first.** A direct deep-link drops the user on GitHub's new-issue page with our body prefilled but
-*no* category, *no* user message, and the public-disclosure surprise happening on GitHub's domain rather than ours.
-The modal is cheap (native `<dialog>`) and buys: category selection (→ triage), a guided short message, an in-our-UI
-public-issue disclosure + context review, and a place to enforce the URL-length guard before we ever build the link.
+| Segment | Suggested treatment | Sub-tokens? |
+|---------|---------------------|-------------|
+| First block (14) | One solid color — ideally echoing the InChI main/`c` (connectivity) layer color to reinforce the link | None — single opaque hash |
+| Second block (8) | One solid color — echo the InChI stereo/isotope (`b`/`t`/`i`) color family | None — single opaque hash |
+| Flag char `S/N` (1) | Distinct "metadata" accent | Optional: flag + version as two adjacent 1-char sub-tokens in one metadata region |
+| Version char `A` (1) | Same metadata accent as flag (or a paired shade) | See above |
+| Protonation char (1) | Distinct color — ideally **echoing the InChI `/p` charge-layer color** already in the palette | None |
 
-**Fields worth collecting in the modal:**
+**Recommendations:**
+- Reuse the existing oklch token palette. Where an InChIKey segment corresponds to an InChI layer the tool already colors (connectivity → main/`c`; stereo/iso → `b`/`t`/`i`; protonation → `p`), **reuse that layer's color.** This reinforces "block 1 = the connectivity you saw above; block 2 = the stereo/isotope you saw above" — a strong, cheap pedagogical win.
+- The hyphens are structural punctuation — render them dimmed/neutral (matching how the InChI strip treats `/` separators), not as a colored segment.
+- For the flag (`S`) + version (`A`) pair: simplest is one combined "version/flag" segment with a single hover card covering both. Recommend **one combined segment** to avoid over-fragmenting a part users rarely care about.
 
-| Field | Type | Required | Maps to |
-|-------|------|----------|---------|
-| Category | radio / segmented control | Yes (default "general") | GitHub label + title prefix |
-| Message | `<textarea>`, short | Yes (or strongly encouraged) | Top of issue body |
-| Include molecule & environment context | checkbox, default **on** | No | Whether the auto-captured block is appended |
-| GitHub @handle (optional, public) | text | No — omit at launch unless wanted | A line in the body |
+Net: **5 colored segments** (block 1, block 2, flag+version, protonation) + dimmed hyphens — fewer, simpler regions than the InChI strip, which suits the "it's just a hash" message.
 
-The "Open feedback on GitHub" button assembles `title`, `body`, `labels` and opens the new tab.
-
-## Feedback categorization for THIS app (question 3)
-
-Mapped to GitHub labels AND a redundant title prefix (labels can silently fail; prefix is the robust fallback):
-
-| Category (user-facing) | Title prefix | GitHub label | When |
-|------------------------|--------------|--------------|------|
-| Something's broken | `[Bug]` | `bug` | Tool errors, canvas/highlight crashes, wrong InChI computed |
-| An explanation is wrong or confusing | `[Explanation]` | `explanation` | A layer's prose/reading-code is incorrect or unclear — core product surface |
-| Highlighting looks wrong | `[Highlighting]` | `highlighting` | Hovering a layer highlights the wrong atoms/bonds (high-value given the multi-fragment work) |
-| Suggestion / idea | `[Suggestion]` | `enhancement` | Feature requests, new presets |
-| General / other | `[Feedback]` | `feedback` | Anything else |
-
-Note: `bug` and `enhancement` exist by default on GitHub repos; `explanation`, `highlighting`, and `feedback` must be
-created in the repo first, or label application is a no-op (the title prefix still carries the signal).
-
-## Privacy / transparency UX (question 4)
-
-- **State plainly, in the modal:** "This opens a new public issue on GitHub. Anything you write — and the molecule/InChI
-  shown below — will be visible to everyone." Table stakes, not optional.
-- **Show the captured context for review** before submit (the "context preview" differentiator). The captured data is
-  non-sensitive (a molecule the user drew, an InChI, a UA string), but transparency is the right default and cheap.
-- **Opt-out:** a single "Include current molecule & environment" checkbox (default on) is sufficient. Full per-field
-  editing is over-engineering; the user can always edit freely on GitHub's own page before submitting.
-- **No PII collection** by us. The only identity attached is the submitter's own GitHub account, surfaced by GitHub — out
-  of our hands and expected.
-
-## Accessibility expectations (question 5)
-
-Consistent with WAI-ARIA APG Dialog (Modal) pattern. Using the native `<dialog>` element provides most of this for free;
-verify each:
-
-- `role="dialog"` + `aria-modal="true"` (native `<dialog>` via `showModal()` supplies these).
-- `aria-labelledby` pointing at the modal heading so the title is announced on open.
-- **Focus management:** move focus into the dialog on open; **return focus to the triggering link** on close. Native
-  `showModal()` handles initial focus and the top-layer focus trap.
-- **Keyboard:** Tab / Shift+Tab cycle within the dialog; **Escape closes** (native `<dialog>` provides Escape).
-- **Background inert:** native modal `<dialog>` makes the backdrop inert automatically; a custom div modal would need
-  `inert`/`aria-hidden` on the rest of the page.
-- Category radios properly grouped (`<fieldset>`/`<legend>`); all controls keyboard-operable.
-- Honor `prefers-reduced-motion` for any open/close transition.
-
-**Implementation note:** prefer the native `<dialog>` element over a hand-rolled focus-trap to minimize a11y bugs. No new
-dependency needed.
+---
 
 ## Feature Dependencies
 
 ```
-[Send feedback entry point (header link)]
-        └──opens──> [Feedback modal (native <dialog>)]
-                          ├──requires──> [Read current InChI]  (store.inchi — exists)
-                          ├──requires──> [Read SMILES]          (ketcher.getSmiles() OR active preset — NEW read)
-                          ├──requires──> [Read preset name]     (selectedMolId — NEW plumbing, App-local today)
-                          ├──requires──> [App version/commit]   (Vite build-time define — NEW wiring)
-                          ├──uses──────> [navigator.userAgent]  (free)
-                          └──builds────> [Prefilled GitHub issue URL]
-                                              └──guarded by──> [URL-length budget guard (~6-7KB)]
-                                                                    └──fallback──> [truncate + copy full InChI to clipboard]
+InChIKey display (new)
+    └──requires──> live InChIKey value from ketcher-standalone WASM   [OPEN QUESTION]
+    └──reuses────> left explanation-card component (EXPL-01)
+    └──reuses────> copy-to-clipboard component (PLSH-04)
+    └──reuses────> oklch CSS token palette / segment-span rendering (INCHI-02)
+    └──reuses────> empty/placeholder behavior (PLSH-01)
 
-[Category selector] ──maps to──> [GitHub label + title prefix]
-[Context preview/opt-out checkbox] ──gates──> [auto-captured context block]
-[Contextual "report this layer" affordance] ──enhances──> [Feedback modal]  (defer to v1.x)
+InChIKey segment hover  ──explicitly DOES NOT──> canvas atom highlight (INCHI-03/04)
+    (this intentional contrast is what teaches the one-way-hash concept)
 ```
 
 ### Dependency Notes
 
-- **Modal requires SMILES/preset/version reads that don't fully exist yet.** Critical roadmap fact: three of six context
-  fields need new wiring. InChI and UA are free; the rest are not. Size the milestone accordingly.
-- **URL-length guard depends on the assembled body**, so it runs after context assembly and before opening the tab. Hard
-  constraint for large molecules, not an edge case (preset list includes atorvastatin and multi-fragment test cases).
-- **Contextual per-layer reporting enhances the modal** but depends on hooking the existing `hoverIdx`/layer state; higher
-  cost, defer.
+- **InChIKey display requires the live key value:** PROJECT.md flags this as the one open technical question — how to obtain the InChIKey from ketcher-standalone's public API. Candidates to investigate in a requirements/spike: a `getInChIKey()`-style method, deriving the key from the `getInchi()` output via the InChI library's key generator, or the `indigo-ketcher` WASM exposing key generation. **This is the critical-path unknown and must be resolved before display work.** The tool already calls `getInchi(true)`.
+- **Reuses explanation-card + copy + token system:** the UI scaffolding exists from v1.0; the new work is mostly content + a parallel segment strip, not new infrastructure → complexity LOW–MEDIUM.
+- **Deliberately NO canvas highlight on hover:** the one place the InChIKey strip must *diverge* from the InChI strip. The divergence is itself the lesson. Ensure the key strip's hover wiring does **not** call `highlights.create`.
+
+---
 
 ## MVP Definition
 
-### Launch With (v1.2)
+### Launch With (v1.3)
 
-- [ ] Header (and/or footer) "Send feedback" link, on-brand — table-stakes entry point
-- [ ] Accessible modal via native `<dialog>` (focus, Escape, aria-labelledby) — table-stakes interaction shell
-- [ ] Category selector (5 categories) → title prefix + label — differentiator, low cost
-- [ ] Short message `<textarea>` — table-stakes content
-- [ ] Auto-captured context: InChI (store), SMILES (Ketcher API/preset), preset name, UA, app version — core decided value
-- [ ] Public-issue disclosure line + context preview — privacy table stakes + cheap differentiator
-- [ ] "Include molecule & environment" opt-out checkbox (default on) — privacy
-- [ ] Graceful empty-canvas handling — table stakes
-- [ ] URL-length guard with truncate + clipboard fallback — required for large molecules
-- [ ] Opens prefilled `issues/new` in a new tab (`rel="noopener"`) — table stakes
+- [ ] Live InChIKey shown below the InChI strip — the milestone goal
+- [ ] Correct 5-segment rendering with the exact char counts/boundaries from Part 1 (two hyphens only)
+- [ ] Per-segment color-coding reusing oklch tokens (echo corresponding InChI layer colors)
+- [ ] Per-segment hover explanation cards with the Part 1 content (block 1 = skeleton/connectivity; block 2 = stereo/isotope; flag = standard S/N; version = A; protonation = N/O…/M… mapping)
+- [ ] Explanatory content: 27-char fixed length & purpose; one-way hash (not reversible, no atom mapping); collision caveat (lookup not identity proof)
+- [ ] Explicit "segments don't highlight atoms because it's a hash" note
+- [ ] Copy-to-clipboard button (PLSH-04 parity), copies verbatim key
+- [ ] Empty/invalid structure → placeholder (PLSH-01 parity)
 
 ### Add After Validation (v1.x)
 
-- [ ] Contextual "report this explanation/layer" affordance pre-selecting category + offending layer — trigger: users file vague "explanation X is wrong" issues without saying which layer
-- [ ] Optional public GitHub @handle field — trigger: maintainer wants a faster contact path than issue comments
+- [ ] "Search this InChIKey on the web / PubChem" outbound link — trigger: users ask how to look it up
+- [ ] Protonation-char live demo preset (a charged species among presets) — trigger: presets expanded (ties into CONT-01)
 
 ### Future Consideration (v2+)
 
-- [ ] GitHub issue *forms* (structured templates) instead of URL params — trigger: feedback volume grows enough that forms beat URL prefill; partially supersedes the URL-param approach
+- [ ] First-block partial-match teaching interactive — defer until core validated
+- [ ] Deep-dive "how the hash is built" optional disclosure — only if users request the math
 
 ## Feature Prioritization Matrix
 
 | Feature | User Value | Implementation Cost | Priority |
 |---------|------------|---------------------|----------|
-| Header "Send feedback" link | HIGH | LOW | P1 |
-| Accessible `<dialog>` modal shell | MEDIUM | LOW-MEDIUM | P1 |
-| Category → label/prefix | HIGH (triage) | LOW | P1 |
-| Message textarea | HIGH | LOW | P1 |
-| Auto-capture InChI + UA | HIGH | LOW | P1 |
-| Auto-capture SMILES + preset name | MEDIUM | MEDIUM (new plumbing) | P1 |
-| App version/commit capture | MEDIUM | LOW (build define) | P1 |
-| Public-issue disclosure + context preview | HIGH (trust) | LOW-MEDIUM | P1 |
-| Opt-out checkbox | MEDIUM | LOW | P1 |
-| URL-length guard + clipboard fallback | MEDIUM (large molecules) | MEDIUM | P1 |
-| Contextual per-layer report affordance | HIGH (product fit) | MEDIUM-HIGH | P2 |
-| Optional GitHub @handle | LOW | LOW | P3 |
-| Floating widget | LOW | LOW | (anti-feature — do not build) |
+| Live InChIKey display + correct segmentation | HIGH | LOW (once API resolved) | P1 |
+| Resolve ketcher API for obtaining the key | HIGH | MEDIUM (unknown) | P1 (critical path) |
+| Per-segment hover explanation cards | HIGH | MEDIUM | P1 |
+| Color-coding (reuse tokens) | MEDIUM | LOW | P1 |
+| Copy-to-clipboard parity | MEDIUM | LOW | P1 |
+| "It's a hash, no atom highlight" teaching note | HIGH | LOW | P1 |
+| Collision/one-way explanatory content | HIGH | LOW (content) | P1 |
+| "Search on web/PubChem" outbound link | MEDIUM | LOW | P2 |
+| Charged-species preset for protonation demo | LOW | MEDIUM | P3 |
 
 ## Competitor Feature Analysis
 
-| Aspect | Typical SaaS widget (Usersnap/Canny) | Plain "Issues" link (many OSS sites) | Our approach |
-|--------|--------------------------------------|--------------------------------------|--------------|
-| Entry point | Floating bubble | Footer link | Header/footer text link |
-| Data collection | Cookies, analytics, screenshots, PII | None | None by us; only on-page molecule/InChI/UA, user-reviewed |
-| Backend | Hosted SaaS | None | None (URL construction only) |
-| Triage | Tags/boards | Manual | Category → label + title prefix |
-| Auth | SaaS account | GitHub login on submit | GitHub login on submit (accepted) |
-| Privacy posture | Privacy policy required | Public by nature | Explicit "this is public" + review/opt-out |
+| Feature | PubChem / typical DB pages | NCI/CADD resolver | Our Approach |
+|---------|----------------------------|-------------------|--------------|
+| Show InChIKey | Yes — static, plain text | Yes — as input field | Live, color-coded, segment-explained |
+| Explain the segments | No | No | **Yes — the differentiator** |
+| Resolve key → structure | N/A | Yes (server-side) | No (no backend); explain *why* and link out |
+| Copy button | Sometimes | No | Yes (parity with InChI) |
+
+No existing tool teaches the *anatomy* of an InChIKey interactively — that gap is exactly this milestone's value.
 
 ## Sources
 
-- GitHub new-issue query parameters (title/body/labels/template/etc.): https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-an-issue — HIGH
-- sindresorhus/new-github-issue-url (supported fields reference): https://github.com/sindresorhus/new-github-issue-url — HIGH
-- GitHub CLI HTTP 414 on long prefilled body (URL-length constraint, real-world): https://github.com/cli/cli/issues/1575 — HIGH
-- MDN HTTP 414 URI Too Long (4–8KB common server limits): https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/414 — HIGH
-- W3C WAI-ARIA APG Dialog (Modal) pattern (focus, Escape, aria): https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/ — HIGH
-- Deque: WAI-ARIA modal dialog support: https://www.deque.com/blog/aria-modal-alert-dialogs-a11y-support-series-part-2/ — MEDIUM
-- Usersnap: website feedback button placement/examples: https://usersnap.com/blog/website-feedback-button/ — MEDIUM (industry practice, used to argue *against* the floating widget here)
-- Qualaroo: in-app feedback strategies / button best practices: https://qualaroo.com/blog/in-app-feedback-strategies/ — MEDIUM
-- App state (verified by reading source): `src/store.ts`, `src/components/Header.tsx`, `src/lib/handleMolSelectLogic.ts`, `src/data/molecules.ts` — HIGH
+- IUPAC InChI paper (Heller et al., *J. Cheminformatics* 2015) — authoritative segment definitions & protonation mapping: https://jcheminf.biomedcentral.com/articles/10.1186/s13321-015-0068-4 (also https://pmc.ncbi.nlm.nih.gov/articles/PMC4486400/) — HIGH
+- Wikipedia, *International Chemical Identifier* (InChIKey section) — format string, block contents, collision estimate, one-way property: https://en.wikipedia.org/wiki/International_Chemical_Identifier — HIGH (matches the IUPAC paper)
+- InChI Trust Technical FAQ — char counts, S/N flag, version A, protonation incl. ±12 saturation, SHA-2/truncation/one-way, collision testing: https://www.inchi-trust.org/technical-faq/ — HIGH
+- InChIKey collision resistance experimental study, *J. Cheminformatics* 2012: https://jcheminf.biomedcentral.com/articles/10.1186/1758-2946-4-39 — HIGH
+- InChI Technical Manual (PDF): https://www.inchi-trust.org/download/104/InChI_TechMan.pdf — HIGH
+- NCI/CADD InChIKey resolver blog (real-world lookup use): https://cactus.nci.nih.gov/blog/?tag=inchikey-resolver — MEDIUM
 
 ---
-*Feature research for: in-app feedback via prefilled GitHub issue (static client-side educational tool)*
-*Researched: 2026-06-17*
+*Feature research for: InChIKey display & explanation panel (v1.3)*
+*Researched: 2026-06-18*
