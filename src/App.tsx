@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { flushSync } from 'react-dom';
 import { StandaloneStructServiceProvider } from 'ketcher-standalone';
 import type { Ketcher } from 'ketcher-core';
 import { Header } from './components/Header';
@@ -79,13 +80,17 @@ export default function App() {
 
   // Opens the feedback dialog. Fetches SMILES once per open so the preview reflects the
   // current molecule; falls back to undefined silently if getSmiles() throws (D-12 / T-10-04-02).
+  // flushSync forces the state update to render BEFORE showModal() opens the dialog — otherwise
+  // React 18 batching defers the re-render and the dialog flashes the previous open's SMILES
+  // (the value is computed into a local so there is no stale-state window across repeated opens).
   const handleFeedbackOpen = async () => {
+    let smiles: string | undefined;
     try {
-      const smiles = await ketcherRef.current?.getSmiles();
-      setPreviewSmiles(smiles ?? undefined);
+      smiles = (await ketcherRef.current?.getSmiles()) ?? undefined;
     } catch {
-      setPreviewSmiles(undefined);
+      smiles = undefined;
     }
+    flushSync(() => setPreviewSmiles(smiles));
     dialogRef.current?.showModal();
   };
 
