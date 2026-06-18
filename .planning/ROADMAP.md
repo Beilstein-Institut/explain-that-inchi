@@ -41,7 +41,7 @@ Full phase details: `.planning/milestones/v1.2-ROADMAP.md`
 
 **Granularity:** standard · **Coverage:** 12/12 v1.3 requirements mapped
 
-- [ ] **Phase 11: Source & Wiring** - Fetch the verbatim InChIKey from the same WASM source, store it atomically with the InChI, ride the existing race/empty guards
+- [x] **Phase 11: Source & Wiring** - Fetch the verbatim InChIKey from the same WASM source, store it atomically with the InChI, ride the existing race/empty guards (completed 2026-06-18)
 - [ ] **Phase 12: Render & Layout** - Render the verbatim key as color-coded segments with dimmed hyphens, local-state hover, and a copy button — as a leaf sibling that never remounts the canvas
 - [ ] **Phase 13: Content & Explanation** - Author per-segment explanation cards and the one-way-hash / collision / standard-flag teaching content
 
@@ -69,7 +69,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 11-03-PLAN.md — Wire Promise.allSettled concurrent fetch in handleChange; propagate inchiKey to all setInchiData call sites
+- [x] 11-03-PLAN.md — Wire Promise.allSettled concurrent fetch in handleChange; propagate inchiKey to all setInchiData call sites
 
 ### Phase 12: Render & Layout
 
@@ -134,7 +134,7 @@ Surfaced here so it isn't mistaken for implementation work (per the v1.2 require
 | 8. Hydrogen Implicit & Explicit Highlight | v1.0 | 2/2 | Complete | 2026-06-05 |
 | 9. Feedback URL builder, config & version injection | v1.2 | 2/2 | Complete | 2026-06-17 |
 | 10. Feedback dialog, context capture & entry point | v1.2 | 4/4 | Complete | 2026-06-18 |
-| 11. Source & Wiring | v1.3 | 2/3 | In Progress|  |
+| 11. Source & Wiring | v1.3 | 3/3 | Complete   | 2026-06-18 |
 | 12. Render & Layout | v1.3 | 0/0 | Not started | - |
 | 13. Content & Explanation | v1.3 | 0/0 | Not started | - |
 
