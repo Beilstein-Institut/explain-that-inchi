@@ -80,7 +80,10 @@ Plans:
   3. Hovering an opening or closing parenthesis (`(` / `)`) highlights all bonds involved in that branch.
   4. For multi-fragment molecules, every c-layer atom/hyphen/parenthesis hover resolves within its own fragment (correct atoms/bonds, no cross-fragment bleed).
   5. For duplicated/repeated fragments (multiplied component prefixes), c-layer hovers highlight the intended fragment instance(s).
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 15-01-PLAN.md — Wave 0 test scaffolds + SubHover type extension + tokenizeCLayerSeg + buildSubHoverSpecs atom/bond/branch cases
+- [ ] 15-02-PLAN.md — ConnectionText two-pass refactor (LayerText.tsx) + live canvas human-verify
 **Notes**: This is the heavier, riskier area. Changes live in the existing `buildHighlightSpecs` / `buildSubHoverSpecs` → `useKetcherHighlights` pipeline (offset/highlight logic only — never re-render or re-join the verbatim InChI string). Fragment correctness rides on the canonical→Ketcher pool-ID mapping from AuxInfo. Highlight-precision changes only; existing c-layer explanation prose is unchanged unless found inaccurate.
 
 ## Progress
@@ -101,9 +104,10 @@ Plans:
 | 12. Render & Layout | v1.3 | 2/2 | Complete | 2026-06-18 |
 | 13. Content & Explanation | v1.3 | 1/1 | Complete | 2026-06-19 |
 | 14. Reset control | v1.4 | 1/1 | Complete   | 2026-06-19 |
-| 15. C-layer hover precision | v1.4 | 0/? | Not started | - |
+| 15. C-layer hover precision | v1.4 | 0/2 | Not started | - |
 
 ---
 *Roadmap created: 2026-05-18*
 *Updated: 2026-06-19 — v1.4 milestone (Reset control & c-layer hover precision) roadmapped; Phases 14–15 added*
 *Updated: 2026-06-19 — Phase 14 planned: 1 plan (14-01)*
+*Updated: 2026-06-19 — Phase 15 planned: 2 plans (15-01, 15-02)*
