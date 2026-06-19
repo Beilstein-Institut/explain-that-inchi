@@ -63,15 +63,9 @@ export function Explanation() {
           className={[styles.card, styles.active].join(' ')}
           style={{ '--accent': KEY_ZONE_ACCENT[keyHoverKind] } as React.CSSProperties}
         >
-          {/* UAT-13 gap: drop the redundant tag row for key-segment cards — the tag
-              label duplicated the title (e.g. "skeleton hash" / "Skeleton hash").
-              Keep the colour swatch inline on the title so the accent cue survives;
-              the descriptive title (KEY_ZONE_COPY.title) is the single header.
-              InChI-layer cards are intentionally left unchanged (tag = notation code). */}
-          <h3 className={styles.layerTitle}>
-            <span className={styles.swatch} style={{ verticalAlign: 'middle', marginRight: 8 }} />
-            {KEY_ZONE_COPY[keyHoverKind].title}
-          </h3>
+          {/* UAT-13: unified card header — title only, no tag row and no swatch dot
+              (consistent across all card states; the left accent strip carries colour). */}
+          <h3 className={styles.layerTitle}>{KEY_ZONE_COPY[keyHoverKind].title}</h3>
           <p className={styles.layerBody}>{KEY_ZONE_COPY[keyHoverKind].body}</p>
         </div>
       ) : (
@@ -80,22 +74,14 @@ export function Explanation() {
           style={{ '--accent': accentVar } as React.CSSProperties}
         >
           {!layer ? (
-            /* D-10: Idle state — DEFAULT_INFO with ink-faint left border */
+            /* D-10: Idle state — DEFAULT_INFO with ink-faint left border (title only) */
             <>
-              <div className={styles.layerTag}>
-                <span className={styles.swatch} />
-                Idle
-              </div>
               <h3 className={styles.layerTitle}>{DEFAULT_INFO.title}</h3>
               <p className={styles.layerBody}>{DEFAULT_INFO.blurb}</p>
             </>
           ) : (
-            /* Active state: show layer info + readingFor output */
+            /* Active state: show layer info + readingFor output (title only) */
             <>
-              <div className={styles.layerTag}>
-                <span className={styles.swatch} />
-                {layer.prefix ? `${layer.prefix}-layer` : `${layer.type}-layer`}
-              </div>
               <h3 className={styles.layerTitle}>{info!.title}</h3>
               <p className={styles.layerBody}>{info!.blurb}</p>
               <div className={styles.layerEg}>
