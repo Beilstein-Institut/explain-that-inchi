@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Reset control & c-layer hover precision
 status: completed
-stopped_at: v1.4 roadmap created — Phases 14 (Reset) and 15 (C-layer precision)
-last_updated: "2026-06-19T12:11:10.613Z"
+stopped_at: Phase 15 context gathered
+last_updated: "2026-06-19T12:17:24.318Z"
 last_activity: 2026-06-19 -- Phase 14 marked complete
 progress:
   total_phases: 2
@@ -80,6 +80,6 @@ Last activity: 2026-06-19 -- Phase 14 marked complete
 
 ## Session Continuity
 
-Last session: 2026-06-19T06:53:59.137Z
-Stopped at: v1.4 roadmap created — Phases 14 (Reset) and 15 (C-layer precision)
-Resume file: .planning/ROADMAP.md
+Last session: 2026-06-19T12:17:24.311Z
+Stopped at: Phase 15 context gathered
+Resume file: .planning/phases/15-c-layer-hover-precision/15-CONTEXT.md
