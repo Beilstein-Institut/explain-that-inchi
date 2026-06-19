@@ -46,10 +46,11 @@ skipped: 0
 ## Gaps
 
 - truth: "Each hover card shows non-redundant header text — the label and title should not repeat the same words (e.g. card shows 'skeleton hash' then 'Skeleton hash')."
-  status: failed
+  status: resolved
   reason: "User reported: there is redundant text in the left card: for example it says 'skeleton hash' and 'skeleton hash'. this is true for most all hovers. redundant information. the same is also for the when hovering over the inchi layers."
   severity: cosmetic
   test: 2
-  scope: "Cross-cutting display issue — affects InChIKey segment cards (this phase) and InChI-layer cards (earlier phases). Likely fixable in Explanation.tsx card rendering (collapse label/title) or by removing the duplicate field from the copy data."
-  artifacts: []
+  scope: "Cross-cutting display issue — affects InChIKey segment cards (this phase) and InChI-layer cards (earlier phases)."
+  resolution: "Inline quick fix (user-chosen approach: drop the tag for key zones). Explanation.tsx key-segment branch no longer renders the redundant layerTag/label row; swatch moved inline onto the descriptive title (KEY_ZONE_COPY.title). InChI-layer cards left unchanged (their tag = notation code, meaningfully distinct from the human title). `label` field retained in inchiKeyInfo.ts (still pinned by SC-1 test). tsc clean; 301/301 tests pass."
+  artifacts: [src/components/Explanation.tsx]
   missing: []

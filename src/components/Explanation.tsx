@@ -63,11 +63,15 @@ export function Explanation() {
           className={[styles.card, styles.active].join(' ')}
           style={{ '--accent': KEY_ZONE_ACCENT[keyHoverKind] } as React.CSSProperties}
         >
-          <div className={styles.layerTag}>
-            <span className={styles.swatch} />
-            {KEY_ZONE_COPY[keyHoverKind].label}
-          </div>
-          <h3 className={styles.layerTitle}>{KEY_ZONE_COPY[keyHoverKind].title}</h3>
+          {/* UAT-13 gap: drop the redundant tag row for key-segment cards — the tag
+              label duplicated the title (e.g. "skeleton hash" / "Skeleton hash").
+              Keep the colour swatch inline on the title so the accent cue survives;
+              the descriptive title (KEY_ZONE_COPY.title) is the single header.
+              InChI-layer cards are intentionally left unchanged (tag = notation code). */}
+          <h3 className={styles.layerTitle}>
+            <span className={styles.swatch} style={{ verticalAlign: 'middle', marginRight: 8 }} />
+            {KEY_ZONE_COPY[keyHoverKind].title}
+          </h3>
           <p className={styles.layerBody}>{KEY_ZONE_COPY[keyHoverKind].body}</p>
         </div>
       ) : (
