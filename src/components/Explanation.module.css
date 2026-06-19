@@ -13,12 +13,14 @@
   }
 }
 
-/* Base card — verbatim from styles.css .explain .card */
+/* Base card — was `padding: 22px 24px` (verbatim from styles.css .explain .card).
+   UAT-13: tag row removed, so top padding is reduced to 16px to close the dead
+   space above the title; sides/bottom unchanged. */
 .card {
   background: var(--bg-canvas);
   border: 1px solid var(--line);
   border-radius: 6px;
-  padding: 22px 24px;
+  padding: 16px 24px 22px;
   min-height: 180px;
   position: relative;
   overflow: hidden;
