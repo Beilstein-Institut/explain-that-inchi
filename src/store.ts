@@ -47,6 +47,7 @@ interface InchiState {
   setSubHover: (sub: SubHover | null) => void;
   setKeyHoverKind: (kind: KeyHoverZone | null) => void;
   setLegendHover: (hover: LegendHover | null) => void;
+  resetAll: () => void;
 }
 
 // Zustand 5 TypeScript pattern: create<State>()() — double-call required.
@@ -75,6 +76,20 @@ export const useInchiStore = create<InchiState>()(
       setSubHover: (sub) => set({ subHover: sub }),
       setKeyHoverKind: (kind) => set({ keyHoverKind: kind }),
       setLegendHover: (hover) => set({ legendHover: hover }),
+      // RESET-02/03: atomically resets ALL fields to idle in a single set() call.
+      // Uses set() directly — do NOT call other actions from here (Zustand 5 anti-pattern).
+      resetAll: () => set({
+        inchi: '',
+        layers: [],
+        auxMap: {},
+        atomElements: {},
+        hAtomPoolIds: [],
+        inchiKey: '',
+        hoverIdx: null,
+        subHover: null,
+        keyHoverKind: null,
+        legendHover: null,
+      }),
     }),
     { name: 'inchi-store' },
   ),
