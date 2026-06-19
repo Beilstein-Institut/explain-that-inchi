@@ -30,7 +30,7 @@ export interface Layer {
 export type AuxMap = Record<number, number>; // canonical 1-based → Ketcher 0-based (per D-10)
 
 export interface SubHover {
-  kind: 'element' | 'atom' | 'stereo' | 'hAtoms' | 'mobileH';
+  kind: 'element' | 'atom' | 'stereo' | 'hAtoms' | 'mobileH' | 'bond' | 'branch';
   el?: string;
   // Inclusive canonical ID range [lo, hi] for element hovers in multi-fragment formulas.
   // Restricts highlights to the hovered fragment or group of identical fragments.
@@ -44,6 +44,15 @@ export interface SubHover {
   sign?: string;
   atoms?: number[];
   count?: number;
+
+  /** 'bond' kind: each pair is [leftCanonical, rightCanonical] with fragment offset applied.
+   *  Single fragment: one pair. N* multi-fragment: one pair per fragment instance. */
+  endpointPairs?: [number, number][];
+
+  /** 'branch' kind: all [leftCanonical, rightCanonical] pairs for every hyphen inside the
+   *  branch's brackets. Includes nested sub-branches. Fragment offset already applied.
+   *  N* multi-fragment: pairs from all fragment instances combined. */
+  bondPairs?: [number, number][];
 }
 
 // ---------------------------------------------------------------------------
@@ -87,6 +96,100 @@ export function parseConnectionBonds(text: string): [number, number][] {
     }
   }
   return bonds;
+}
+
+// ---------------------------------------------------------------------------
+// C-layer token types and tokenizer (for Phase 15 hover precision)
+// ---------------------------------------------------------------------------
+
+/**
+ * Discriminated union of token types produced by tokenizeCLayerSeg.
+ * All numeric values are LOCAL (pre-offset) — the caller applies offset
+ * or canonicalFn after tokenization (Pitfall 3).
+ */
+export type CLayerToken =
+  | { type: 'atom';   start: number; end: number; localN: number }
+  | { type: 'hyphen'; pos: number; leftLocal: number | null; rightLocal: number | null }
+  | { type: 'open';   pos: number; attachLocal: number | null; closeTokenIdx: number }
+  | { type: 'close';  pos: number; openTokenIdx: number }
+  | { type: 'other';  slice: string };
+
+// Internal type aliases for narrowing within the tokenizer
+type HyphenToken = Extract<CLayerToken, { type: 'hyphen' }>;
+type OpenToken   = Extract<CLayerToken, { type: 'open' }>;
+
+/**
+ * Tokenizes a single c-layer segment (no ';' separators — those are split before calling).
+ * Produces a CLayerToken[] array in a single O(n) forward scan.
+ *
+ * Key differences from parseConnectionBonds:
+ * - Emits typed tokens instead of bond tuples.
+ * - Stack tracks token *indices* of 'open' tokens so open/close pairs can cross-reference.
+ * - On ')': restores lastLocal to the open token's attachLocal (Pitfall 2).
+ * - All localN values are pre-offset (Pitfall 3).
+ */
+export function tokenizeCLayerSeg(seg: string): CLayerToken[] {
+  const tokens: CLayerToken[] = [];
+  const stack: number[] = []; // indices into tokens[] of pending 'open' tokens
+  let lastLocal: number | null = null;
+  let i = 0;
+  while (i < seg.length) {
+    const c = seg[i];
+    if (/\d/.test(c)) {
+      // Parse multi-digit integer
+      let j = i;
+      while (j < seg.length && /\d/.test(seg[j])) j++;
+      const localN = parseInt(seg.slice(i, j), 10);
+      // Fill rightLocal of the immediately preceding hyphen token
+      if (tokens.length > 0 && tokens[tokens.length - 1].type === 'hyphen') {
+        (tokens[tokens.length - 1] as HyphenToken).rightLocal = localN;
+      }
+      tokens.push({ type: 'atom', start: i, end: j, localN });
+      lastLocal = localN;
+      i = j;
+    } else if (c === '-') {
+      tokens.push({ type: 'hyphen', pos: i, leftLocal: lastLocal, rightLocal: null });
+      i++;
+    } else if (c === '(') {
+      const openIdx = tokens.length;
+      tokens.push({ type: 'open', pos: i, attachLocal: lastLocal, closeTokenIdx: -1 });
+      stack.push(openIdx);
+      i++;
+    } else if (c === ')') {
+      const openIdx = stack.pop() ?? -1;
+      const closeIdx = tokens.length;
+      tokens.push({ type: 'close', pos: i, openTokenIdx: openIdx });
+      if (openIdx >= 0) {
+        (tokens[openIdx] as OpenToken).closeTokenIdx = closeIdx;
+        // Restore lastLocal to the branch attachment point (Pitfall 2)
+        lastLocal = (tokens[openIdx] as OpenToken).attachLocal;
+      }
+      i++;
+    } else {
+      // comma, semicolon (shouldn't appear — segments are pre-split), etc.
+      tokens.push({ type: 'other', slice: c });
+      i++;
+    }
+  }
+  return tokens;
+}
+
+/**
+ * Collects all 'hyphen' tokens strictly between an 'open' token at index oi
+ * and its matching 'close' token at index ci (exclusive bounds).
+ * Automatically includes hyphens from nested sub-branches because they fall
+ * within the [oi+1, ci-1] index range.
+ *
+ * Used by ConnectionText (LayerText.tsx) to build bondPairs for branch hovers.
+ */
+export function collectBranchHyphens(
+  tokens: CLayerToken[],
+  oi: number,
+  ci: number,
+): Extract<CLayerToken, { type: 'hyphen' }>[] {
+  return tokens.slice(oi + 1, ci).filter(
+    (t): t is Extract<CLayerToken, { type: 'hyphen' }> => t.type === 'hyphen',
+  );
 }
 
 /**
