@@ -142,7 +142,7 @@ Surfaced here so it isn't mistaken for implementation work (per the v1.2 require
 | 10. Feedback dialog, context capture & entry point | v1.2 | 4/4 | Complete | 2026-06-18 |
 | 11. Source & Wiring | v1.3 | 3/3 | Complete   | 2026-06-18 |
 | 12. Render & Layout | v1.3 | 2/2 | Complete   | 2026-06-18 |
-| 13. Content & Explanation | v1.3 | 1/1 | Complete   | 2026-06-19 |
+| 13. Content & Explanation | v1.3 | 1/1 | Complete    | 2026-06-19 |
 
 ---
 *Roadmap created: 2026-05-18*

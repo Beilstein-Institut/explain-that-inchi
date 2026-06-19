@@ -17,12 +17,12 @@
 
 ### InChIKey explanation content (INKEY)
 
-- [ ] **INKEY-07**: Explanation content describes the block structure — 14-char skeleton/connectivity hash, 8-char remaining-layers (stereo/isotope/proton) hash, standard/non-standard flag + version char, and the protonation char.
-- [ ] **INKEY-08**: Explanation content describes what the InChIKey is for — a fixed 27-char, web/database-search-friendly hashed form of the InChI.
-- [ ] **INKEY-09**: Explanation content states the InChIKey is a one-way hash — not reversible and not atom-mappable; its segments deliberately do NOT highlight atoms in the canvas (unlike InChI layers).
-- [ ] **INKEY-10**: Explanation content includes the collision caveat — collisions are improbable but theoretically possible, so the key is for lookup/indexing, not proof of identity.
-- [ ] **INKEY-11**: The skeleton-hash (first block) explanation notes that molecules sharing the same connectivity share this first block — the basis for InChIKey database/web lookup.
-- [ ] **INKEY-12**: The flag/version segment explanation distinguishes the standard (`S`) vs non-standard (`N`) flag and the version character (`A`), beyond merely labelling the segment.
+- [x] **INKEY-07**: Explanation content describes the block structure — 14-char skeleton/connectivity hash, 8-char remaining-layers (stereo/isotope/proton) hash, standard/non-standard flag + version char, and the protonation char.
+- [x] **INKEY-08**: Explanation content describes what the InChIKey is for — a fixed 27-char, web/database-search-friendly hashed form of the InChI.
+- [x] **INKEY-09**: Explanation content states the InChIKey is a one-way hash — not reversible and not atom-mappable; its segments deliberately do NOT highlight atoms in the canvas (unlike InChI layers).
+- [x] **INKEY-10**: Explanation content includes the collision caveat — collisions are improbable but theoretically possible, so the key is for lookup/indexing, not proof of identity.
+- [x] **INKEY-11**: The skeleton-hash (first block) explanation notes that molecules sharing the same connectivity share this first block — the basis for InChIKey database/web lookup.
+- [x] **INKEY-12**: The flag/version segment explanation distinguishes the standard (`S`) vs non-standard (`N`) flag and the version character (`A`), beyond merely labelling the segment.
 
 ## Future Requirements (deferred)
 
@@ -51,11 +51,11 @@
 | INKEY-04 | Phase 12 | pending |
 | INKEY-05 | Phase 12 | pending |
 | INKEY-06 | Phase 11 | Complete |
-| INKEY-07 | Phase 13 | pending |
-| INKEY-08 | Phase 13 | pending |
-| INKEY-09 | Phase 13 | pending |
-| INKEY-10 | Phase 13 | pending |
-| INKEY-11 | Phase 13 | pending |
-| INKEY-12 | Phase 13 | pending |
+| INKEY-07 | Phase 13 | Complete |
+| INKEY-08 | Phase 13 | Complete |
+| INKEY-09 | Phase 13 | Complete |
+| INKEY-10 | Phase 13 | Complete |
+| INKEY-11 | Phase 13 | Complete |
+| INKEY-12 | Phase 13 | Complete |
 
 *(Phase column filled by the roadmap.)*
