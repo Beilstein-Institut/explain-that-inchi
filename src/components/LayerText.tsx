@@ -5,8 +5,8 @@
 
 import React from 'react';
 import { useInchiStore } from '../store';
-import type { Layer, SubHover } from '../lib/parseInchi';
-import { formulaFragmentCounts } from '../lib/parseInchi';
+import type { Layer, SubHover, CLayerToken } from '../lib/parseInchi';
+import { formulaFragmentCounts, tokenizeCLayerSeg, collectBranchHyphens } from '../lib/parseInchi';
 import styles from './InchiSection.module.css';
 
 // Static lookup — avoids dynamic class name construction which breaks CSS Modules.
@@ -125,26 +125,94 @@ function ConnectionText({ text, fragCounts }: { text: string; fragCounts: number
   let key = 0;
 
   const renderSegment = (seg: string, offset: number, canonicalFn?: (n: number) => { canonical: number; canonicals?: number[] }) => {
-    let i = 0, buf = '';
-    const flush = () => { if (buf) { parts.push(<span key={key++}>{buf}</span>); buf = ''; } };
-    while (i < seg.length) {
-      const c = seg[i];
-      if (/\d/.test(c)) {
-        flush();
-        let j = i;
-        while (j < seg.length && /\d/.test(seg[j])) j++;
-        const n = parseInt(seg.slice(i, j), 10);
-        const hover = canonicalFn ? canonicalFn(n) : { canonical: n + offset };
+    // Pass 1 — tokenize the segment into typed CLayerToken[]
+    const tokens = tokenizeCLayerSeg(seg);
+
+    // Pass 2 — render each token to a React span
+    for (let tokenIdx = 0; tokenIdx < tokens.length; tokenIdx++) {
+      const token = tokens[tokenIdx] as CLayerToken;
+
+      if (token.type === 'atom') {
+        const hover = canonicalFn ? canonicalFn(token.localN) : { canonical: token.localN + offset };
         parts.push(
           <span key={key++} className={styles.inchiSubtoken} {...subHoverProps({ kind: 'atom', ...hover })}>
-            {seg.slice(i, j)}
+            {seg.slice(token.start, token.end)}
           </span>
         );
-        i = j; continue;
+
+      } else if (token.type === 'hyphen') {
+        if (token.leftLocal == null || token.rightLocal == null) {
+          // Malformed hyphen — emit as plain text
+          parts.push(<span key={key++}>-</span>);
+        } else {
+          const endpointPairs: [number, number][] = canonicalFn
+            ? (() => {
+                const lc = canonicalFn(token.leftLocal);
+                const rc = canonicalFn(token.rightLocal);
+                const ls = lc.canonicals ?? [lc.canonical];
+                const rs = rc.canonicals ?? [rc.canonical];
+                return ls.map((l, i) => [l, rs[i]] as [number, number]);
+              })()
+            : [[token.leftLocal + offset, token.rightLocal + offset]];
+          parts.push(
+            <span key={key++} className={styles.inchiSubtoken}
+              {...subHoverProps({ kind: 'bond', endpointPairs })}>
+              {'-'}
+            </span>
+          );
+        }
+
+      } else if (token.type === 'open') {
+        if (token.closeTokenIdx === -1) {
+          // Malformed — unmatched open paren
+          parts.push(<span key={key++}>{'('}</span>);
+        } else {
+          const branchHyphens = collectBranchHyphens(tokens, tokenIdx, token.closeTokenIdx);
+          const bondPairs: [number, number][] = branchHyphens.flatMap(h => {
+            if (h.leftLocal == null || h.rightLocal == null) return [];
+            if (canonicalFn) {
+              const lc = canonicalFn(h.leftLocal);
+              const rc = canonicalFn(h.rightLocal);
+              const ls = lc.canonicals ?? [lc.canonical];
+              const rs = rc.canonicals ?? [rc.canonical];
+              return ls.map((l, i) => [l, rs[i]] as [number, number]);
+            }
+            return [[h.leftLocal + offset, h.rightLocal + offset] as [number, number]];
+          });
+          // Store bondPairs on the open token for the close-paren to look up
+          (tokens[tokenIdx] as unknown as Record<string, unknown>)['_bondPairs'] = bondPairs;
+          if (bondPairs.length === 0) {
+            // Comma-only branch — plain non-interactive span
+            parts.push(<span key={key++}>{'('}</span>);
+          } else {
+            parts.push(
+              <span key={key++} className={styles.inchiSubtoken}
+                {...subHoverProps({ kind: 'branch', bondPairs })}>
+                {'('}
+              </span>
+            );
+          }
+        }
+
+      } else if (token.type === 'close') {
+        const bondPairs: [number, number][] =
+          (tokens[token.openTokenIdx] as unknown as Record<string, unknown>)?.['_bondPairs'] as [number, number][] ?? [];
+        if (bondPairs.length === 0) {
+          parts.push(<span key={key++}>{')'}</span>);
+        } else {
+          parts.push(
+            <span key={key++} className={styles.inchiSubtoken}
+              {...subHoverProps({ kind: 'branch', bondPairs })}>
+              {')'}
+            </span>
+          );
+        }
+
+      } else {
+        // 'other' token — comma, or any unrecognised character
+        parts.push(<span key={key++}>{token.slice}</span>);
       }
-      buf += c; i++;
     }
-    flush();
   };
 
   // 2* identical-fragment notation: hovering atom n highlights that atom in all fragments.
