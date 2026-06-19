@@ -80,6 +80,10 @@ export function InchiSection() {
                     onMouseEnter={() => {
                       useInchiStore.getState().setHover(i);
                       useInchiStore.getState().setSubHover(null);
+                      // WR-01: hover sources are mutually exclusive — entering an InChI
+                      // layer clears any active key-segment hover so the precedence chain
+                      // in Explanation cannot show a stale key card over a layer hover.
+                      useInchiStore.getState().setKeyHoverKind(null);
                     }}
                   >
                     {l.prefix && <span className={styles.prefix}>{l.prefix}</span>}

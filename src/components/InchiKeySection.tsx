@@ -102,6 +102,12 @@ export function InchiKeySection() {
                     }}
                     onMouseEnter={() => {
                       useInchiStore.getState().setKeyHoverKind(zone);
+                      // WR-01: hover sources are mutually exclusive — entering a key
+                      // segment clears any active InChI-layer hover. These are state-clearing
+                      // writes ONLY (clearing existing hover state to null); they do NOT
+                      // create canvas highlights, so Invariant #2 is preserved. DO NOT remove.
+                      useInchiStore.getState().setHover(null);
+                      useInchiStore.getState().setSubHover(null);
                     }}
                   >
                     {inchiKey.slice(seg.start, seg.end)}
