@@ -19,9 +19,16 @@ Every chunk of an InChI string is hoverable, explained, and linked back to the a
 - 301 unit/integration tests passing; TypeScript clean; production build clean
 - Deployed to GitHub Pages via GitHub Actions CD
 
-## Next Milestone Goals
+## Current Milestone: v1.4 Reset control & c-layer hover precision
 
-To be defined via `/gsd:new-milestone`. Candidate directions in **Active (v2 candidates)** below: shareable URL (MAP-03), accessibility (ACCS-01/02), content expansion (CONT-01/02), appearance (APPR-01/02), plus v1.3 deferrals INKEY-F1/F2/F3.
+**Goal:** Add a Reset control and make c-layer (connectivity) hovering pinpoint exactly the right atoms and bonds.
+
+**Target features:**
+- Reset button (left of "Send feedback") that clears Ketcher and resets all app state, without remounting the canvas/WASM
+- C-layer atom-number hover highlights only the single canonical atom
+- C-layer hyphen hover highlights the bond connecting the two flanking atoms
+- C-layer parenthesis hover highlights all bonds involved in that branch
+- All c-layer hover behavior correct for multi-fragment and duplicated-fragment molecules
 
 ## Requirements
 
@@ -144,4 +151,4 @@ To be defined via `/gsd:new-milestone`. Candidate directions in **Active (v2 can
 This document evolves at phase transitions and milestone boundaries.
 
 ---
-*Last updated: 2026-06-19 after v1.3 milestone (InChIKey display & explanation) — shipped and tagged*
+*Last updated: 2026-06-19 — started milestone v1.4 (Reset control & c-layer hover precision)*
