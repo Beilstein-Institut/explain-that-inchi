@@ -45,16 +45,7 @@ export function Legend({ activeType }: LegendProps) {
 
   return (
     <div className={`${expStyles.card} ${expStyles.legendCard}`}>
-      <div
-        className={expStyles.layerTag}
-        style={{ padding: '0 22px', marginBottom: 6 }}
-      >
-        <span className={expStyles.swatch} style={{ background: 'var(--ink-faint)' }} />
-        Layer legend{' '}
-        <span style={{ color: 'var(--ink-faint)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>
-          · hover any row
-        </span>
-      </div>
+      {/* UAT-13: legend header (swatch dot + "Layer legend · hover any row") removed. */}
       {ALL_LAYERS.map(l => {
         const present = presentTypes.has(l.type);
         const isActive = l.type === activeType;
