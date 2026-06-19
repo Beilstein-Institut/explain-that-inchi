@@ -106,6 +106,16 @@ describe('Group 5: malformed and short keys', () => {
   it('returns [] for 28-char string (length check)', () => {
     expect(parseInchiKey('UHOVQNZJYSORNB-UHFFFAOYSA-NN')).toEqual([]);
   });
+
+  // WR-03: 27 chars with hyphens at index 14 and 25 but non-alphabetic blocks
+  // must be rejected (positional-only validation would have accepted it).
+  it('returns [] for hyphen-positioned-but-non-alpha string', () => {
+    expect(parseInchiKey('--------------X--------XX-X')).toEqual([]);
+  });
+
+  it('returns [] for a key with digits in the skeleton block', () => {
+    expect(parseInchiKey('UHOVQNZJYS0RNB-UHFFFAOYSA-N')).toEqual([]);
+  });
 });
 
 describe('Group 6: no-reassembly structural invariant', () => {

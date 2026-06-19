@@ -48,7 +48,12 @@ export interface InchiKeySegment {
  * Never throws for any string input (Threat T-11-01 / D-08).
  */
 export function parseInchiKey(key: string): InchiKeySegment[] {
-  if (key.length !== 27 || key[14] !== '-' || key[25] !== '-') {
+  // WR-03: validate the full structural shape, not just hyphen positions.
+  // A 27-char string with hyphens at 14/25 but non-alphabetic blocks (e.g.
+  // "--------------X--------XX-X") would otherwise pass and yield meaningless
+  // segments. Require alphabetic blocks: 14-char skeleton, 8-char hash, 2-char
+  // flag+version, 1-char protonation. Keeps the no-throw contract (T-11-01 / D-08).
+  if (!/^[A-Z]{14}-[A-Z]{10}-[A-Z]$/.test(key)) {
     return [];
   }
 
