@@ -36,7 +36,11 @@ export function Explanation() {
   const hoverIdx = useInchiStore(state => state.hoverIdx);
   const atomElements = useInchiStore(state => state.atomElements);
   // D-04a: read keyHoverKind; treat undefined the same as null (falsy-safe for test mocks).
-  const keyHoverKind = useInchiStore(state => state.keyHoverKind);
+  const rawKeyHoverKind = useInchiStore(state => state.keyHoverKind);
+  const inchiKey = useInchiStore(state => state.inchiKey);
+  // CR-01 (defensive): an empty key can never show a key-segment card, even if a stale
+  // keyHoverKind slips through. Primary fix is the keyHoverKind reset in setInchiData.
+  const keyHoverKind = inchiKey ? rawKeyHoverKind : null;
 
   const layer = hoverIdx !== null ? layers[hoverIdx] : null;
   const info = layer ? LAYER_INFO[layer.type] : null;

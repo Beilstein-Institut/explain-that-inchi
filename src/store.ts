@@ -51,7 +51,10 @@ export const useInchiStore = create<InchiState>()(
       hoverIdx: null,
       subHover: null,
       keyHoverKind: null,
-      setInchiData: (inchi, layers, auxMap, atomElements, hAtomPoolIds = [], inchiKey = '') => set({ inchi, layers, auxMap, atomElements, hAtomPoolIds, inchiKey }),
+      // CR-01: reset keyHoverKind on every data transition. setInchiData fires only
+      // after a debounced structure change; at that point a stale key-hover (from an
+      // emptied key or a preset swap) must be dropped so it cannot mask the panel.
+      setInchiData: (inchi, layers, auxMap, atomElements, hAtomPoolIds = [], inchiKey = '') => set({ inchi, layers, auxMap, atomElements, hAtomPoolIds, inchiKey, keyHoverKind: null }),
       setHover: (idx) => set({ hoverIdx: idx }),
       setSubHover: (sub) => set({ subHover: sub }),
       setKeyHoverKind: (kind) => set({ keyHoverKind: kind }),
