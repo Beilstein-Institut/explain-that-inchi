@@ -1,5 +1,24 @@
 # Milestones: Explain that InChI
 
+## v1.3 InChIKey display & explanation (Shipped: 2026-06-19)
+
+**Phases completed:** 3 phases (11–13), 6 plans
+**Timeline:** 2026-06-18 → 2026-06-19 · 63 commits since `v1.2` (15 src files, +865/−126)
+**Tests:** 301 passing · `tsc -b` clean · production build clean
+
+**Delivered:** The molecule's InChIKey now renders live below the InChI strip — its four zones (14-char skeleton hash, 8-char remaining-layers hash, standard-flag + version char, protonation char) color-coded, hoverable with per-segment explanation cards, and copy-to-clipboard — purely client-side via `ketcher.getInChIKey()` with zero new dependencies. The teaching twist: unlike InChI layers, key segments deliberately do **not** highlight canvas atoms — the absence of highlighting is the lesson that a one-way hash cannot point back to structure.
+
+**Key accomplishments:**
+
+- **Single concurrent pipeline (Phase 11):** `Promise.allSettled([getInchi(true), getInChIKey()])` fetches both WASM results in the same 150ms debounced `handleChange` tick; the existing `generationRef` stale-result guard and empty-canvas guard extended to cover the key atomically, with asymmetric rejection handling (a failed key blanks only the key). No second subscription, timer, or generation counter.
+- **Verbatim passthrough invariant:** pure `parseInchiKey.ts` returns offset ranges (`{kind,start,end}`) only — never `.slice()` in the parser body; the renderer slices the stored verbatim string. Displayed key === copied key === raw `getInChIKey()` output (direct application of the InChI `.`-drop passthrough lesson).
+- **Leaf-sibling render (Phase 12):** `InchiKeySection` mounts after `InchiSection` so the Ketcher canvas never remounts; color-coded segments by slicing the verbatim string, dimmed hyphens, 27-char format gate, StrictMode-safe `mountedRef` copy button (PLSH-04 parity). Key hover uses a store field that never reaches `useKetcherHighlights` (verified by grep) — no canvas highlighting by construction.
+- **Explanation cards (Phase 12 + 13):** `inchiKeyInfo.ts` `KEY_ZONE_COPY` prose (parallel to `layerInfo.ts`) drives four per-zone cards via D-04a precedence (`keyHoverKind` → `hoverIdx` → idle); content covers block structure, purpose, one-way-hash / not-reversible / not-atom-mapped, collision caveat, same-connectivity→same-first-block, and standard (`S`) vs non-standard (`N`) flag + version (`A`). SC-1 unit test pins zone labels and segment offsets.
+- **Verification:** Phase 12 code review (3 WR fixes landed) + UAT 6/6, 0 issues; Phase 13 UAT 4 passed, 1 issue fixed. 12/12 INKEY requirements satisfied.
+- Known deferred items at close: 8 (same completed v1.0-era quick-task registry stubs deferred at v1.2 close; see STATE.md Deferred Items). Deferred to v2: INKEY-F1 (web/PubChem search link), INKEY-F2 (charged-species preset), INKEY-F3 (hash-build deep dive).
+
+---
+
 ## v1.2 In-app feedback via prefilled GitHub issues (Shipped: 2026-06-18)
 
 **Phases completed:** 2 phases, 6 plans

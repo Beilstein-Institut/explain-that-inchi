@@ -2,51 +2,49 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: InChIKey display & explanation
-status: milestone_complete
-stopped_at: Milestone complete (Phase 13 was final phase)
-last_updated: 2026-06-19T07:24:40.089Z
-last_activity: 2026-06-19 -- Phase 13 execution started
+status: completed
+stopped_at: Phase 13 context gathered
+last_updated: "2026-06-19T11:27:15.287Z"
+last_activity: 2026-06-19 — Milestone v1.3 completed and archived
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 6
   completed_plans: 6
-  percent: 67
+  percent: 100
 ---
 
 # Project State
 
 **Project:** Explain that InChI
 **Milestone:** v1.3 — InChIKey display & explanation (roadmap drafted; Phases 11–13)
-**Status:** Milestone complete
+**Status:** v1.3 milestone complete
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-06-18)
+See: .planning/PROJECT.md (updated 2026-06-19)
 
 **Core value:** Every chunk of an InChI string is hoverable, explained, and linked back to the atoms in the drawing — demystifying a notation that most chemists treat as opaque.
-**Current focus:** Milestone complete
+**Current focus:** Planning next milestone
 
-## v1.3 Roadmap (Phases 11–13)
+## Deferred Items
 
-3 phases, dependency-ordered (Source → Render → Content). All 12 INKEY requirements mapped; no orphans. No phase needs deeper research (the InChIKey source API is resolved with HIGH confidence — `ketcher.getInChIKey()`, zero new deps).
+Items acknowledged and deferred at v1.3 milestone close on 2026-06-19 (same v1.0-era quick-task registry stubs carried from the v1.2 close — files cleaned up, registry entries remain; functionally completed in v1.0/v1.1):
 
-- **Phase 11: Source & Wiring** — Fetch `ketcher.getInChIKey()` via `Promise.all` alongside the existing debounced `getInchi(true)`; add a verbatim `inchiKey` store field; single atomic write; extend the `generationRef` stale-result guard and empty-canvas guard to the key; pure tested `parseInchiKey.ts` offset parser (returns index ranges only). Requirements: INKEY-01, INKEY-02, INKEY-06.
-- **Phase 12: Render & Layout** — `InchiKeySection` leaf sibling (canvas never remounts); color-coded segment spans by slicing the verbatim string; dimmed hyphens; local `useState` hover index (NOT the Zustand subHover bus → no canvas highlight); copy button (PLSH-04 / StrictMode-safe `mountedRef`); 27-char format gate. Requirements: INKEY-03, INKEY-04, INKEY-05. UI phase.
-- **Phase 13: Content & Explanation** — `inchiKeyInfo.ts` segment blurbs + `InchiKeyExplanation` card; block structure, purpose, one-way-hash (not reversible / no atom mapping / segments don't highlight), collision caveat, same-connectivity→same-first-block, standard-vs-non-standard flag + version detail, one-key-per-assembly. Requirements: INKEY-07–INKEY-12. UI phase.
-
-## v1.3 Key Decisions (carry-forward from research, HIGH confidence)
-
-- **Source:** `ketcher.getInChIKey(): Promise<string>` — a typed public method on installed `ketcher-core@3.12.0`, routing through the same WASM worker as `getInchi()`. Zero new npm deps. Never compute/hash the key in JS; never derive it from the displayed InChI (separate WASM command).
-- **Verbatim passthrough invariant:** displayed key === copied key === raw `getInChIKey()` output. Parser returns `{kind,start,end}` offsets only; renderer slices the stored verbatim string; never re-join segments. (Direct analogue of the InChI `.`-drop passthrough bug — memory `feedback_inchi_passthrough.md`.)
-- **Single pipeline:** fetch concurrently via `Promise.all([getInchi(true), getInChIKey()])` inside the existing 150ms debounced `handleChange`; re-check `thisGen` after the await; one atomic `setInchiData(..., inchiKey)` write; clear to `''` in the empty guard and catch path. No second subscription/timer/generation counter; no `getInChIKey()` in `handleMolSelectLogic`.
-- **No canvas highlighting from key segments:** segments must NOT call `setHover`/`setSubHover` (wired to `useKetcherHighlights`). The absence of highlighting is the central teaching point (INKEY-09). Use a component-local hover index.
-- **Canvas never remounts (D-13):** `InchiKeySection` is a leaf sibling after `InchiSection`; never touch `KetcherPanel` / module-level `structServiceProvider`. Add store fields, don't reshape `setInchiData`.
-- **Segment layout (InChI Trust FAQ):** chars 0–13 skeleton hash, 14 hyphen, 15–22 remaining-layers hash, 23 flag (`S`/`N`), 24 version (`A`)… use verified offsets pinned by a slice-boundary test. (Note: research files vary slightly on the trailing flag/version char order; pin against the live key for presets — flag `S`, version `A` — during Phase 11/13.)
-- **Copy button:** reuse the StrictMode-safe `mountedRef` reset-on-mount pattern (WR-02); a shared `useCopyButton` hook is recommended but optional.
-- **Multi-component:** one key for the whole assembly; explanation must say so; test against an INCHI-06-style multi-fragment fixture.
+| Category | Item | Status |
+|----------|------|--------|
+| quick_task | 260610-cho-fix-preset-highlight-guard-timing-and-st | missing |
+| quick_task | 260610-csa-decouple-layertext-rawtext-from-position | missing |
+| quick_task | 260610-d2r-fix-mixed-n-star-semicolon-hover-highlig | missing |
+| quick_task | 260610-eci-fix-canonical-to-pool-id-remap-for-multi | missing |
+| quick_task | 260610-eoi-fix-readingfor-multi-fragment-text-and-t | missing |
+| quick_task | 260610-fn1-scope-formula-layer-h-hover-to-the-hover | missing |
+| quick_task | 260610-ist-unify-h-hover-formula-h-count-and-h-laye | missing |
+| quick_task | 260610-jyj-replace-preset-cid-with-hardcoded-smiles | missing |
 
 ## Key Decisions (carry-forward)
+
+- InChIKey source is `ketcher.getInChIKey()` (typed public method on ketcher-core 3.12.0, same WASM worker) — never hash/derive in JS; verbatim passthrough (offsets-only parser, renderer slices the stored string). Key segments never call `setHover`/`setSubHover` — no canvas highlight by design (v1.3)
 
 - Use `@vitejs/plugin-react` (esbuild), NOT the SWC variant — SWC crashes on Ketcher packages (issue #5565)
 - All three Ketcher packages (`ketcher-react`, `ketcher-standalone`, `ketcher-core`) pinned to exactly 3.12.0
@@ -60,6 +58,7 @@ See: .planning/PROJECT.md (updated 2026-06-18)
 
 ## Milestone Archive
 
+- v1.3: see `.planning/MILESTONES.md` (Phases 11–13, shipped 2026-06-19, tag `v1.3`); roadmap `.planning/milestones/v1.3-ROADMAP.md`, requirements `.planning/milestones/v1.3-REQUIREMENTS.md`
 - v1.2: see `.planning/MILESTONES.md` (Phases 9–10, shipped 2026-06-18, tag `v1.2`); roadmap `.planning/milestones/v1.2-ROADMAP.md`
 - v1.1 (patch): `.planning/MILESTONES.md` — 70 commits since v1.0, tag `v1.1`
 - v1.0: `.planning/milestones/v1.0-ROADMAP.md` / `v1.0-REQUIREMENTS.md`, tag `v1.0`
@@ -70,14 +69,14 @@ None
 
 ## Current Position
 
-Phase: 13
-Plan: Not started
-Status: Executing Phase 13
-Last activity: 2026-06-19
+Phase: Milestone v1.3 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-06-19 — Milestone v1.3 completed and archived
 
 ## Operator Next Steps
 
-- Phase 12 plans 12-01 & 12-02 executed; code review (12-REVIEW.md) found 1 BLOCKER + 3 warnings + 2 info. Review-fix recovery was interrupted (no fixes landed). Resume by applying fixes — `/gsd-code-review --fix` (phase 12).
+- Start the next milestone with /gsd-new-milestone
 
 ## Session Continuity
 

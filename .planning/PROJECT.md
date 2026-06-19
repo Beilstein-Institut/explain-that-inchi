@@ -10,27 +10,18 @@ Shipped as a static build to GitHub Pages (no server, no backend). All InChI com
 
 Every chunk of an InChI string is hoverable, explained, and linked back to the atoms in the drawing — demystifying a notation that most chemists treat as opaque.
 
-## Current Milestone: v1.3 InChIKey display & explanation
-
-**Goal:** Display the molecule's InChIKey below the InChI, with each segment color-coded, hoverable, and explained — mirroring the existing InChI strip treatment.
-
-**Target features:**
-- InChIKey shown below the InChI strip, computed live from the same library source as the InChI
-- Per-segment color-coding + hover explanation cards (skeleton hash / remaining-layers hash / version+flag chars / protonation char)
-- Explanatory content: block structure, purpose, one-way-hash (not reversible, no atom mapping), collision caveat
-- Copy-to-clipboard button matching the InChI (PLSH-04 style)
-
-**Key context:** The InChIKey is a one-way hash — its segments do NOT highlight canvas atoms (unlike InChI layers). Open technical question for research: how to obtain the InChIKey from ketcher-standalone's public API.
-
 ## Current State
 
-**Version:** v1.3 — all phases complete 2026-06-19 (live InChIKey display & per-segment explanation, on v1.2 feedback / v1.1 polish / v1.0 MVP)
+**Version:** v1.3 — SHIPPED 2026-06-19 (live InChIKey display & per-segment explanation), tagged `v1.3`. Next milestone being planned.
 
 - v1.0: 8 phases, 25 plans; v1.1: 70-commit maintenance/polish patch; v1.2: 2 phases (9–10), 6 plans; v1.3: 3 phases (11–13), 6 plans
 - Tech stack: Vite 8 + React 18 + TypeScript + Ketcher 3.12.0 (WASM) + Zustand 5 + CSS Modules
 - 301 unit/integration tests passing; TypeScript clean; production build clean
 - Deployed to GitHub Pages via GitHub Actions CD
-- Next: v1.3 milestone ready to close (`/gsd:complete-milestone`)
+
+## Next Milestone Goals
+
+To be defined via `/gsd:new-milestone`. Candidate directions in **Active (v2 candidates)** below: shareable URL (MAP-03), accessibility (ACCS-01/02), content expansion (CONT-01/02), appearance (APPR-01/02), plus v1.3 deferrals INKEY-F1/F2/F3.
 
 ## Requirements
 
@@ -65,6 +56,18 @@ Every chunk of an InChI string is hoverable, explained, and linked back to the a
 - ✓ FEED-07: ~7.5 KB byte-budget truncation of context (never the message) with clipboard fallback — v1.2
 - ✓ FEED-08: Empty-canvas feedback degrades cleanly ("no structure loaded") — v1.2
 - ✓ FEED-09: Build injects app version/commit (Vite `define`, `git describe`/`GITHUB_SHA` fallback) surfaced in context — v1.2
+- ✓ INKEY-01: Live InChIKey below the InChI strip, computed from the same WASM source (`ketcher.getInChIKey()`), in sync with the molecule — v1.3
+- ✓ INKEY-02: Displayed/copied key is the verbatim library output — never reconstructed from parsed segments — v1.3
+- ✓ INKEY-03: Color-coded key segments (skeleton / remaining-layers / flag+version / protonation) with dimmed hyphens — v1.3
+- ✓ INKEY-04: Hovering a segment surfaces a per-segment explanation card (no canvas highlight) — v1.3
+- ✓ INKEY-05: Copy-to-clipboard for the verbatim key with visual confirmation (PLSH-04 parity) — v1.3
+- ✓ INKEY-06: Empty/invalid structure shows placeholder, no key, no error (PLSH-01 parity) — v1.3
+- ✓ INKEY-07: Explanation describes the block structure (14-char skeleton / 8-char remaining-layers / flag+version / protonation) — v1.3
+- ✓ INKEY-08: Explanation describes purpose — a fixed 27-char, search-friendly hashed form of the InChI — v1.3
+- ✓ INKEY-09: Explanation states the key is a one-way hash — not reversible, not atom-mappable; segments deliberately do NOT highlight atoms — v1.3
+- ✓ INKEY-10: Explanation includes the collision caveat (improbable but possible; for lookup, not proof of identity) — v1.3
+- ✓ INKEY-11: Skeleton-hash card notes same-connectivity molecules share the first block (basis for lookup) — v1.3
+- ✓ INKEY-12: Flag/version card distinguishes standard (`S`) vs non-standard (`N`) and version char (`A`) — v1.3
 
 ### Active (v2 candidates)
 
@@ -75,6 +78,9 @@ Every chunk of an InChI string is hoverable, explained, and linked back to the a
 - [ ] CONT-02: Molecule search by name or InChI string
 - [ ] APPR-01: Dark mode toggle with adapted design tokens
 - [ ] APPR-02: Print styles for the explanation panel
+- [ ] INKEY-F1: "Search this InChIKey on the web / PubChem" outbound link — deferred from v1.3
+- [ ] INKEY-F2: A charged-species preset to live-demo the protonation character (ties into CONT-01) — deferred from v1.3
+- [ ] INKEY-F3: First-block partial-match interactive / "how the hash is built" deep dive — deferred from v1.3
 
 ### Out of Scope
 
@@ -118,6 +124,12 @@ Every chunk of an InChI string is hoverable, explained, and linked back to the a
 | Real `<a target="_blank" rel="noopener">` click, no await before open | Avoids popup-blocker on the user gesture | ✓ Good (v1.2) |
 | Feedback is ephemeral UI state, dialog is a leaf sibling | Never add store fields / remount KetcherPanel | ✓ Good (v1.2) — canvas never remounts |
 | Preview SMILES via getSmiles() + flushSync on open | Async SMILES must render before showModal to avoid stale flash | ✓ Good (v1.2 gap-closure) |
+| InChIKey via `ketcher.getInChIKey()` (no JS hashing) | Typed public method on ketcher-core 3.12.0, same WASM worker as getInchi | ✓ Good (v1.3) — zero new deps |
+| Concurrent fetch via Promise.allSettled in same debounce tick | Both WASM calls share the 150ms debounce + one generationRef guard; asymmetric rejection (failed key blanks only the key) | ✓ Good (v1.3) — no second subscription/timer |
+| parseInchiKey returns offsets only; renderer slices verbatim | Verbatim passthrough invariant — displayed === copied === raw output | ✓ Good (v1.3) — applies the InChI `.`-drop lesson |
+| Key hover uses a store field that never reaches useKetcherHighlights | No canvas highlight from key segments — the absence IS the teaching point (INKEY-09) | ✓ Good (v1.3) — verified by grep |
+| InchiKeySection is a leaf sibling after InchiSection | Canvas/WASM must never remount (D-13) | ✓ Good (v1.3) — canvas never remounts |
+| inchiKeyInfo.ts prose module (parallel to layerInfo.ts) | Static copy extracted for testability; SC-1 test pins zone labels + offsets | ✓ Good (v1.3) |
 
 ## Constraints
 
@@ -132,4 +144,4 @@ Every chunk of an InChI string is hoverable, explained, and linked back to the a
 This document evolves at phase transitions and milestone boundaries.
 
 ---
-*Last updated: 2026-06-19 — Phase 13 complete; v1.3 milestone (InChIKey display & explanation) all phases done*
+*Last updated: 2026-06-19 after v1.3 milestone (InChIKey display & explanation) — shipped and tagged*
