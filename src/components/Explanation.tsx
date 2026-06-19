@@ -103,8 +103,15 @@ export function Explanation() {
               <p className={styles.layerBody}>{info!.blurb}</p>
               <div className={styles.layerEg}>
                 <span className={styles.lbl}>{info!.egLabel}</span>
-                {/* D-09: innerHTML for reading-code block */}
-                <span dangerouslySetInnerHTML={{ __html: reading || info!.eg || layer.text }} />
+                {/* D-09: innerHTML only for readingFor()/info.eg (emit known-safe <b>/<span> tags).
+                    WR-02: layer.text fallback is rendered as a plain React text child, never
+                    as raw HTML, so any '<'/'>' in malformed/edge parses is escaped, not markup. */}
+                {(() => {
+                  const safeHtml = reading || info!.eg;
+                  return safeHtml
+                    ? <span dangerouslySetInnerHTML={{ __html: safeHtml }} />
+                    : <span>{layer.text}</span>;
+                })()}
               </div>
             </>
           )}
