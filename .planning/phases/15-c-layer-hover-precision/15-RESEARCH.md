@@ -817,17 +817,15 @@ V2–V6 do not apply to canvas highlight spec computation.
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Comma-inside-branch UX**
+1. **Comma-inside-branch UX** — RESOLVED: suppress the `inchiSubtoken` class (no hover affordance) for paren spans with `bondPairs.length === 0`. Adopted in plan 15-02 Task 1 (case 'open' emits a plain span when bondPairs is empty).
    - What we know: the notation is spec-valid but rare; produces no hyphen tokens; the branch span would highlight nothing.
-   - What's unclear: how common is this in practice for the target molecules?
-   - Recommendation: suppress `inchiSubtoken` class (no hover affordance) for paren spans with `bondPairs.length === 0`. This requires checking at render time — simple condition.
+   - Resolution: render-time condition — no hover ring when there are no bonds to highlight.
 
-2. **Close-paren bond set access**
-   - What we know: the `)` token needs the same `bondPairs` as its matching `(`. In the token array, `tokens[closeToken.openTokenIdx]` holds the open token.
-   - What's unclear: should `bondPairs` be stored on the open token (and looked up by the close token renderer), or should both tokens carry a copy?
-   - Recommendation: store on the open token; the close renderer looks it up by `openTokenIdx`. Avoids duplication.
+2. **Close-paren bond set access** — RESOLVED: store `bondPairs` on the open token; the close renderer looks it up by `openTokenIdx` (`tokens[closeToken.openTokenIdx]`). Adopted in plan 15-02 Task 1 (case 'close'). Avoids duplicating the bond set across both tokens.
+   - What we know: the `)` token needs the same `bondPairs` as its matching `(`.
+   - Resolution: single source of truth on the open token; symmetric highlight per D-04.
 
 ---
 
