@@ -6,7 +6,7 @@ status: planning
 last_updated: "2026-06-19T11:36:58.064Z"
 last_activity: 2026-06-19
 progress:
-  total_phases: 0
+  total_phases: 2
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -16,15 +16,15 @@ progress:
 # Project State
 
 **Project:** Explain that InChI
-**Milestone:** v1.3 — InChIKey display & explanation (roadmap drafted; Phases 11–13)
-**Status:** v1.3 milestone complete
+**Milestone:** v1.4 — Reset control & c-layer hover precision (roadmap drafted; Phases 14–15)
+**Status:** Roadmapped — ready to plan Phase 14
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-06-19)
 
 **Core value:** Every chunk of an InChI string is hoverable, explained, and linked back to the atoms in the drawing — demystifying a notation that most chemists treat as opaque.
-**Current focus:** Planning next milestone
+**Current focus:** v1.4 — Reset control (Phase 14) and c-layer hover precision (Phase 15)
 
 ## Deferred Items
 
@@ -43,8 +43,8 @@ Items acknowledged and deferred at v1.3 milestone close on 2026-06-19 (same v1.0
 
 ## Key Decisions (carry-forward)
 
+- **v1.4 invariants:** Reset and c-layer work must honor the established no-remount invariant — never conditionally render `<Editor>`, never recreate `StandaloneStructServiceProvider`. Reset = Ketcher built-in clear + Zustand store reset (leaf-sibling control, like the feedback dialog). C-layer precision = offset/highlight-logic changes only in `buildHighlightSpecs`/`buildSubHoverSpecs` → `useKetcherHighlights`; never re-render or re-join the verbatim InChI string; fragment correctness rides on the AuxInfo canonical→Ketcher pool-ID map.
 - InChIKey source is `ketcher.getInChIKey()` (typed public method on ketcher-core 3.12.0, same WASM worker) — never hash/derive in JS; verbatim passthrough (offsets-only parser, renderer slices the stored string). Key segments never call `setHover`/`setSubHover` — no canvas highlight by design (v1.3)
-
 - Use `@vitejs/plugin-react` (esbuild), NOT the SWC variant — SWC crashes on Ketcher packages (issue #5565)
 - All three Ketcher packages (`ketcher-react`, `ketcher-standalone`, `ketcher-core`) pinned to exactly 3.12.0
 - `StandaloneStructServiceProvider` must be created at module level, never inside a component
@@ -68,17 +68,17 @@ None
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 14 — Reset control (not started)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-06-19 — Milestone v1.4 started
+Status: Roadmapped — ready to plan Phase 14
+Last activity: 2026-06-19 — v1.4 roadmap created (Phases 14–15, 10/10 requirements mapped)
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Plan the first phase with /gsd-plan-phase 14
 
 ## Session Continuity
 
 Last session: 2026-06-19T06:53:59.137Z
-Stopped at: Phase 13 context gathered
-Resume file: .planning/phases/13-content-explanation/13-CONTEXT.md
+Stopped at: v1.4 roadmap created — Phases 14 (Reset) and 15 (C-layer precision)
+Resume file: .planning/ROADMAP.md

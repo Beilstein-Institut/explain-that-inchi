@@ -40,15 +40,15 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| RESET-01 | — | Pending |
-| RESET-02 | — | Pending |
-| RESET-03 | — | Pending |
-| RESET-04 | — | Pending |
-| RESET-05 | — | Pending |
-| CLYR-01 | — | Pending |
-| CLYR-02 | — | Pending |
-| CLYR-03 | — | Pending |
-| CLYR-04 | — | Pending |
-| CLYR-05 | — | Pending |
+| RESET-01 | Phase 14 | Pending |
+| RESET-02 | Phase 14 | Pending |
+| RESET-03 | Phase 14 | Pending |
+| RESET-04 | Phase 14 | Pending |
+| RESET-05 | Phase 14 | Pending |
+| CLYR-01 | Phase 15 | Pending |
+| CLYR-02 | Phase 15 | Pending |
+| CLYR-03 | Phase 15 | Pending |
+| CLYR-04 | Phase 15 | Pending |
+| CLYR-05 | Phase 15 | Pending |
 
 *(Phase column filled by the roadmap.)*

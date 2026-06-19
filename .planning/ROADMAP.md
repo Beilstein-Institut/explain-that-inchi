@@ -6,6 +6,7 @@
 - ✅ **v1.1 Post-ship correctness & polish** — patch, no roadmap phases (shipped 2026-06-17)
 - ✅ **v1.2 In-app feedback via prefilled GitHub issues** — Phases 9–10 (shipped 2026-06-18)
 - ✅ **v1.3 InChIKey display & explanation** — Phases 11–13 (shipped 2026-06-19)
+- 🚧 **v1.4 Reset control & c-layer hover precision** — Phases 14–15 (planning)
 
 ## Phases
 
@@ -46,6 +47,40 @@ Full phase details: `.planning/milestones/v1.3-ROADMAP.md`
 
 </details>
 
+### 🚧 v1.4 Reset control & c-layer hover precision (Phases 14–15)
+
+- [ ] **Phase 14: Reset control** — A Reset control clears the canvas and returns all app state to its empty/idle placeholder, without remounting the canvas/WASM.
+- [ ] **Phase 15: C-layer hover precision** — C-layer atom numbers, hyphens, and parentheses each highlight the exact atom/bond(s) they denote, correct across multi-fragment and duplicated-fragment molecules.
+
+## Phase Details
+
+### Phase 14: Reset control
+**Goal**: A user can clear their current exploration and return the entire tool to its fresh, empty starting state in one click.
+**Depends on**: Nothing within v1.4 (builds on the existing v1.3 app shell)
+**Requirements**: RESET-01, RESET-02, RESET-03, RESET-04, RESET-05
+**Success Criteria** (what must be TRUE):
+  1. A "Reset" control is visible immediately to the left of the "Send feedback" control.
+  2. Clicking Reset clears the molecule from the Ketcher canvas (equivalent to Ketcher's own clear action).
+  3. After Reset, the InChI strip, InChIKey, explanation card, legend, mapping, and any active hover/highlight all return to the placeholder/idle state shown before any molecule is drawn.
+  4. The Ketcher canvas and WASM are not remounted or re-initialized by Reset (canvas stays alive, no loading flash).
+  5. Clicking Reset on an already-empty canvas is a safe no-op — no error, idle state preserved.
+**Plans**: TBD
+**Notes**: Reset is a clear-to-empty action only (no undo/redo history, no confirmation dialog, no preset reload — see Out of Scope). Honor the leaf-sibling, no-remount invariant: trigger Ketcher's built-in clear and reset Zustand store fields; never conditionally render `<Editor>` or recreate the StructServiceProvider.
+**UI hint**: yes
+
+### Phase 15: C-layer hover precision
+**Goal**: When a user hovers any token of the connectivity (c) layer, the canvas highlights exactly the atom or bond(s) that token denotes — never more — and stays correct for multi-fragment and duplicated-fragment molecules.
+**Depends on**: Nothing within v1.4 (independent of Phase 14; both build on the existing highlight pipeline)
+**Requirements**: CLYR-01, CLYR-02, CLYR-03, CLYR-04, CLYR-05
+**Success Criteria** (what must be TRUE):
+  1. Hovering a canonical atom number in the c-layer highlights only that single atom (no bonds).
+  2. Hovering a hyphen (`-`) highlights the single bond connecting the two atoms it joins.
+  3. Hovering an opening or closing parenthesis (`(` / `)`) highlights all bonds involved in that branch.
+  4. For multi-fragment molecules, every c-layer atom/hyphen/parenthesis hover resolves within its own fragment (correct atoms/bonds, no cross-fragment bleed).
+  5. For duplicated/repeated fragments (multiplied component prefixes), c-layer hovers highlight the intended fragment instance(s).
+**Plans**: TBD
+**Notes**: This is the heavier, riskier area. Changes live in the existing `buildHighlightSpecs` / `buildSubHoverSpecs` → `useKetcherHighlights` pipeline (offset/highlight logic only — never re-render or re-join the verbatim InChI string). Fragment correctness rides on the canonical→Ketcher pool-ID mapping from AuxInfo. Highlight-precision changes only; existing c-layer explanation prose is unchanged unless found inaccurate.
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -63,7 +98,9 @@ Full phase details: `.planning/milestones/v1.3-ROADMAP.md`
 | 11. Source & Wiring | v1.3 | 3/3 | Complete | 2026-06-18 |
 | 12. Render & Layout | v1.3 | 2/2 | Complete | 2026-06-18 |
 | 13. Content & Explanation | v1.3 | 1/1 | Complete | 2026-06-19 |
+| 14. Reset control | v1.4 | 0/? | Not started | - |
+| 15. C-layer hover precision | v1.4 | 0/? | Not started | - |
 
 ---
 *Roadmap created: 2026-05-18*
-*Updated: 2026-06-19 — v1.3 milestone (InChIKey display & explanation) shipped and archived; Phases 11–13 collapsed*
+*Updated: 2026-06-19 — v1.4 milestone (Reset control & c-layer hover precision) roadmapped; Phases 14–15 added*
