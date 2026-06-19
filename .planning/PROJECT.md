@@ -24,13 +24,13 @@ Every chunk of an InChI string is hoverable, explained, and linked back to the a
 
 ## Current State
 
-**Version:** v1.2 — shipped 2026-06-18 (in-app feedback via prefilled GitHub issues, on the v1.1 polish patch / v1.0 MVP)
+**Version:** v1.3 — all phases complete 2026-06-19 (live InChIKey display & per-segment explanation, on v1.2 feedback / v1.1 polish / v1.0 MVP)
 
-- v1.0: 8 phases, 25 plans; v1.1: 70-commit maintenance/polish patch; v1.2: 2 phases (9–10), 6 plans
+- v1.0: 8 phases, 25 plans; v1.1: 70-commit maintenance/polish patch; v1.2: 2 phases (9–10), 6 plans; v1.3: 3 phases (11–13), 6 plans
 - Tech stack: Vite 8 + React 18 + TypeScript + Ketcher 3.12.0 (WASM) + Zustand 5 + CSS Modules
-- 256 unit/integration tests passing; TypeScript clean; production build clean
+- 301 unit/integration tests passing; TypeScript clean; production build clean
 - Deployed to GitHub Pages via GitHub Actions CD
-- Next milestone: not yet started (`/gsd:new-milestone`)
+- Next: v1.3 milestone ready to close (`/gsd:complete-milestone`)
 
 ## Requirements
 
@@ -132,4 +132,4 @@ Every chunk of an InChI string is hoverable, explained, and linked back to the a
 This document evolves at phase transitions and milestone boundaries.
 
 ---
-*Last updated: 2026-06-18 — milestone v1.3 (InChIKey display & explanation) started*
+*Last updated: 2026-06-19 — Phase 13 complete; v1.3 milestone (InChIKey display & explanation) all phases done*
