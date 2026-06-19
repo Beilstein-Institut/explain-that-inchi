@@ -2,23 +2,23 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Reset control & c-layer hover precision
-status: executing
+status: completed
 stopped_at: v1.4 roadmap created — Phases 14 (Reset) and 15 (C-layer precision)
-last_updated: "2026-06-19T11:53:42.080Z"
-last_activity: 2026-06-19 -- Phase 14 execution started
+last_updated: "2026-06-19T12:11:10.613Z"
+last_activity: 2026-06-19 -- Phase 14 marked complete
 progress:
   total_phases: 2
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 1
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 50
 ---
 
 # Project State
 
 **Project:** Explain that InChI
 **Milestone:** v1.4 — Reset control & c-layer hover precision (roadmap drafted; Phases 14–15)
-**Status:** Executing Phase 14
+**Status:** Phase 14 complete
 
 ## Project Reference
 
@@ -69,10 +69,10 @@ None
 
 ## Current Position
 
-Phase: 14 (reset-control) — EXECUTING
+Phase: 14 — COMPLETE
 Plan: 1 of 1
-Status: Executing Phase 14
-Last activity: 2026-06-19 -- Phase 14 execution started
+Status: Phase 14 complete
+Last activity: 2026-06-19 -- Phase 14 marked complete
 
 ## Operator Next Steps
 
