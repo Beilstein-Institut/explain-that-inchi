@@ -4,12 +4,12 @@ milestone: v1.3
 milestone_name: InChIKey display & explanation
 status: executing
 stopped_at: Phase 13 context gathered
-last_updated: "2026-06-19T06:53:59.147Z"
-last_activity: 2026-06-18 -- Phase 12 execution started
+last_updated: "2026-06-19T07:11:33.549Z"
+last_activity: 2026-06-19 -- Phase 13 planning complete
 progress:
   total_phases: 3
   completed_phases: 2
-  total_plans: 5
+  total_plans: 6
   completed_plans: 5
   percent: 67
 ---
@@ -18,7 +18,7 @@ progress:
 
 **Project:** Explain that InChI
 **Milestone:** v1.3 — InChIKey display & explanation (roadmap drafted; Phases 11–13)
-**Status:** Executing Phase 12
+**Status:** Ready to execute
 
 ## Project Reference
 
@@ -72,8 +72,8 @@ None
 
 Phase: 12 (render-layout) — EXECUTING
 Plan: 1 of 2
-Status: Executing Phase 12
-Last activity: 2026-06-18 -- Phase 12 execution started
+Status: Ready to execute
+Last activity: 2026-06-19 -- Phase 13 planning complete
 
 ## Operator Next Steps
 
