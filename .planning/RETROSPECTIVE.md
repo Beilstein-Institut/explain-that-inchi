@@ -80,3 +80,39 @@ A "Send feedback" control that opens a prefilled GitHub `issues/new` page in a n
 2. Any context shown in a preview must be sourced the same way it is at submit time — if it's async (`getSmiles()`), fetch-and-flush it on open rather than leaving the preview to guess.
 3. Category-as-title-prefix beats labels for GitHub issues opened by non-collaborators (labels silently drop).
 4. The post-merge code-review gate catches self-check blind spots (the stale-SMILES flash) — keep it required even for small gap-closure diffs.
+
+## Milestone: v1.3 — InChIKey display & explanation
+
+**Shipped:** 2026-06-19
+**Phases:** 3 (11–13) | **Plans:** 6 | **Commits since v1.2:** 63
+
+### What Was Built
+
+A live InChIKey rendered below the InChI strip: four color-coded zones (14-char skeleton hash, 8-char remaining-layers hash, standard-flag + version char, protonation char), per-segment hover explanation cards, and a verbatim copy-to-clipboard button — all client-side via `ketcher.getInChIKey()` with zero new deps. Phase 11 wired a single concurrent pipeline (`Promise.allSettled([getInchi(true), getInChIKey()])` in the existing debounce, extended `generationRef`/empty guards, pure offsets-only `parseInchiKey.ts`). Phase 12 rendered the `InchiKeySection` leaf sibling and extended the shared Explanation panel with key-zone cards. Phase 13 authored the `inchiKeyInfo.ts` prose (one-way-hash / collision / standard-flag teaching) pinned by an SC-1 offset test.
+
+### What Worked
+
+- **The passthrough invariant paid off twice.** The "offsets-only parser, renderer slices the verbatim string" rule — carried as a project memory from the InChI `.`-drop bug — was applied from the first plan, so the displayed/copied key was never at risk of reconstruction drift.
+- **Reusing the established seams.** No new architecture: rode the existing 150ms debounce, the existing `generationRef` stale guard, the leaf-sibling render pattern (D-13), and the StrictMode `mountedRef` copy pattern (PLSH-04). Each phase was small and low-risk because the patterns were already proven.
+- **"No highlight" as a verified invariant.** Confirming by grep that `keyHoverKind` never reaches `useKetcherHighlights` turned the central teaching point (a one-way hash can't point back to atoms) into a code-level guarantee, not just prose.
+- **Single-source WASM.** `ketcher.getInChIKey()` existing as a typed public method meant the milestone's one open research question was resolved at zero dependency cost.
+
+### What Was Inefficient
+
+- **Requirement checkboxes (again).** INKEY-03/04/05 stayed `[ ]` in REQUIREMENTS.md and the traceability table through close despite Phase 12 passing code-review + UAT — the same sync-debt lesson from v1.0 and v1.2, now three milestones running. The flip should happen at phase verification, not milestone archival.
+- **Stale STATE.md operator note.** STATE.md's "Operator Next Steps" still described a Phase 12 BLOCKER and an interrupted review-fix long after the fixes landed and UAT passed, while the frontmatter said `milestone_complete` — an internal contradiction that cost verification time at close to disprove.
+- **Phase 12 code review caught 3 real issues post-merge** (WR-01/02/03, incl. raw-HTML-vs-escaped-text and full-structure validation) — again surfaced by the review gate, not the executor self-check.
+
+### Patterns Established
+
+- Concurrent dual-WASM fetch via `Promise.allSettled` in one debounce tick, with asymmetric rejection handling (a failed key blanks only the key, not the InChI).
+- Offsets-only parser + verbatim-slice renderer as the standard shape for any "segment a library string" feature.
+- A hover-state store field deliberately *not* wired to the highlight hook, when the absence of highlighting is itself the intended behavior.
+- Static prose modules (`inchiKeyInfo.ts` parallel to `layerInfo.ts`) extracted for unit-testability and pinned by a label/offset test.
+
+### Key Lessons
+
+1. Flip requirement checkboxes at phase verification — three milestones in a row have paid the reconciliation tax at close.
+2. Keep STATE.md's narrative sections (Operator Next Steps, Current Position) in sync with its frontmatter; a stale operator note that contradicts `status` forces re-verification of already-done work.
+3. When a feature segments a library-produced string, never reconstruct — parse to offsets and slice the stored verbatim value (now a cross-feature invariant: InChI and InChIKey both).
+4. The post-merge code-review gate continues to earn its keep (3 real Phase 12 fixes); keep it required.
