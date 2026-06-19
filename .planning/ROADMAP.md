@@ -102,7 +102,11 @@ Plans:
   4. The skeleton-hash card notes that molecules sharing the same connectivity share this first block — the basis for InChIKey database/web lookup; the flag/version card distinguishes standard (`S`) vs non-standard (`N`) and the version character (`A`).
   5. Content notes that a multi-component/salt structure yields one key for the entire drawn assembly (no per-fragment keys), and no prose implies reversibility, atom-mapping, or guaranteed uniqueness.
 
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+**Wave 1**
+
+- [ ] 13-01-PLAN.md — Extract inchiKeyInfo.ts with KEY_ZONE_COPY prose for all 4 zones + SC-1 offset/label unit test
 **UI hint**: yes
 
 ## Cross-Cutting Invariants (carry into every v1.3 phase)
@@ -138,10 +142,11 @@ Surfaced here so it isn't mistaken for implementation work (per the v1.2 require
 | 10. Feedback dialog, context capture & entry point | v1.2 | 4/4 | Complete | 2026-06-18 |
 | 11. Source & Wiring | v1.3 | 3/3 | Complete   | 2026-06-18 |
 | 12. Render & Layout | v1.3 | 2/2 | Complete   | 2026-06-18 |
-| 13. Content & Explanation | v1.3 | 0/0 | Not started | - |
+| 13. Content & Explanation | v1.3 | 0/1 | In progress | - |
 
 ---
 *Roadmap created: 2026-05-18*
 *Updated: 2026-06-18 — v1.3 milestone (InChIKey display & explanation) roadmap added; Phases 11–13*
 *Updated: 2026-06-18 — Phase 11 plans created (3 plans, 2 waves)*
 *Updated: 2026-06-18 — Phase 12 plans created (2 plans, 2 waves)*
+*Updated: 2026-06-19 — Phase 13 plans created (1 plan, 1 wave)*
