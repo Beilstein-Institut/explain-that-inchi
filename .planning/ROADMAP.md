@@ -100,7 +100,7 @@ Plans:
 | 11. Source & Wiring | v1.3 | 3/3 | Complete | 2026-06-18 |
 | 12. Render & Layout | v1.3 | 2/2 | Complete | 2026-06-18 |
 | 13. Content & Explanation | v1.3 | 1/1 | Complete | 2026-06-19 |
-| 14. Reset control | v1.4 | 0/1 | Not started | - |
+| 14. Reset control | v1.4 | 0/1 | Planned    |  |
 | 15. C-layer hover precision | v1.4 | 0/? | Not started | - |
 
 ---
