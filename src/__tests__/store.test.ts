@@ -96,4 +96,63 @@ describe('useInchiStore', () => {
     expect(typeof state.setHover).toBe('function');
     expect(typeof state.setSubHover).toBe('function');
   });
+
+  describe('resetAll', () => {
+    it('resets all fields to idle after data and hover have been set', () => {
+      // Set up non-idle state
+      const fakeLayers: Layer[] = [
+        { type: 'version', prefix: '', text: '1S', atoms: [], bonds: [] },
+        { type: 'formula', prefix: '', text: 'CH4', atoms: [1], bonds: [] },
+      ];
+      const fakeMap: AuxMap = { 1: 0 };
+
+      useInchiStore.getState().setInchiData('InChI=1S/CH4/h1H4', fakeLayers, fakeMap, { 1: 'C' }, [2], 'VNWKTOKETHGBQD-UHFFFAOYSA-N');
+      useInchiStore.getState().setHover(0);
+      useInchiStore.getState().setSubHover({ kind: 'atom', canonical: 1 });
+      useInchiStore.getState().setKeyHoverKind('skeleton');
+      useInchiStore.getState().setLegendHover({ type: 'formula', eg: 'C6H6' });
+
+      // Call resetAll
+      useInchiStore.getState().resetAll();
+
+      // Assert all fields at idle
+      const state = useInchiStore.getState();
+      expect(state.inchi).toBe('');
+      expect(state.layers).toEqual([]);
+      expect(state.auxMap).toEqual({});
+      expect(state.atomElements).toEqual({});
+      expect(state.hAtomPoolIds).toEqual([]);
+      expect(state.inchiKey).toBe('');
+      expect(state.hoverIdx).toBeNull();
+      expect(state.subHover).toBeNull();
+      expect(state.keyHoverKind).toBeNull();
+      expect(state.legendHover).toBeNull();
+    });
+
+    it('is a safe no-op on an already-idle store (RESET-05)', () => {
+      // Store is already at idle state after beforeEach reset
+      expect(() => useInchiStore.getState().resetAll()).not.toThrow();
+
+      const state = useInchiStore.getState();
+      expect(state.inchi).toBe('');
+      expect(state.layers).toEqual([]);
+      expect(state.auxMap).toEqual({});
+      expect(state.atomElements).toEqual({});
+      expect(state.hAtomPoolIds).toEqual([]);
+      expect(state.inchiKey).toBe('');
+      expect(state.hoverIdx).toBeNull();
+      expect(state.subHover).toBeNull();
+      expect(state.keyHoverKind).toBeNull();
+      expect(state.legendHover).toBeNull();
+    });
+
+    it('sets keyHoverKind to null even when it was previously non-null', () => {
+      useInchiStore.getState().setKeyHoverKind('skeleton');
+      expect(useInchiStore.getState().keyHoverKind).toBe('skeleton');
+
+      useInchiStore.getState().resetAll();
+
+      expect(useInchiStore.getState().keyHoverKind).toBeNull();
+    });
+  });
 });
