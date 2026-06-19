@@ -92,7 +92,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 15-01-PLAN.md — Wave 0 test scaffolds + SubHover type extension + tokenizeCLayerSeg + buildSubHoverSpecs atom/bond/branch cases
+- [x] 15-01-PLAN.md — Wave 0 test scaffolds + SubHover type extension + tokenizeCLayerSeg + buildSubHoverSpecs atom/bond/branch cases
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -118,7 +118,7 @@ Plans:
 | 12. Render & Layout | v1.3 | 2/2 | Complete | 2026-06-18 |
 | 13. Content & Explanation | v1.3 | 1/1 | Complete | 2026-06-19 |
 | 14. Reset control | v1.4 | 1/1 | Complete   | 2026-06-19 |
-| 15. C-layer hover precision | v1.4 | 0/2 | Not started | - |
+| 15. C-layer hover precision | v1.4 | 1/2 | In Progress|  |
 
 ---
 *Roadmap created: 2026-05-18*

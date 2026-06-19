@@ -16,11 +16,11 @@
 
 ### C-layer hover precision (CLYR)
 
-- [ ] **CLYR-01**: Hovering a canonical atom number in the c-layer highlights only that single atom in the Ketcher canvas (no bonds).
-- [ ] **CLYR-02**: Hovering a hyphen (`-`) in the c-layer highlights the bond connecting the two atoms it joins.
-- [ ] **CLYR-03**: Hovering an opening or closing parenthesis (`(` / `)`) in the c-layer highlights all bonds involved in that branch.
-- [ ] **CLYR-04**: All c-layer atom-number, hyphen, and parenthesis hovers resolve to the correct atoms/bonds for multi-fragment molecules (each token maps within its own fragment).
-- [ ] **CLYR-05**: All c-layer hovers resolve correctly for duplicated/repeated fragments (multiplied component prefixes), highlighting the intended fragment instance(s).
+- [x] **CLYR-01**: Hovering a canonical atom number in the c-layer highlights only that single atom in the Ketcher canvas (no bonds).
+- [x] **CLYR-02**: Hovering a hyphen (`-`) in the c-layer highlights the bond connecting the two atoms it joins.
+- [x] **CLYR-03**: Hovering an opening or closing parenthesis (`(` / `)`) in the c-layer highlights all bonds involved in that branch.
+- [x] **CLYR-04**: All c-layer atom-number, hyphen, and parenthesis hovers resolve to the correct atoms/bonds for multi-fragment molecules (each token maps within its own fragment).
+- [x] **CLYR-05**: All c-layer hovers resolve correctly for duplicated/repeated fragments (multiplied component prefixes), highlighting the intended fragment instance(s).
 
 ## Future Requirements (deferred)
 
@@ -45,10 +45,10 @@
 | RESET-03 | Phase 14 | Pending |
 | RESET-04 | Phase 14 | Pending |
 | RESET-05 | Phase 14 | Pending |
-| CLYR-01 | Phase 15 | Pending |
-| CLYR-02 | Phase 15 | Pending |
-| CLYR-03 | Phase 15 | Pending |
-| CLYR-04 | Phase 15 | Pending |
-| CLYR-05 | Phase 15 | Pending |
+| CLYR-01 | Phase 15 | Complete |
+| CLYR-02 | Phase 15 | Complete |
+| CLYR-03 | Phase 15 | Complete |
+| CLYR-04 | Phase 15 | Complete |
+| CLYR-05 | Phase 15 | Complete |
 
 *(Phase column filled by the roadmap.)*

@@ -4,14 +4,14 @@ milestone: v1.4
 milestone_name: Reset control & c-layer hover precision
 status: executing
 stopped_at: Phase 15 context gathered
-last_updated: "2026-06-19T12:45:40.446Z"
-last_activity: 2026-06-19 -- Phase 15 planning complete
+last_updated: "2026-06-19T12:56:14.140Z"
+last_activity: 2026-06-19
 progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 3
-  completed_plans: 1
-  percent: 33
+  completed_plans: 2
+  percent: 50
 ---
 
 # Project State
@@ -25,7 +25,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-19)
 
 **Core value:** Every chunk of an InChI string is hoverable, explained, and linked back to the atoms in the drawing — demystifying a notation that most chemists treat as opaque.
-**Current focus:** Phase 14 — reset-control
+**Current focus:** Phase 15 — c-layer-hover-precision
 
 ## Deferred Items
 
@@ -69,10 +69,10 @@ None
 
 ## Current Position
 
-Phase: 14 — COMPLETE
-Plan: 1 of 1
+Phase: 15 (c-layer-hover-precision) — EXECUTING
+Plan: 2 of 2
 Status: Ready to execute
-Last activity: 2026-06-19 -- Phase 15 planning complete
+Last activity: 2026-06-19
 
 ## Operator Next Steps
 
@@ -80,6 +80,6 @@ Last activity: 2026-06-19 -- Phase 15 planning complete
 
 ## Session Continuity
 
-Last session: 2026-06-19T12:17:24.311Z
+Last session: 2026-06-19T12:56:14.133Z
 Stopped at: Phase 15 context gathered
-Resume file: .planning/phases/15-c-layer-hover-precision/15-CONTEXT.md
+Resume file: None
