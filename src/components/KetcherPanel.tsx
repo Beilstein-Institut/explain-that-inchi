@@ -12,6 +12,8 @@ interface KetcherPanelProps {
   isLoading: boolean;
   /** Opens the feedback dialog. Rendered as a trigger on the section-label row. */
   onFeedbackClick?: () => void;
+  /** Clears the canvas and resets all app state to idle. Rendered to the left of Send feedback. */
+  onResetClick?: () => void;
 }
 
 export function KetcherPanel({
@@ -22,16 +24,24 @@ export function KetcherPanel({
   onMolSelect,
   isLoading,
   onFeedbackClick,
+  onResetClick,
 }: KetcherPanelProps) {
   return (
     <section>
       <div className="section-label">
         <span>Draw a molecule to see its InChI</span>
-        {onFeedbackClick && (
-          <button type="button" className="feedback-trigger" onClick={onFeedbackClick}>
-            Send feedback
-          </button>
-        )}
+        <div className="section-label-actions">
+          {onResetClick && (
+            <button type="button" className="reset-trigger" onClick={onResetClick}>
+              Reset
+            </button>
+          )}
+          {onFeedbackClick && (
+            <button type="button" className="feedback-trigger" onClick={onFeedbackClick}>
+              Send feedback
+            </button>
+          )}
+        </div>
       </div>
       <div className={styles.ketcher}>
         {/* Canvas column: Editor + loading overlay + canvas-meta overlay */}
