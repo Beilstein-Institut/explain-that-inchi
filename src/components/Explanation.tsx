@@ -34,9 +34,16 @@ export function Explanation() {
   // CR-01 (defensive): an empty key can never show a key-segment card, even if a stale
   // keyHoverKind slips through. Primary fix is the keyHoverKind reset in setInchiData.
   const keyHoverKind = inchiKey ? rawKeyHoverKind : null;
+  // UAT-13: legend-hover payload — drives a static info card for layers not on the
+  // canvas (the floating tooltip was removed). Lower precedence than a live layer.
+  const legendHover = useInchiStore(state => state.legendHover);
 
   const layer = hoverIdx !== null ? layers[hoverIdx] : null;
   const info = layer ? LAYER_INFO[layer.type] : null;
+
+  const presentTypes = new Set(layers.map(l => l.type));
+  const legendInfo = legendHover ? LAYER_INFO[legendHover.type] : null;
+  const legendAccent = legendHover ? `var(--c-${swatchVar(legendHover.type)})` : 'var(--ink-faint)';
 
   // Pitfall 3: always set --accent so card::before always has a value.
   // Idle: var(--ink-faint); active: layer accent color.
@@ -68,36 +75,57 @@ export function Explanation() {
           <h3 className={styles.layerTitle}>{KEY_ZONE_COPY[keyHoverKind].title}</h3>
           <p className={styles.layerBody}>{KEY_ZONE_COPY[keyHoverKind].body}</p>
         </div>
-      ) : (
+      ) : layer ? (
+        /* Active state: a live InChI layer is hovered (InChI string or a present
+           legend row) — show layer info + readingFor output (title only). */
         <div
-          className={[styles.card, layer ? styles.active : ''].filter(Boolean).join(' ')}
+          className={[styles.card, styles.active].join(' ')}
           style={{ '--accent': accentVar } as React.CSSProperties}
         >
-          {!layer ? (
-            /* D-10: Idle state — DEFAULT_INFO with ink-faint left border (title only) */
-            <>
-              <h3 className={styles.layerTitle}>{DEFAULT_INFO.title}</h3>
-              <p className={styles.layerBody}>{DEFAULT_INFO.blurb}</p>
-            </>
-          ) : (
-            /* Active state: show layer info + readingFor output (title only) */
-            <>
-              <h3 className={styles.layerTitle}>{info!.title}</h3>
-              <p className={styles.layerBody}>{info!.blurb}</p>
-              <div className={styles.layerEg}>
-                <span className={styles.lbl}>{info!.egLabel}</span>
-                {/* D-09: innerHTML only for readingFor()/info.eg (emit known-safe <b>/<span> tags).
-                    WR-02: layer.text fallback is rendered as a plain React text child, never
-                    as raw HTML, so any '<'/'>' in malformed/edge parses is escaped, not markup. */}
-                {(() => {
-                  const safeHtml = reading || info!.eg;
-                  return safeHtml
-                    ? <span dangerouslySetInnerHTML={{ __html: safeHtml }} />
-                    : <span>{layer.text}</span>;
-                })()}
-              </div>
-            </>
+          <h3 className={styles.layerTitle}>{info!.title}</h3>
+          <p className={styles.layerBody}>{info!.blurb}</p>
+          <div className={styles.layerEg}>
+            <span className={styles.lbl}>{info!.egLabel}</span>
+            {/* D-09: innerHTML only for readingFor()/info.eg (emit known-safe <b>/<span> tags).
+                WR-02: layer.text fallback is rendered as a plain React text child, never
+                as raw HTML, so any '<'/'>' in malformed/edge parses is escaped, not markup. */}
+            {(() => {
+              const safeHtml = reading || info!.eg;
+              return safeHtml
+                ? <span dangerouslySetInnerHTML={{ __html: safeHtml }} />
+                : <span>{layer.text}</span>;
+            })()}
+          </div>
+        </div>
+      ) : legendHover ? (
+        /* UAT-13: static info for a hovered legend row whose layer is NOT on the
+           canvas — replaces the old floating tooltip. No live reading exists, so the
+           canonical example snippet is shown. l.eg is a plain InChI fragment string
+           (no markup) → rendered as an escaped React text child, never innerHTML. */
+        <div
+          className={[styles.card, styles.active].join(' ')}
+          style={{ '--accent': legendAccent } as React.CSSProperties}
+        >
+          <h3 className={styles.layerTitle}>{legendInfo!.title}</h3>
+          <p className={styles.layerBody}>{legendInfo!.blurb}</p>
+          {!presentTypes.has(legendHover.type) && (
+            <p className={styles.notPresent}>Not present in this molecule.</p>
           )}
+          {legendHover.eg && (
+            <div className={styles.layerEg}>
+              <span className={styles.lbl}>Example</span>
+              <span>{legendHover.eg}</span>
+            </div>
+          )}
+        </div>
+      ) : (
+        /* D-10: Idle state — DEFAULT_INFO with ink-faint left border (title only) */
+        <div
+          className={styles.card}
+          style={{ '--accent': 'var(--ink-faint)' } as React.CSSProperties}
+        >
+          <h3 className={styles.layerTitle}>{DEFAULT_INFO.title}</h3>
+          <p className={styles.layerBody}>{DEFAULT_INFO.blurb}</p>
         </div>
       )}
 

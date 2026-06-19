@@ -4,12 +4,12 @@
 // Reads layers from Zustand store to compute which layer types are present.
 
 import { useInchiStore } from '../store';
-import { LAYER_INFO, swatchVar } from '../lib/layerInfo';
+import { swatchVar } from '../lib/layerInfo';
 import type { LayerType } from '../lib/parseInchi';
 import styles from './Legend.module.css';
 import expStyles from './Explanation.module.css';
 
-const { setHover, setSubHover } = useInchiStore.getState();
+const { setHover, setSubHover, setLegendHover } = useInchiStore.getState();
 
 interface LegendLayerDef {
   type: LayerType;
@@ -50,15 +50,24 @@ export function Legend({ activeType }: LegendProps) {
         const present = presentTypes.has(l.type);
         const isActive = l.type === activeType;
         const color = `var(--c-${swatchVar(l.type)})`;
-        const info = LAYER_INFO[l.type];
         const layerIdx = layerIndexByType.get(l.type);
+        // UAT-13: hovering ANY row shows that layer's info in the explanation card
+        // (the floating tooltip is gone). Present layers also drive the live card +
+        // canvas highlight via setHover; absent layers show static info via legendHoverType.
         return (
           <div
             key={l.type}
             className={[styles.legendRow, !present ? styles.muted : ''].filter(Boolean).join(' ')}
             style={isActive ? { background: `var(--c-${swatchVar(l.type)}-bg)` } : undefined}
-            onMouseEnter={present && layerIdx !== undefined ? () => { setSubHover(null); setHover(layerIdx); } : undefined}
-            onMouseLeave={present && layerIdx !== undefined ? () => setHover(null) : undefined}
+            onMouseEnter={() => {
+              setSubHover(null);
+              setLegendHover({ type: l.type, eg: l.eg });
+              if (present && layerIdx !== undefined) setHover(layerIdx);
+            }}
+            onMouseLeave={() => {
+              setLegendHover(null);
+              if (present && layerIdx !== undefined) setHover(null);
+            }}
           >
             <span className={styles.sw} style={{ background: color }} />
             <span
@@ -71,13 +80,6 @@ export function Legend({ activeType }: LegendProps) {
               {l.name}
             </span>
             <span className={styles.desc}>{l.desc}</span>
-            <div className={styles.legendTip} role="tooltip">
-              <span className={styles.tipLabel}>
-                {l.name} layer{!present ? ' · not present in this molecule' : ''}
-              </span>
-              {info?.blurb || l.desc}
-              {l.eg && <span className={styles.tipEg}>e.g.&nbsp;{l.eg}</span>}
-            </div>
           </div>
         );
       })}

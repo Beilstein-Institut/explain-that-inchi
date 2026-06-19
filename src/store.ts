@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import type { Layer, AuxMap, SubHover } from './lib/parseInchi';
+import type { Layer, AuxMap, SubHover, LayerType } from './lib/parseInchi';
 
 // All v1 fields defined here per D-02.
 // hoverIdx and subHover are null until Phase 3 writes them.
@@ -16,6 +16,16 @@ import type { Layer, AuxMap, SubHover } from './lib/parseInchi';
  */
 export type KeyHoverZone = 'skeleton' | 'hash' | 'flagVersion' | 'protonation';
 
+/**
+ * UAT-13: a legend row being hovered. Carries the layer `type` (for card precedence
+ * and the "present in molecule" check) and the canonical `eg` snippet (shown as the
+ * example for layers not present on the canvas, where no live reading exists).
+ */
+export interface LegendHover {
+  type: LayerType;
+  eg: string;
+}
+
 interface InchiState {
   // Data fields
   inchi: string;
@@ -27,11 +37,16 @@ interface InchiState {
   hoverIdx: number | null;
   subHover: SubHover | null;
   keyHoverKind: KeyHoverZone | null;
+  // UAT-13: legend-hover payload. Lets the explanation card show a layer's static
+  // info (incl. layers NOT present in the molecule) instead of a floating tooltip.
+  // Present layers still drive the rich card via hoverIdx (higher precedence).
+  legendHover: LegendHover | null;
   // Actions
   setInchiData: (inchi: string, layers: Layer[], auxMap: AuxMap, atomElements: Record<number, string>, hAtomPoolIds?: number[], inchiKey?: string) => void;
   setHover: (idx: number | null) => void;
   setSubHover: (sub: SubHover | null) => void;
   setKeyHoverKind: (kind: KeyHoverZone | null) => void;
+  setLegendHover: (hover: LegendHover | null) => void;
 }
 
 // Zustand 5 TypeScript pattern: create<State>()() — double-call required.
@@ -51,6 +66,7 @@ export const useInchiStore = create<InchiState>()(
       hoverIdx: null,
       subHover: null,
       keyHoverKind: null,
+      legendHover: null,
       // CR-01: reset keyHoverKind on every data transition. setInchiData fires only
       // after a debounced structure change; at that point a stale key-hover (from an
       // emptied key or a preset swap) must be dropped so it cannot mask the panel.
@@ -58,6 +74,7 @@ export const useInchiStore = create<InchiState>()(
       setHover: (idx) => set({ hoverIdx: idx }),
       setSubHover: (sub) => set({ subHover: sub }),
       setKeyHoverKind: (kind) => set({ keyHoverKind: kind }),
+      setLegendHover: (hover) => set({ legendHover: hover }),
     }),
     { name: 'inchi-store' },
   ),

@@ -100,6 +100,14 @@
   text-wrap: pretty;
 }
 
+/* UAT-13: "not present in this molecule" note on the legend-hover static card. */
+.notPresent {
+  font-size: 12.5px;
+  font-style: italic;
+  color: var(--ink-faint);
+  margin: 0 0 14px;
+}
+
 /* Reading-code block — verbatim from styles.css .explain .layer-eg */
 .layerEg {
   font-family: var(--font-mono);
