@@ -30,3 +30,5 @@ node_modules/.tmp/
 memory/
 
 design_handoff_explain_that_inchi/
+# Claude Code local state (settings + transient agent worktrees)
+.claude/
