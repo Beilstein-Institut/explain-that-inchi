@@ -43,7 +43,7 @@ Full phase details: `.planning/milestones/v1.2-ROADMAP.md`
 
 - [x] **Phase 11: Source & Wiring** - Fetch the verbatim InChIKey from the same WASM source, store it atomically with the InChI, ride the existing race/empty guards (completed 2026-06-18)
 - [x] **Phase 12: Render & Layout** - Render the verbatim key as color-coded segments with dimmed hyphens, local-state hover, and a copy button — as a leaf sibling that never remounts the canvas (completed 2026-06-18)
-- [ ] **Phase 13: Content & Explanation** - Author per-segment explanation cards and the one-way-hash / collision / standard-flag teaching content
+- [x] **Phase 13: Content & Explanation** - Author per-segment explanation cards and the one-way-hash / collision / standard-flag teaching content (completed 2026-06-19)
 
 ## Phase Details (v1.3)
 
@@ -106,7 +106,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 13-01-PLAN.md — Extract inchiKeyInfo.ts with KEY_ZONE_COPY prose for all 4 zones + SC-1 offset/label unit test
+- [x] 13-01-PLAN.md — Extract inchiKeyInfo.ts with KEY_ZONE_COPY prose for all 4 zones + SC-1 offset/label unit test
 **UI hint**: yes
 
 ## Cross-Cutting Invariants (carry into every v1.3 phase)
@@ -142,7 +142,7 @@ Surfaced here so it isn't mistaken for implementation work (per the v1.2 require
 | 10. Feedback dialog, context capture & entry point | v1.2 | 4/4 | Complete | 2026-06-18 |
 | 11. Source & Wiring | v1.3 | 3/3 | Complete   | 2026-06-18 |
 | 12. Render & Layout | v1.3 | 2/2 | Complete   | 2026-06-18 |
-| 13. Content & Explanation | v1.3 | 0/1 | In progress | - |
+| 13. Content & Explanation | v1.3 | 1/1 | Complete   | 2026-06-19 |
 
 ---
 *Roadmap created: 2026-05-18*

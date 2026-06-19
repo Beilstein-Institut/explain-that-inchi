@@ -4,8 +4,8 @@ milestone: v1.3
 milestone_name: InChIKey display & explanation
 status: executing
 stopped_at: Phase 13 context gathered
-last_updated: "2026-06-19T07:11:33.549Z"
-last_activity: 2026-06-19 -- Phase 13 planning complete
+last_updated: "2026-06-19T07:15:19.722Z"
+last_activity: 2026-06-19 -- Phase 13 execution started
 progress:
   total_phases: 3
   completed_phases: 2
@@ -18,14 +18,14 @@ progress:
 
 **Project:** Explain that InChI
 **Milestone:** v1.3 — InChIKey display & explanation (roadmap drafted; Phases 11–13)
-**Status:** Ready to execute
+**Status:** Executing Phase 13
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-06-18)
 
 **Core value:** Every chunk of an InChI string is hoverable, explained, and linked back to the atoms in the drawing — demystifying a notation that most chemists treat as opaque.
-**Current focus:** Phase 12 — render-layout
+**Current focus:** Phase 13 — content-explanation
 
 ## v1.3 Roadmap (Phases 11–13)
 
@@ -70,10 +70,10 @@ None
 
 ## Current Position
 
-Phase: 12 (render-layout) — EXECUTING
-Plan: 1 of 2
-Status: Ready to execute
-Last activity: 2026-06-19 -- Phase 13 planning complete
+Phase: 13 (content-explanation) — EXECUTING
+Plan: 1 of 1
+Status: Executing Phase 13
+Last activity: 2026-06-19 -- Phase 13 execution started
 
 ## Operator Next Steps
 
