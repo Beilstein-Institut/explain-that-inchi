@@ -38,7 +38,7 @@ export const LAYER_INFO: Record<LayerType, LayerInfoEntry> = {
     title: 'Connection layer',
     accent: 'var(--c-conn)',
     blurb:
-      'How the heavy atoms are wired together, using canonical atom numbers. Hyphens chain bonds; parentheses open branches. The skeleton, without any hydrogens.',
+      'How the heavy atoms are wired together, using canonical atom numbers. Hyphens chain bonds; parentheses open and close branches. The skeleton, without any hydrogens.',
     egLabel: 'Reads as',
   },
   h: {
