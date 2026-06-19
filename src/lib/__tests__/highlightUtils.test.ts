@@ -698,7 +698,9 @@ describe('buildSubHoverSpecs', () => {
       expect(specs[0].color).toBe('--c-el-C');
     });
 
-    it('kind atom: single atom + all incident bonds from struct.bonds.forEach', () => {
+    it('kind atom: single atom highlighted, bonds is [] (CLYR-01 D-01: no incident bonds)', () => {
+      // CLYR-01: atom number hover highlights ONLY the atom — no incident bonds.
+      // Bonds are reachable via their own hyphen hover tokens (kind:'bond').
       const struct = makeMockStruct();
       const specs = buildSubHoverSpecs(
         { kind: 'atom', canonical: 1 },
@@ -712,10 +714,8 @@ describe('buildSubHoverSpecs', () => {
       expect(specs.length).toBeGreaterThan(0);
       // canonical 1 → ketcher 0
       expect(specs[0].atoms).toContain(0);
-      // bonds incident to atom 0 (begin or end === 0): bonds 0 (0→1) and 5 (5→0)
-      expect(specs[0].bonds.length).toBeGreaterThan(0);
-      expect(specs[0].bonds).toContain(0); // bond id 0: begin=0, end=1
-      expect(specs[0].bonds).toContain(5); // bond id 5: begin=5, end=0
+      // CLYR-01: bonds MUST be empty — no incident bonds (changed from pre-Phase-15 behavior)
+      expect(specs[0].bonds).toEqual([]);
     });
 
     it('kind atom: color is --c-conn', () => {

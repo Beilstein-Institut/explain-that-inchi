@@ -435,12 +435,42 @@ export function buildSubHoverSpecs(
       const canonIds = subHover.canonicals ?? (subHover.canonical != null ? [subHover.canonical] : []);
       const kAtomIds = canonIds.map(c => auxMap[c]).filter((id): id is number => id !== undefined);
       if (kAtomIds.length === 0) return [];
-      const incidentBonds: number[] = [];
-      struct.bonds.forEach((bond, bid) => {
-        if (kAtomIds.includes(bond.begin) || kAtomIds.includes(bond.end)) incidentBonds.push(bid);
-      });
+      // CLYR-01 (D-01): atom number hover highlights ONLY the atom — no incident bonds.
+      // Bonds are reachable via their own hyphen tokens (kind:'bond').
       const color = resolveVarFn('--c-conn');
-      return [{ atoms: kAtomIds, bonds: incidentBonds, rgroupAttachmentPoints: [], color }];
+      return [{ atoms: kAtomIds, bonds: [], rgroupAttachmentPoints: [], color }];
+    }
+
+    case 'bond': {
+      // CLYR-02 (D-02): hyphen hover highlights only the bond between the two endpoint atoms.
+      // endpointPairs: [[leftCanonical, rightCanonical], ...] — offset already applied by caller.
+      // N* multi-fragment: multiple pairs, one per fragment instance.
+      const bonds: number[] = [];
+      for (const [a, b] of subHover.endpointPairs ?? []) {
+        const kA = auxMap[a];
+        const kB = auxMap[b];
+        if (kA === undefined || kB === undefined) continue;
+        const bid = struct.findBondId(kA, kB);
+        if (bid !== null) bonds.push(bid);
+      }
+      if (bonds.length === 0) return [];
+      return [{ atoms: [], bonds, rgroupAttachmentPoints: [], color: resolveVarFn('--c-conn') }];
+    }
+
+    case 'branch': {
+      // CLYR-03 (D-03/D-04): parenthesis hover highlights all bonds in the branch (incl. nested
+      // sub-branches and the stem bond). bondPairs: all hyphen pairs within the branch token range.
+      // Deduplication via includes() guard prevents nested branches from producing duplicate bond IDs.
+      const bonds: number[] = [];
+      for (const [a, b] of subHover.bondPairs ?? []) {
+        const kA = auxMap[a];
+        const kB = auxMap[b];
+        if (kA === undefined || kB === undefined) continue;
+        const bid = struct.findBondId(kA, kB);
+        if (bid !== null && !bonds.includes(bid)) bonds.push(bid);
+      }
+      if (bonds.length === 0) return [];
+      return [{ atoms: [], bonds, rgroupAttachmentPoints: [], color: resolveVarFn('--c-conn') }];
     }
 
     case 'stereo': {
