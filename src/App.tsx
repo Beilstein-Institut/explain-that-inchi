@@ -95,6 +95,20 @@ export default function App() {
     dialogRef.current?.showModal();
   };
 
+  // Clears the Ketcher canvas and resets all store state to idle in a single action (RESET-01..05).
+  // 1. setMolecule('') uses Ketcher's own clear path — fires a 'change' event which triggers
+  //    handleChange waterfall (debounced 150ms) → setInchiData('', [], {}, {}, [], '').
+  // 2. resetAll() clears hover fields immediately — no debounce wait (RESET-03).
+  // 3. setSelectedMolId(null) deselects any active preset in the examples list.
+  // RESET-04: no conditional rendering — ketcherRef.current is only null-checked, never toggles state.
+  // RESET-05: setMolecule('') on an already-empty canvas is safe (Ketcher no-ops it).
+  const handleReset = async () => {
+    if (!ketcherRef.current) return;
+    await ketcherRef.current.setMolecule('');
+    useInchiStore.getState().resetAll();
+    setSelectedMolId(null);
+  };
+
   // Assembles FeedbackContext at submit time with a live getSmiles() call (D-12 / D-13 / D-14).
   // Reads inchi from store via getState() (not a hook subscription — avoids extra re-renders).
   const handleFeedbackSubmit = async (
@@ -234,6 +248,7 @@ export default function App() {
         onMolSelect={handleMolSelect}
         isLoading={isLoading}
         onFeedbackClick={handleFeedbackOpen}
+        onResetClick={handleReset}
       />
       <InchiSection />
       <InchiKeySection />
