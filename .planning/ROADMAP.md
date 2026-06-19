@@ -55,35 +55,49 @@ Full phase details: `.planning/milestones/v1.3-ROADMAP.md`
 ## Phase Details
 
 ### Phase 14: Reset control
+
 **Goal**: A user can clear their current exploration and return the entire tool to its fresh, empty starting state in one click.
 **Depends on**: Nothing within v1.4 (builds on the existing v1.3 app shell)
 **Requirements**: RESET-01, RESET-02, RESET-03, RESET-04, RESET-05
 **Success Criteria** (what must be TRUE):
+
   1. A "Reset" control is visible immediately to the left of the "Send feedback" control.
   2. Clicking Reset clears the molecule from the Ketcher canvas (equivalent to Ketcher's own clear action).
   3. After Reset, the InChI strip, InChIKey, explanation card, legend, mapping, and any active hover/highlight all return to the placeholder/idle state shown before any molecule is drawn.
   4. The Ketcher canvas and WASM are not remounted or re-initialized by Reset (canvas stays alive, no loading flash).
   5. Clicking Reset on an already-empty canvas is a safe no-op — no error, idle state preserved.
+
 **Plans**: 1 plan
 Plans:
+
 - [x] 14-01-PLAN.md — Store resetAll action + Reset button UI + App.tsx wiring
+
 **Notes**: Reset is a clear-to-empty action only (no undo/redo history, no confirmation dialog, no preset reload — see Out of Scope). Honor the leaf-sibling, no-remount invariant: trigger Ketcher's built-in clear and reset Zustand store fields; never conditionally render `<Editor>` or recreate the StructServiceProvider.
 **UI hint**: yes
 
 ### Phase 15: C-layer hover precision
+
 **Goal**: When a user hovers any token of the connectivity (c) layer, the canvas highlights exactly the atom or bond(s) that token denotes — never more — and stays correct for multi-fragment and duplicated-fragment molecules.
 **Depends on**: Nothing within v1.4 (independent of Phase 14; both build on the existing highlight pipeline)
 **Requirements**: CLYR-01, CLYR-02, CLYR-03, CLYR-04, CLYR-05
 **Success Criteria** (what must be TRUE):
+
   1. Hovering a canonical atom number in the c-layer highlights only that single atom (no bonds).
   2. Hovering a hyphen (`-`) highlights the single bond connecting the two atoms it joins.
   3. Hovering an opening or closing parenthesis (`(` / `)`) highlights all bonds involved in that branch.
   4. For multi-fragment molecules, every c-layer atom/hyphen/parenthesis hover resolves within its own fragment (correct atoms/bonds, no cross-fragment bleed).
   5. For duplicated/repeated fragments (multiplied component prefixes), c-layer hovers highlight the intended fragment instance(s).
+
 **Plans**: 2 plans
 Plans:
+**Wave 1**
+
 - [ ] 15-01-PLAN.md — Wave 0 test scaffolds + SubHover type extension + tokenizeCLayerSeg + buildSubHoverSpecs atom/bond/branch cases
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 15-02-PLAN.md — ConnectionText two-pass refactor (LayerText.tsx) + live canvas human-verify
+
 **Notes**: This is the heavier, riskier area. Changes live in the existing `buildHighlightSpecs` / `buildSubHoverSpecs` → `useKetcherHighlights` pipeline (offset/highlight logic only — never re-render or re-join the verbatim InChI string). Fragment correctness rides on the canonical→Ketcher pool-ID mapping from AuxInfo. Highlight-precision changes only; existing c-layer explanation prose is unchanged unless found inaccurate.
 
 ## Progress
