@@ -2,13 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Reset control & c-layer hover precision
-status: planning
-last_updated: "2026-06-19T11:36:58.064Z"
-last_activity: 2026-06-19
+status: executing
+stopped_at: v1.4 roadmap created — Phases 14 (Reset) and 15 (C-layer precision)
+last_updated: "2026-06-19T11:53:42.080Z"
+last_activity: 2026-06-19 -- Phase 14 execution started
 progress:
   total_phases: 2
   completed_phases: 0
-  total_plans: 0
+  total_plans: 1
   completed_plans: 0
   percent: 0
 ---
@@ -17,14 +18,14 @@ progress:
 
 **Project:** Explain that InChI
 **Milestone:** v1.4 — Reset control & c-layer hover precision (roadmap drafted; Phases 14–15)
-**Status:** Roadmapped — ready to plan Phase 14
+**Status:** Executing Phase 14
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-06-19)
 
 **Core value:** Every chunk of an InChI string is hoverable, explained, and linked back to the atoms in the drawing — demystifying a notation that most chemists treat as opaque.
-**Current focus:** v1.4 — Reset control (Phase 14) and c-layer hover precision (Phase 15)
+**Current focus:** Phase 14 — reset-control
 
 ## Deferred Items
 
@@ -68,10 +69,10 @@ None
 
 ## Current Position
 
-Phase: 14 — Reset control (not started)
-Plan: —
-Status: Roadmapped — ready to plan Phase 14
-Last activity: 2026-06-19 — v1.4 roadmap created (Phases 14–15, 10/10 requirements mapped)
+Phase: 14 (reset-control) — EXECUTING
+Plan: 1 of 1
+Status: Executing Phase 14
+Last activity: 2026-06-19 -- Phase 14 execution started
 
 ## Operator Next Steps
 

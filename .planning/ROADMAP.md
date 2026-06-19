@@ -49,7 +49,7 @@ Full phase details: `.planning/milestones/v1.3-ROADMAP.md`
 
 ### 🚧 v1.4 Reset control & c-layer hover precision (Phases 14–15)
 
-- [ ] **Phase 14: Reset control** — A Reset control clears the canvas and returns all app state to its empty/idle placeholder, without remounting the canvas/WASM.
+- [x] **Phase 14: Reset control** — A Reset control clears the canvas and returns all app state to its empty/idle placeholder, without remounting the canvas/WASM. (completed 2026-06-19)
 - [ ] **Phase 15: C-layer hover precision** — C-layer atom numbers, hyphens, and parentheses each highlight the exact atom/bond(s) they denote, correct across multi-fragment and duplicated-fragment molecules.
 
 ## Phase Details
@@ -66,7 +66,7 @@ Full phase details: `.planning/milestones/v1.3-ROADMAP.md`
   5. Clicking Reset on an already-empty canvas is a safe no-op — no error, idle state preserved.
 **Plans**: 1 plan
 Plans:
-- [ ] 14-01-PLAN.md — Store resetAll action + Reset button UI + App.tsx wiring
+- [x] 14-01-PLAN.md — Store resetAll action + Reset button UI + App.tsx wiring
 **Notes**: Reset is a clear-to-empty action only (no undo/redo history, no confirmation dialog, no preset reload — see Out of Scope). Honor the leaf-sibling, no-remount invariant: trigger Ketcher's built-in clear and reset Zustand store fields; never conditionally render `<Editor>` or recreate the StructServiceProvider.
 **UI hint**: yes
 
@@ -100,7 +100,7 @@ Plans:
 | 11. Source & Wiring | v1.3 | 3/3 | Complete | 2026-06-18 |
 | 12. Render & Layout | v1.3 | 2/2 | Complete | 2026-06-18 |
 | 13. Content & Explanation | v1.3 | 1/1 | Complete | 2026-06-19 |
-| 14. Reset control | v1.4 | 0/1 | Planned    |  |
+| 14. Reset control | v1.4 | 1/1 | Complete   | 2026-06-19 |
 | 15. C-layer hover precision | v1.4 | 0/? | Not started | - |
 
 ---
