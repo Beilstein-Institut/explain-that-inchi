@@ -11,6 +11,7 @@ import { useInchiStore } from '../store';
 import type { KeyHoverZone } from '../store';
 import { formulaFragmentCounts } from '../lib/parseInchi';
 import { LAYER_INFO, DEFAULT_INFO, readingFor, swatchVar } from '../lib/layerInfo';
+import { KEY_ZONE_COPY } from '../lib/inchiKeyInfo';
 import { Legend } from './Legend';
 import styles from './Explanation.module.css';
 
@@ -21,14 +22,6 @@ const KEY_ZONE_ACCENT: Record<KeyHoverZone, string> = {
   hash:        'var(--c-stereo)',
   flagVersion: 'var(--c-version)',
   protonation: 'var(--c-proton)',
-};
-
-// Placeholder prose (Phase 13 replaces with full content).
-const KEY_ZONE_COPY: Record<KeyHoverZone, { title: string; body: string; label: string }> = {
-  skeleton:    { label: 'skeleton',         title: 'Skeleton hash',        body: 'First 14-character block of the InChIKey. Encodes the molecular skeleton (connectivity layer).' },
-  hash:        { label: 'hash',             title: 'Remaining-layers hash', body: 'Second 8-character block. Encodes the remaining InChI layers (stereo, charge, isotopes).' },
-  flagVersion: { label: 'flag + version',   title: 'Standard flag & version', body: 'Two-character suffix of the second block: S/N indicates standard/non-standard InChI; A indicates InChIKey version 1.' },
-  protonation: { label: 'protonation',      title: 'Protonation flag',     body: 'Single character encoding the protonation state of the molecule.' },
 };
 
 export function Explanation() {
