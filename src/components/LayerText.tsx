@@ -2,6 +2,7 @@
 // Port of design_handoff_explain_that_inchi/app.jsx lines 112-278.
 // Key adaptation: no onSubHover prop — calls useInchiStore.getState().setSubHover directly.
 // Per D-07 and RESEARCH.md Pitfall 1.
+// Phase 16: layerIdx threaded through all sub-renderers for click-to-pin sub-tokens.
 
 import React from 'react';
 import { useInchiStore } from '../store';
@@ -17,13 +18,47 @@ const EL_CLASS: Record<string, string> = {
   Br: styles.elBr, I: styles.elI,
 };
 
-// Hover handler factory — sets subHover in store on enter, clears on leave.
+// Hover + pin handler factory — sets subHover in store on enter, clears on leave,
+// and pins/unpins on click (Phase 16).
+// layerIdx: the owning layer's index in the layers array (threaded from InchiSection).
 // Per D-07: wired here so Phase 4 can act on store.subHover without adding event handlers.
-function subHoverProps(hit: SubHover) {
+function subHoverProps(hit: SubHover, layerIdx: number) {
   return {
     onMouseEnter: () => useInchiStore.getState().setSubHover(hit),
     onMouseLeave: () => useInchiStore.getState().setSubHover(null),
+    onClick: (e: React.MouseEvent) => {
+      // stopPropagation so the layer-level onClick in InchiSection does NOT also fire.
+      // The document capture listener already cleared the pin (if any) before bubbling,
+      // so getState().pinned is null by the time this bubble-phase handler runs.
+      e.stopPropagation();
+      const s = useInchiStore.getState();
+      if (s.pinned) { s.clearPinned(); return; }
+      s.setPinned({ idx: layerIdx, sub: hit });
+    },
   };
+}
+
+// Helper to determine if a sub-token matches the pinned sub-token (for .pinned CSS class).
+function isSubPinned(hit: SubHover, pinnedSub: SubHover | null): boolean {
+  if (!pinnedSub) return false;
+  if (hit.kind !== pinnedSub.kind) return false;
+  // Compare by kind-specific identity fields
+  if (hit.kind === 'atom' && pinnedSub.kind === 'atom') return hit.canonical === pinnedSub.canonical;
+  if (hit.kind === 'element' && pinnedSub.kind === 'element') return hit.el === pinnedSub.el;
+  if (hit.kind === 'bond' && pinnedSub.kind === 'bond') {
+    return JSON.stringify(hit.endpointPairs) === JSON.stringify(pinnedSub.endpointPairs);
+  }
+  if (hit.kind === 'branch' && pinnedSub.kind === 'branch') {
+    return JSON.stringify(hit.bondPairs) === JSON.stringify(pinnedSub.bondPairs);
+  }
+  if (hit.kind === 'stereo' && pinnedSub.kind === 'stereo') return hit.atom === pinnedSub.atom;
+  if (hit.kind === 'hAtoms' && pinnedSub.kind === 'hAtoms') {
+    return JSON.stringify(hit.atoms) === JSON.stringify(pinnedSub.atoms);
+  }
+  if (hit.kind === 'mobileH' && pinnedSub.kind === 'mobileH') {
+    return JSON.stringify(hit.atoms) === JSON.stringify(pinnedSub.atoms);
+  }
+  return false;
 }
 
 // Dispatches to the correct sub-renderer by layer type.
@@ -31,13 +66,21 @@ function subHoverProps(hit: SubHover) {
 // Callers must source rawText from the raw inchi string — never reconstruct it.
 // fragCounts: heavy-atom counts per fragment (from formulaFragmentCounts on the formula layer).
 // Required for correct multi-fragment canonical ID offsetting.
-export function LayerText({ layer, rawText, fragCounts = [] }: { layer: Layer; rawText: string; fragCounts?: number[] }) {
+// layerIdx: the owning layer's index (threaded for sub-token pin onClick).
+// pinnedSub: the pinned sub-token for this layer (null if layer is not pinned or pinned at layer level).
+export function LayerText({ layer, rawText, fragCounts = [], layerIdx = 0, pinnedSub = null }: {
+  layer: Layer;
+  rawText: string;
+  fragCounts?: number[];
+  layerIdx?: number;
+  pinnedSub?: SubHover | null;
+}) {
   switch (layer.type) {
-    case 'formula': return <FormulaText text={rawText} />;
-    case 'c':       return <ConnectionText text={rawText} fragCounts={fragCounts} />;
+    case 'formula': return <FormulaText text={rawText} layerIdx={layerIdx} pinnedSub={pinnedSub} />;
+    case 'c':       return <ConnectionText text={rawText} fragCounts={fragCounts} layerIdx={layerIdx} pinnedSub={pinnedSub} />;
     case 't':
-    case 'b':       return <ParityText text={rawText} fragCounts={fragCounts} />;
-    case 'h':       return <HLayerText text={rawText} fragCounts={fragCounts} />;
+    case 'b':       return <ParityText text={rawText} fragCounts={fragCounts} layerIdx={layerIdx} pinnedSub={pinnedSub} />;
+    case 'h':       return <HLayerText text={rawText} fragCounts={fragCounts} layerIdx={layerIdx} pinnedSub={pinnedSub} />;
     default:        return <>{rawText}</>;
   }
 }
@@ -48,7 +91,7 @@ export function LayerText({ layer, rawText, fragCounts = [] }: { layer: Layer; r
 // For multiple dot-segments: computes inclusive canonRange per segment so hover is scoped to
 // that fragment or group (e.g. "C7" in "C7H8.2C6H6" scopes to canonicals 1-7 only;
 // "C6" in "2C6H6" portion scopes to 8-19, covering both benzene fragments).
-function FormulaText({ text }: { text: string }) {
+function FormulaText({ text, layerIdx, pinnedSub }: { text: string; layerIdx: number; pinnedSub: SubHover | null }) {
   const out: React.ReactNode[] = [];
   const re = /([A-Z][a-z]?)(\d*)/g;
   let m: RegExpExecArray | null;
@@ -65,9 +108,10 @@ function FormulaText({ text }: { text: string }) {
       if (!m[1]) break;
       if (m.index > last) out.push(<span key={key++}>{text.slice(last, m.index)}</span>);
       const el = m[1];
+      const hit: SubHover = { kind: 'element', el };
       out.push(
-        <span key={key++} className={[EL_CLASS[el] ?? '', styles.inchiSubtoken].filter(Boolean).join(' ')}
-          {...subHoverProps({ kind: 'element', el })}>
+        <span key={key++} className={[EL_CLASS[el] ?? '', styles.inchiSubtoken, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')}
+          {...subHoverProps(hit, layerIdx)}>
           {el}{m[2]}
         </span>
       );
@@ -102,9 +146,10 @@ function FormulaText({ text }: { text: string }) {
       if (!m[1]) break;
       if (m.index > last) out.push(<span key={key++}>{seg.slice(last, m.index)}</span>);
       const el = m[1];
+      const hit: SubHover = { kind: 'element', el, canonRange };
       out.push(
-        <span key={key++} className={[EL_CLASS[el] ?? '', styles.inchiSubtoken].filter(Boolean).join(' ')}
-          {...subHoverProps({ kind: 'element', el, canonRange })}>
+        <span key={key++} className={[EL_CLASS[el] ?? '', styles.inchiSubtoken, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')}
+          {...subHoverProps(hit, layerIdx)}>
           {el}{m[2]}
         </span>
       );
@@ -120,7 +165,7 @@ function FormulaText({ text }: { text: string }) {
 // Port of app.jsx ConnectionText lines 158-189.
 // Extended for multi-fragment: applies per-fragment canonical offsets for ; notation,
 // and emits canonicals arrays for 2* identical-fragment notation.
-function ConnectionText({ text, fragCounts }: { text: string; fragCounts: number[] }) {
+function ConnectionText({ text, fragCounts, layerIdx, pinnedSub }: { text: string; fragCounts: number[]; layerIdx: number; pinnedSub: SubHover | null }) {
   const parts: React.ReactNode[] = [];
   let key = 0;
 
@@ -134,8 +179,9 @@ function ConnectionText({ text, fragCounts }: { text: string; fragCounts: number
 
       if (token.type === 'atom') {
         const hover = canonicalFn ? canonicalFn(token.localN) : { canonical: token.localN + offset };
+        const hit: SubHover = { kind: 'atom', ...hover };
         parts.push(
-          <span key={key++} className={styles.inchiSubtoken} {...subHoverProps({ kind: 'atom', ...hover })}>
+          <span key={key++} className={[styles.inchiSubtoken, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')} {...subHoverProps(hit, layerIdx)}>
             {seg.slice(token.start, token.end)}
           </span>
         );
@@ -154,9 +200,10 @@ function ConnectionText({ text, fragCounts }: { text: string; fragCounts: number
                 return ls.map((l, i) => [l, rs[i]] as [number, number]);
               })()
             : [[token.leftLocal + offset, token.rightLocal + offset]];
+          const hit: SubHover = { kind: 'bond', endpointPairs };
           parts.push(
-            <span key={key++} className={styles.inchiSubtoken}
-              {...subHoverProps({ kind: 'bond', endpointPairs })}>
+            <span key={key++} className={[styles.inchiSubtoken, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')}
+              {...subHoverProps(hit, layerIdx)}>
               {'-'}
             </span>
           );
@@ -188,9 +235,10 @@ function ConnectionText({ text, fragCounts }: { text: string; fragCounts: number
             // Comma-only branch — plain non-interactive span
             parts.push(<span key={key++}>{'('}</span>);
           } else {
+            const hit: SubHover = { kind: 'branch', bondPairs };
             parts.push(
-              <span key={key++} className={styles.inchiSubtoken}
-                {...subHoverProps({ kind: 'branch', bondPairs })}>
+              <span key={key++} className={[styles.inchiSubtoken, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')}
+                {...subHoverProps(hit, layerIdx)}>
                 {'('}
               </span>
             );
@@ -203,9 +251,10 @@ function ConnectionText({ text, fragCounts }: { text: string; fragCounts: number
         if (bondPairs.length === 0) {
           parts.push(<span key={key++}>{')'}</span>);
         } else {
+          const hit: SubHover = { kind: 'branch', bondPairs };
           parts.push(
-            <span key={key++} className={styles.inchiSubtoken}
-              {...subHoverProps({ kind: 'branch', bondPairs })}>
+            <span key={key++} className={[styles.inchiSubtoken, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')}
+              {...subHoverProps(hit, layerIdx)}>
               {')'}
             </span>
           );
@@ -262,7 +311,7 @@ function ConnectionText({ text, fragCounts }: { text: string; fragCounts: number
 
 // Port of app.jsx ParityText lines 191-212.
 // Extended for multi-fragment: applies per-fragment canonical offset for ; notation.
-function ParityText({ text, fragCounts }: { text: string; fragCounts: number[] }) {
+function ParityText({ text, fragCounts, layerIdx, pinnedSub }: { text: string; fragCounts: number[]; layerIdx: number; pinnedSub: SubHover | null }) {
   const parts: React.ReactNode[] = [];
   let key = 0;
 
@@ -276,11 +325,12 @@ function ParityText({ text, fragCounts }: { text: string; fragCounts: number[] }
       const sign = m[2];
       // '+' -> plus color, '-' -> minus color, '?' (undefined) -> neutral (no color class).
       const signClass = sign === '+' ? styles.parityPlus : sign === '-' ? styles.parityMinus : '';
+      const hit: SubHover = { kind: 'stereo', atom, sign };
       parts.push(
         <span
           key={key++}
-          className={[signClass, styles.inchiSubtoken].filter(Boolean).join(' ')}
-          {...subHoverProps({ kind: 'stereo', atom, sign })}
+          className={[signClass, styles.inchiSubtoken, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')}
+          {...subHoverProps(hit, layerIdx)}
         >
           {m[1]}{sign}
         </span>
@@ -302,7 +352,7 @@ function ParityText({ text, fragCounts }: { text: string; fragCounts: number[] }
 
 // Port of app.jsx HLayerText lines 214-278.
 // Extended for multi-fragment: applies per-fragment canonical offset.
-function HLayerText({ text, fragCounts }: { text: string; fragCounts: number[] }) {
+function HLayerText({ text, fragCounts, layerIdx, pinnedSub }: { text: string; fragCounts: number[]; layerIdx: number; pinnedSub: SubHover | null }) {
   const parts: React.ReactNode[] = [];
   let key = 0;
 
@@ -335,9 +385,10 @@ function HLayerText({ text, fragCounts }: { text: string; fragCounts: number[] }
         const inside = seg.slice(i, end + 1);
         const match = inside.match(/\(H\d*,([^)]+)\)/);
         const atoms = match ? expandAtoms(match[1], offset) : [];
+        const hit: SubHover = { kind: 'mobileH', atoms };
         parts.push(
-          <span key={key++} className={[styles.hydroMobile, styles.inchiSubtoken].join(' ')}
-            {...subHoverProps({ kind: 'mobileH', atoms })}
+          <span key={key++} className={[styles.hydroMobile, styles.inchiSubtoken, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')}
+            {...subHoverProps(hit, layerIdx)}
           >{inside}</span>
         );
         i = end + 1; continue;
@@ -348,8 +399,9 @@ function HLayerText({ text, fragCounts }: { text: string; fragCounts: number[] }
         const count = j > i + 1 ? parseInt(seg.slice(i + 1, j), 10) : 1;
         const atoms = expandAtoms(buf.replace(/^,/, ''), offset);
         const hydroClass = [(styles as Record<string, string>)[`hydro${Math.min(count, 4)}`], styles.inchiSubtoken].join(' ');
+        const hit: SubHover = { kind: 'hAtoms', atoms, count };
         parts.push(
-          <span key={key++} className={hydroClass} {...subHoverProps({ kind: 'hAtoms', atoms, count })}>
+          <span key={key++} className={[hydroClass, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')} {...subHoverProps(hit, layerIdx)}>
             {buf + seg.slice(i, j)}
           </span>
         );
@@ -384,9 +436,10 @@ function HLayerText({ text, fragCounts }: { text: string; fragCounts: number[] }
         const atoms = match
           ? Array.from({ length: n }, (_, fi) => expandAtoms(match[1], fi * atomsPerFrag)).flat()
           : [];
+        const hit: SubHover = { kind: 'mobileH', atoms };
         parts.push(
-          <span key={key++} className={[styles.hydroMobile, styles.inchiSubtoken].join(' ')}
-            {...subHoverProps({ kind: 'mobileH', atoms })}
+          <span key={key++} className={[styles.hydroMobile, styles.inchiSubtoken, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')}
+            {...subHoverProps(hit, layerIdx)}
           >{inside}</span>
         );
         i = end + 1; continue;
@@ -397,8 +450,9 @@ function HLayerText({ text, fragCounts }: { text: string; fragCounts: number[] }
         const count = j > i + 1 ? parseInt(pattern.slice(i + 1, j), 10) : 1;
         const atoms = Array.from({ length: n }, (_, fi) => expandAtoms(buf.replace(/^,/, ''), fi * atomsPerFrag)).flat();
         const hydroClass = [(styles as Record<string, string>)[`hydro${Math.min(count, 4)}`], styles.inchiSubtoken].join(' ');
+        const hit: SubHover = { kind: 'hAtoms', atoms, count };
         parts.push(
-          <span key={key++} className={hydroClass} {...subHoverProps({ kind: 'hAtoms', atoms, count })}>
+          <span key={key++} className={[hydroClass, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')} {...subHoverProps(hit, layerIdx)}>
             {buf + pattern.slice(i, j)}
           </span>
         );
@@ -438,9 +492,10 @@ function HLayerText({ text, fragCounts }: { text: string; fragCounts: number[] }
           const atoms = match
             ? Array.from({ length: n }, (_, fi) => expandAtoms(match[1], baseOffset + fi * atomsPerFrag)).flat()
             : [];
+          const hit: SubHover = { kind: 'mobileH', atoms };
           parts.push(
-            <span key={key++} className={[styles.hydroMobile, styles.inchiSubtoken].join(' ')}
-              {...subHoverProps({ kind: 'mobileH', atoms })}
+            <span key={key++} className={[styles.hydroMobile, styles.inchiSubtoken, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')}
+              {...subHoverProps(hit, layerIdx)}
             >{inside}</span>
           );
           i = end + 1; continue;
@@ -451,8 +506,9 @@ function HLayerText({ text, fragCounts }: { text: string; fragCounts: number[] }
           const count = j > i + 1 ? parseInt(pattern.slice(i + 1, j), 10) : 1;
           const atoms = Array.from({ length: n }, (_, fi) => expandAtoms(buf.replace(/^,/, ''), baseOffset + fi * atomsPerFrag)).flat();
           const hydroClass = [(styles as Record<string, string>)[`hydro${Math.min(count, 4)}`], styles.inchiSubtoken].join(' ');
+          const hit: SubHover = { kind: 'hAtoms', atoms, count };
           parts.push(
-            <span key={key++} className={hydroClass} {...subHoverProps({ kind: 'hAtoms', atoms, count })}>
+            <span key={key++} className={[hydroClass, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')} {...subHoverProps(hit, layerIdx)}>
               {buf + pattern.slice(i, j)}
             </span>
           );

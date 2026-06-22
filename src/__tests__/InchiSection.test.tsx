@@ -20,12 +20,16 @@ vi.mock('../store', () => {
   const storeState = () => ({
     layers: mockLayers,
     hoverIdx: mockHoverIdx,
+    pinned: null as null | { idx: number; sub: null },
     setHover: mockSetHover,
     setSubHover: mockSetSubHover,
+    setPinned: vi.fn(),
+    clearPinned: vi.fn(),
     inchi: mockInchi,
     auxMap: {},
     atomElements: {},
     setInchiData: vi.fn(),
+    setKeyHoverKind: vi.fn(),
   });
 
   const useInchiStore = vi.fn((selector: (s: ReturnType<typeof storeState>) => unknown) =>

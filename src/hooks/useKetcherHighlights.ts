@@ -295,10 +295,18 @@ export function useKetcherHighlights(
 ): void {
   const hoverIdx     = useInchiStore(s => s.hoverIdx);
   const subHover     = useInchiStore(s => s.subHover);
+  const pinned       = useInchiStore(s => s.pinned);
   const layers       = useInchiStore(s => s.layers);
   const auxMap       = useInchiStore(s => s.auxMap);
   const atomElements = useInchiStore(s => s.atomElements);
   const hAtomPoolIds = useInchiStore(s => s.hAtomPoolIds);
+
+  // Phase 16: pinned wins over live hover (spec line 55).
+  // When pinned is set, derive effective targets from pinned instead of the live store fields.
+  // The store gate already freezes hoverIdx/subHover while pinned, so this is belt-and-suspenders
+  // that also makes the intent explicit in the hook.
+  const effIdx = pinned ? pinned.idx : hoverIdx;
+  const effSub = pinned ? pinned.sub : subHover;
 
   useEffect(() => {
     if (!isReady || !ketcherRef.current) return;
@@ -314,14 +322,14 @@ export function useKetcherHighlights(
     if (_isHighlightingRef) _isHighlightingRef.current = true;
     try {
       // Always clear first — prevents stale highlight accumulation.
-      // Also clears on hoverIdx=null (idle) and non-spatial layers (D-01).
-      if (hoverIdx === null) {
+      // Also clears on effIdx=null (idle) and non-spatial layers (D-01).
+      if (effIdx === null) {
         highlightEditor.highlights.clear();
         const svgRoot = editorAny.render.paper.canvas as Element;
         cleanHBadges(svgRoot);
         return;
       }
-      const layer = layers[hoverIdx];
+      const layer = layers[effIdx];
       if (!layer) {
         highlightEditor.highlights.clear();
         const svgRoot = editorAny.render.paper.canvas as Element;
@@ -336,7 +344,7 @@ export function useKetcherHighlights(
         return;
       }
 
-      const specs = buildHighlightSpecs(layer, subHover, auxMap, atomElements, hAtomPoolIds, layers, struct, resolveVar);
+      const specs = buildHighlightSpecs(layer, effSub, auxMap, atomElements, hAtomPoolIds, layers, struct, resolveVar);
       applyKetcherHighlights(highlightEditor, specs);
       const svgRoot = editorAny.render.paper.canvas as Element;
       cleanHBadges(svgRoot);
@@ -346,16 +354,16 @@ export function useKetcherHighlights(
       }
       // QUICK-260610-ist: badges run regardless of specs.length so purely-implicit
       // /h tokens (zero explicit H drawn) still render count badges.
-      if (subHover && (subHover.kind === 'hAtoms' || subHover.kind === 'mobileH')) {
-        renderHBadges(svgRoot, subHover, auxMap, resolveVar, hAtomPoolIds, struct);
+      if (effSub && (effSub.kind === 'hAtoms' || effSub.kind === 'mobileH')) {
+        renderHBadges(svgRoot, effSub, auxMap, resolveVar, hAtomPoolIds, struct);
       }
       // Formula-layer H token: render implicit-H badges scoped to the hovered fragment.
-      if (subHover && subHover.kind === 'element' && subHover.el === 'H') {
-        renderFormulaHBadges(svgRoot, subHover.canonRange, layers, auxMap, resolveVar, hAtomPoolIds, struct);
+      if (effSub && effSub.kind === 'element' && effSub.el === 'H') {
+        renderFormulaHBadges(svgRoot, effSub.canonRange, layers, auxMap, resolveVar, hAtomPoolIds, struct);
       }
     } finally {
       if (_isHighlightingRef) _isHighlightingRef.current = false;
     }
-  }, [hoverIdx, subHover, layers, auxMap, atomElements, hAtomPoolIds, isReady]);
+  }, [effIdx, effSub, pinned, layers, auxMap, atomElements, hAtomPoolIds, isReady]);
   // Note: ketcherRef is a ref — intentionally not in deps (stable reference)
 }
