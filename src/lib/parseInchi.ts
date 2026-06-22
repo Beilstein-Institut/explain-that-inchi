@@ -175,10 +175,21 @@ export function tokenizeCLayerSeg(seg: string): CLayerToken[] {
 }
 
 /**
- * Collects all 'hyphen' tokens strictly between an 'open' token at index oi
- * and its matching 'close' token at index ci (exclusive bounds).
- * Automatically includes hyphens from nested sub-branches because they fall
- * within the [oi+1, ci-1] index range.
+ * Derives every bond inside a branch — by atom ADJACENCY, not by hyphen characters.
+ *
+ * Real InChI encodes branch bonds by adjacency: the stem bond (attach atom → first
+ * branch atom) and every subsequent consecutive-atom bond are implicit. A single-atom
+ * branch like "(4)" off atom 2 carries no internal hyphen token at all, yet still
+ * represents the bond 2-4. The previous hyphen-only collector returned [] for such
+ * branches, leaving the parentheses non-interactive on real molecules (clyr-03-paren-bonds).
+ *
+ * This walks the token slice [oi, ci] using the same adjacency semantics as
+ * parseConnectionBonds, seeded with the open token's attachLocal (the parent atom the
+ * branch hangs off). Nested sub-branches are handled by the open/close stack exactly
+ * as in parseConnectionBonds, so their bonds are included automatically.
+ *
+ * Returns pseudo-hyphen tokens ({ type:'hyphen', leftLocal, rightLocal }) so existing
+ * callers can read the bond endpoints uniformly. All values are LOCAL (pre-offset).
  *
  * Used by ConnectionText (LayerText.tsx) to build bondPairs for branch hovers.
  */
@@ -187,9 +198,31 @@ export function collectBranchHyphens(
   oi: number,
   ci: number,
 ): Extract<CLayerToken, { type: 'hyphen' }>[] {
-  return tokens.slice(oi + 1, ci).filter(
-    (t): t is Extract<CLayerToken, { type: 'hyphen' }> => t.type === 'hyphen',
-  );
+  const open = tokens[oi];
+  if (open?.type !== 'open') return [];
+
+  const bonds: Extract<CLayerToken, { type: 'hyphen' }>[] = [];
+  const stack: (number | null)[] = [];
+  let last: number | null = open.attachLocal;
+
+  for (let i = oi + 1; i < ci; i++) {
+    const t = tokens[i];
+    if (t.type === 'atom') {
+      if (last != null) {
+        bonds.push({ type: 'hyphen', pos: -1, leftLocal: last, rightLocal: t.localN });
+      }
+      last = t.localN;
+    } else if (t.type === 'open') {
+      stack.push(last);
+    } else if (t.type === 'close') {
+      last = stack.pop() ?? null;
+    } else if (t.type === 'other' && t.slice === ',') {
+      // Comma inside a branch: next atom bonds to the enclosing branch root.
+      if (stack.length) last = stack[stack.length - 1] as number | null;
+    }
+    // 'hyphen' tokens carry no adjacency information here — adjacency already covers them.
+  }
+  return bonds;
 }
 
 /**

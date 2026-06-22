@@ -167,6 +167,9 @@ function ConnectionText({ text, fragCounts }: { text: string; fragCounts: number
           // Malformed — unmatched open paren
           parts.push(<span key={key++}>{'('}</span>);
         } else {
+          // Branch bonds are derived by ATOM ADJACENCY (stem + nested), not hyphen chars.
+          // collectBranchHyphens now returns adjacency-derived pseudo-hyphen bonds, so a
+          // single-atom branch like "(4)" off atom 2 yields the stem bond 2-4 (clyr-03).
           const branchHyphens = collectBranchHyphens(tokens, tokenIdx, token.closeTokenIdx);
           const bondPairs: [number, number][] = branchHyphens.flatMap(h => {
             if (h.leftLocal == null || h.rightLocal == null) return [];

@@ -1,11 +1,56 @@
-// clyr.test.ts — Wave 0 failing tests for CLYR-01..05
-// These tests FAIL in RED state (tokenizeCLayerSeg not yet exported; 'bond'/'branch' kinds not yet in SubHover).
-// They will pass GREEN after Tasks 2 and 3 implement the library tier.
+// clyr.test.ts — CLYR-01..05 library-tier tests.
+//
+// CLYR-03 REGRESSION GUARD (clyr-03-paren-bonds):
+// The tokenizer/derivation fixtures below use REAL InChI c-layer syntax. Real InChI encodes
+// branch bonds by atom ADJACENCY, not by hyphen characters. A single-atom branch like "(4)"
+// has NO internal hyphen. The previous fixtures ("1-2-3(-4-5)-6", "(-2)") used a FABRICATED
+// leading-hyphen syntax that never occurs in real InChI, which is why the bug (non-interactive
+// parentheses on real molecules) went undetected.
+//
+// The deriveBranchBondPairs helper below replicates EXACTLY how LayerText.tsx derives a
+// branch's bondPairs (via collectBranchHyphens over the tokens). In RED it returns [] for
+// real single-atom branches because there are no internal hyphen tokens — that is the bug.
 import { describe, it, expect, vi } from 'vitest';
 import { buildSubHoverSpecs } from '../highlightUtils';
 import type { StructLike } from '../highlightUtils';
-import type { Layer, AuxMap } from '../parseInchi';
-import { tokenizeCLayerSeg } from '../parseInchi';
+import type { Layer, AuxMap, CLayerToken } from '../parseInchi';
+import { tokenizeCLayerSeg, collectBranchHyphens } from '../parseInchi';
+
+// Replicates LayerText.tsx ConnectionText open-paren bondPairs derivation (single fragment,
+// offset 0, no canonicalFn). This is the exact code path that decides whether a paren is
+// interactive. Real-InChI branches with no internal hyphen yield [] here in RED.
+function deriveBranchBondPairs(seg: string, openTokenIdx: number): [number, number][] {
+  const tokens = tokenizeCLayerSeg(seg);
+  const open = tokens[openTokenIdx];
+  if (open.type !== 'open' || open.closeTokenIdx === -1) {
+    throw new Error(`token ${openTokenIdx} is not a matched open paren`);
+  }
+  const branchHyphens = collectBranchHyphens(tokens, openTokenIdx, open.closeTokenIdx);
+  return branchHyphens.flatMap((h) =>
+    h.leftLocal == null || h.rightLocal == null
+      ? []
+      : [[h.leftLocal, h.rightLocal] as [number, number]],
+  );
+}
+
+// Bond direction is meaningful here: branch bonds are emitted parent→child by adjacency
+// (e.g. atom 11's sub-branch (3) is the bond 11→3). Preserve the emitted order so the
+// directional expectations (11-3, 10-2, 9-11) compare correctly.
+function pairKeys(pairs: [number, number][]): Set<string> {
+  return new Set(pairs.map(([a, b]) => `${a}-${b}`));
+}
+
+// Index of the Nth 'open' token in a tokenized segment.
+function openTokenIndex(tokens: CLayerToken[], nth: number): number {
+  let seen = 0;
+  for (let i = 0; i < tokens.length; i++) {
+    if (tokens[i].type === 'open') {
+      if (seen === nth) return i;
+      seen++;
+    }
+  }
+  throw new Error(`no open token #${nth}`);
+}
 
 // Identity mock — CSS var names passed through as-is for readable assertions
 const resolveVarFn = (name: string): string => name;
@@ -47,68 +92,92 @@ const cLayer = makeLayer({ type: 'c', prefix: 'c' });
 // tokenizeCLayerSeg — pure tokenizer (Fixture E)
 // ---------------------------------------------------------------------------
 
-describe('tokenizeCLayerSeg — "1-2-3(-4-5)-6"', () => {
-  it('emits 13 tokens with correct types in order', () => {
-    const tokens = tokenizeCLayerSeg('1-2-3(-4-5)-6');
-    expect(tokens).toHaveLength(13);
+// Real alanine c-layer "1-2(4)3(5)6": branches (4) and (5) are SINGLE atoms with NO
+// internal hyphen. The bond into each branch (2-4, 3-5) is encoded purely by adjacency.
+describe('tokenizeCLayerSeg — alanine "1-2(4)3(5)6" (real InChI, adjacency branches)', () => {
+  it('emits correct token types in order', () => {
+    const tokens = tokenizeCLayerSeg('1-2(4)3(5)6');
     const types = tokens.map(t => t.type);
     expect(types).toEqual([
-      'atom',   // 1
-      'hyphen', // -
-      'atom',   // 2
-      'hyphen', // -
-      'atom',   // 3
-      'open',   // (
-      'hyphen', // -
-      'atom',   // 4
-      'hyphen', // -
-      'atom',   // 5
-      'close',  // )
-      'hyphen', // -
-      'atom',   // 6
+      'atom',  // 1
+      'hyphen',// -
+      'atom',  // 2
+      'open',  // (
+      'atom',  // 4
+      'close', // )
+      'atom',  // 3
+      'open',  // (
+      'atom',  // 5
+      'close', // )
+      'atom',  // 6
     ]);
   });
 
   it('atom tokens have correct localN values', () => {
-    const tokens = tokenizeCLayerSeg('1-2-3(-4-5)-6');
-    const atomTokens = tokens.filter(t => t.type === 'atom') as Array<{ type: 'atom'; start: number; end: number; localN: number }>;
-    expect(atomTokens.map(t => t.localN)).toEqual([1, 2, 3, 4, 5, 6]);
+    const tokens = tokenizeCLayerSeg('1-2(4)3(5)6');
+    const atomTokens = tokens.filter(t => t.type === 'atom') as Array<{ type: 'atom'; localN: number }>;
+    expect(atomTokens.map(t => t.localN)).toEqual([1, 2, 4, 3, 5, 6]);
   });
 
-  it('hyphen tokens have correct leftLocal / rightLocal', () => {
-    const tokens = tokenizeCLayerSeg('1-2-3(-4-5)-6');
-    const hyphens = tokens.filter(t => t.type === 'hyphen') as Array<{ type: 'hyphen'; pos: number; leftLocal: number | null; rightLocal: number | null }>;
-    expect(hyphens).toHaveLength(5);
-    // hyphen 0: 1→2
-    expect(hyphens[0].leftLocal).toBe(1);
-    expect(hyphens[0].rightLocal).toBe(2);
-    // hyphen 1: 2→3
-    expect(hyphens[1].leftLocal).toBe(2);
-    expect(hyphens[1].rightLocal).toBe(3);
-    // hyphen 2: 3→4 (inside branch, first hyphen after open)
-    expect(hyphens[2].leftLocal).toBe(3);
-    expect(hyphens[2].rightLocal).toBe(4);
-    // hyphen 3: 4→5 (inside branch)
-    expect(hyphens[3].leftLocal).toBe(4);
-    expect(hyphens[3].rightLocal).toBe(5);
-    // hyphen 4: 3→6 (after close paren — leftLocal restored to attachLocal=3)
-    expect(hyphens[4].leftLocal).toBe(3);
-    expect(hyphens[4].rightLocal).toBe(6);
+  it('open token for branch (4) has attachLocal=2 (adjacency parent), not a hyphen', () => {
+    const tokens = tokenizeCLayerSeg('1-2(4)3(5)6');
+    const oi = openTokenIndex(tokens, 0);
+    const open = tokens[oi] as { type: 'open'; attachLocal: number | null; closeTokenIdx: number };
+    expect(open.attachLocal).toBe(2);
+    expect(open.closeTokenIdx).toBeGreaterThan(oi);
   });
 
-  it('open token at idx 5 has closeTokenIdx === 10', () => {
-    const tokens = tokenizeCLayerSeg('1-2-3(-4-5)-6');
-    const openToken = tokens[5] as { type: 'open'; pos: number; attachLocal: number | null; closeTokenIdx: number };
-    expect(openToken.type).toBe('open');
-    expect(openToken.closeTokenIdx).toBe(10);
-    expect(openToken.attachLocal).toBe(3);
+  it('open token for branch (5) has attachLocal=3', () => {
+    const tokens = tokenizeCLayerSeg('1-2(4)3(5)6');
+    const oi = openTokenIndex(tokens, 1);
+    const open = tokens[oi] as { type: 'open'; attachLocal: number | null };
+    expect(open.attachLocal).toBe(3);
   });
 
-  it('close token at idx 10 has openTokenIdx === 5', () => {
-    const tokens = tokenizeCLayerSeg('1-2-3(-4-5)-6');
-    const closeToken = tokens[10] as { type: 'close'; pos: number; openTokenIdx: number };
-    expect(closeToken.type).toBe('close');
-    expect(closeToken.openTokenIdx).toBe(5);
+  it('only ONE hyphen token exists (the 1-2 bond); branches carry no hyphens', () => {
+    const tokens = tokenizeCLayerSeg('1-2(4)3(5)6');
+    const hyphens = tokens.filter(t => t.type === 'hyphen');
+    expect(hyphens).toHaveLength(1);
+  });
+});
+
+describe('branch bondPairs derived by adjacency (CLYR-03 regression)', () => {
+  it('alanine "1-2(4)...": branch (4) → bondPairs {2-4} (RED: collectBranchHyphens gives [])', () => {
+    const tokens = tokenizeCLayerSeg('1-2(4)3(5)6');
+    const oi = openTokenIndex(tokens, 0);
+    const pairs = deriveBranchBondPairs('1-2(4)3(5)6', oi);
+    expect(pairKeys(pairs)).toEqual(new Set(['2-4']));
+  });
+
+  it('alanine "...3(5)6": branch (5) → bondPairs {3-5}', () => {
+    const tokens = tokenizeCLayerSeg('1-2(4)3(5)6');
+    const oi = openTokenIndex(tokens, 1);
+    const pairs = deriveBranchBondPairs('1-2(4)3(5)6', oi);
+    expect(pairKeys(pairs)).toEqual(new Set(['3-5']));
+  });
+
+  it('nested "9(11(3)13)10(2)12": outer branch → bondPairs {9-11, 11-3, 11-13}', () => {
+    const seg = '9(11(3)13)10(2)12';
+    const tokens = tokenizeCLayerSeg(seg);
+    const oi = openTokenIndex(tokens, 0);
+    const pairs = deriveBranchBondPairs(seg, oi);
+    expect(pairKeys(pairs)).toEqual(new Set(['9-11', '11-3', '11-13']));
+  });
+
+  it('nested "9(11(3)13)...": inner branch (3) → bondPairs {11-3}', () => {
+    const seg = '9(11(3)13)10(2)12';
+    const tokens = tokenizeCLayerSeg(seg);
+    const oi = openTokenIndex(tokens, 1);
+    const pairs = deriveBranchBondPairs(seg, oi);
+    expect(pairKeys(pairs)).toEqual(new Set(['11-3']));
+  });
+
+  it('nested "...10(2)12": trailing branch (2) → bondPairs {10-2}', () => {
+    const seg = '9(11(3)13)10(2)12';
+    const tokens = tokenizeCLayerSeg(seg);
+    const oi = openTokenIndex(tokens, 2);
+    const pairs = deriveBranchBondPairs(seg, oi);
+    expect(pairKeys(pairs)).toEqual(new Set(['10-2']));
   });
 });
 
@@ -134,24 +203,31 @@ describe('tokenizeCLayerSeg — "1-2-4-6-5-3-1" (ring closure)', () => {
   });
 });
 
-describe('tokenizeCLayerSeg — "1-2-3(-4(-5)-6)-7" (nested branches)', () => {
+describe('tokenizeCLayerSeg — "9(11(3)13)10(2)12" (real nested branches)', () => {
   it('nested open/close indices are mutually consistent', () => {
-    const tokens = tokenizeCLayerSeg('1-2-3(-4(-5)-6)-7');
+    const tokens = tokenizeCLayerSeg('9(11(3)13)10(2)12');
     const opens = tokens
       .map((t, i) => ({ t, i }))
       .filter(({ t }) => t.type === 'open') as Array<{ t: { type: 'open'; closeTokenIdx: number }; i: number }>;
     const closes = tokens
       .map((t, i) => ({ t, i }))
       .filter(({ t }) => t.type === 'close') as Array<{ t: { type: 'close'; openTokenIdx: number }; i: number }>;
-    expect(opens).toHaveLength(2);
-    expect(closes).toHaveLength(2);
-    // inner open's closeTokenIdx < outer open's closeTokenIdx
+    // "9(11(3)13)10(2)12" → opens: outer "(11(3)13)", inner "(3)", trailing "(2)"
+    expect(opens).toHaveLength(3);
+    expect(closes).toHaveLength(3);
     const outerOpen = opens[0];
     const innerOpen = opens[1];
+    const trailingOpen = opens[2];
+    // inner open's closeTokenIdx < outer open's closeTokenIdx (inner closes first)
     expect(innerOpen.t.closeTokenIdx).toBeLessThan(outerOpen.t.closeTokenIdx);
-    // cross-references are symmetric
-    expect(closes[0].t.openTokenIdx).toBe(innerOpen.i);
-    expect(closes[1].t.openTokenIdx).toBe(outerOpen.i);
+    // trailing branch is entirely after the outer branch closes
+    expect(trailingOpen.i).toBeGreaterThan(outerOpen.t.closeTokenIdx);
+    // every close cross-references a real open
+    for (const c of closes) {
+      const matchedOpen = tokens[c.t.openTokenIdx];
+      expect(matchedOpen.type).toBe('open');
+      expect((matchedOpen as { closeTokenIdx: number }).closeTokenIdx).toBe(c.i);
+    }
   });
 });
 
