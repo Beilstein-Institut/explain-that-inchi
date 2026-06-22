@@ -81,12 +81,13 @@ Full phase details: `.planning/milestones/v1.4-ROADMAP.md`
 
 **Goal:** Let users click an InChI chunk (layer or sub-token) to freeze its highlight + explanation for inspection, and add a Help button (next to Reset) that launches a stepped, spotlight-style guided tour of the app.
 **Spec:** docs/superpowers/specs/2026-06-22-pin-freeze-and-help-tour-design.md
-**Requirements**: TBD
+**Requirements**: Feature 1 — Click-to-Pin (Freeze) Highlights; Feature 2 — Guided Help Tour (spec-defined; no ROADMAP requirement IDs mapped)
 **Depends on:** Phase 15
-**Plans:** 0 plans
+**Plans:** 2 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 16 to break down)
+- [ ] 16-01-PLAN.md — Click-to-pin (freeze) highlights: store pin state machine + gate, layer/sub-token click wiring, pinned precedence in highlight hook + explanation, locked-state ring + release hint
+- [ ] 16-02-PLAN.md — Guided Help tour: Help button, custom zero-dep stepped spotlight overlay (8 steps), App tour state with empty-canvas Caffeine auto-load
 
 ---
 *Roadmap created: 2026-05-18*
@@ -94,3 +95,4 @@ Plans:
 *Updated: 2026-06-19 — Phase 14 planned: 1 plan (14-01)*
 *Updated: 2026-06-19 — Phase 15 planned: 2 plans (15-01, 15-02)*
 *Updated: 2026-06-22 — v1.4 SHIPPED (Phases 14–15); archived to milestones/v1.4-ROADMAP.md*
+*Updated: 2026-06-22 — Phase 16 planned: 2 plans (16-01, 16-02)*
