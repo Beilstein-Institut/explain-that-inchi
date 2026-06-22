@@ -186,3 +186,29 @@
   white-space: nowrap;
   pointer-events: none;
 }
+
+/* Phase 16: pinned state — locked cue (D-03) */
+/* Layer-level pin: retained hover fill + outer ring using the layer accent var */
+.inchiLayer.pinned {
+  box-shadow: 0 0 0 2px var(--layer-accent, currentColor);
+  border-radius: 3px;
+}
+
+/* Sub-token pin: retained hover fill + outer ring using the element color var */
+.inchiSubtoken.pinned {
+  box-shadow: 0 0 0 2px var(--el-color, currentColor);
+  border-radius: 2px;
+}
+
+/* Phase 16: while-pinned release hint (D-04) */
+/* Mirror .emptyHint / .copiedFeedback inline-note style. */
+.pinnedHint {
+  display: block;
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-faint);
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}

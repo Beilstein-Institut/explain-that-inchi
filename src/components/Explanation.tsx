@@ -28,6 +28,8 @@ export function Explanation() {
   const layers = useInchiStore(state => state.layers);
   const hoverIdx = useInchiStore(state => state.hoverIdx);
   const atomElements = useInchiStore(state => state.atomElements);
+  // Phase 16: read pinned; when set, it overrides hoverIdx for the explanation card.
+  const pinned = useInchiStore(state => state.pinned);
   // D-04a: read keyHoverKind; treat undefined the same as null (falsy-safe for test mocks).
   const rawKeyHoverKind = useInchiStore(state => state.keyHoverKind);
   const inchiKey = useInchiStore(state => state.inchiKey);
@@ -38,7 +40,11 @@ export function Explanation() {
   // canvas (the floating tooltip was removed). Lower precedence than a live layer.
   const legendHover = useInchiStore(state => state.legendHover);
 
-  const layer = hoverIdx !== null ? layers[hoverIdx] : null;
+  // Phase 16: pinned wins over live hover (spec line 56).
+  // The store gate freezes hoverIdx while pinned, so effIdx already equals the pinned
+  // target — this derivation makes intent explicit and handles belt-and-suspenders.
+  const effIdx = pinned ? pinned.idx : hoverIdx;
+  const layer = effIdx !== null ? layers[effIdx] : null;
   const info = layer ? LAYER_INFO[layer.type] : null;
 
   const presentTypes = new Set(layers.map(l => l.type));
