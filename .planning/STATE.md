@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Reset control & c-layer hover precision
-status: executing
-stopped_at: Phase 15 context gathered
-last_updated: "2026-06-19T12:58:59.938Z"
+status: milestone_complete
+stopped_at: Milestone complete (Phase 15 was final phase)
+last_updated: 2026-06-22T06:16:50.392Z
 last_activity: 2026-06-19
 progress:
   total_phases: 2
@@ -18,14 +18,14 @@ progress:
 
 **Project:** Explain that InChI
 **Milestone:** v1.4 — Reset control & c-layer hover precision (roadmap drafted; Phases 14–15)
-**Status:** Ready to execute
+**Status:** Milestone complete
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-06-19)
 
 **Core value:** Every chunk of an InChI string is hoverable, explained, and linked back to the atoms in the drawing — demystifying a notation that most chemists treat as opaque.
-**Current focus:** Phase 15 — c-layer-hover-precision
+**Current focus:** Milestone complete
 
 ## Deferred Items
 
@@ -69,10 +69,10 @@ None
 
 ## Current Position
 
-Phase: 15 (c-layer-hover-precision) — EXECUTING
-Plan: 2 of 2
+Phase: 15
+Plan: Not started
 Status: Ready to execute
-Last activity: 2026-06-19
+Last activity: 2026-06-22
 
 ## Operator Next Steps
 
