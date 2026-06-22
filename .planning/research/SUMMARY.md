@@ -1,156 +1,143 @@
 # Project Research Summary
 
-**Project:** Explain that InChI
-**Domain:** In-browser InChIKey display & explanation (v1.3) — educational chemistry SPA
-**Researched:** 2026-06-18
+**Project:** Explain that InChI — v1.5 inorganic / organometallic / salt capabilities
+**Domain:** Extending a shipped in-browser InChI explainer to handle metals, salts, and coordination species
+**Researched:** 2026-06-22
 **Confidence:** HIGH
 
 ## Executive Summary
 
-**The milestone's one open technical question is RESOLVED, and the answer is the cheapest possible one.** The InChIKey is already obtainable from the public Ketcher API the app ships today: `ketcher.getInChIKey(): Promise<string>` is a typed, public method on the same `Ketcher` instance the app already holds (verified directly in installed `ketcher-core@3.12.0` source, `ketcher.d.ts:52`). It routes through the same `StandaloneStructServiceProvider` WASM worker as the existing `getInchi()`, backed by the same already-loaded `indigo-ketcher@1.40.0` build. There is **no backend, no new npm dependency, no new WASM asset, no direct `indigo-ketcher` import** — this mirrors the "zero new deps" outcome of v1.2. This single fact reshapes nothing downstream and de-risks the entire milestone.
+This milestone is **not** what its original framing assumed. All four researchers independently converge on one make-or-break fact: **the non-standard `/r` reconnected layer is unreachable with this stack.** Ketcher 3.12.0's only InChI entry point is `getInchi(withAuxInfo?: boolean)` — a single boolean, no options/flavor parameter — so the app can only ever receive **Standard InChI** (`InChI=1S/…`), which by definition never contains `/r`. Standard InChI *always* disconnects metal–ligand bonds into separate dot-components; the metal becomes its own bondless component with an empty `/c` slot. The `/r` layer requires the non-standard `/RecMet` switch that the React-level API does not expose. **A `/r` parser would be dead code for output the app cannot produce.** v1.5 is therefore a milestone about *explaining metal disconnection*, not about reconnecting anything.
 
-The recommended approach is a **clean additive leaf strip**: fetch the InChIKey concurrently with the existing debounced `getInchi(true)` via `Promise.all` inside the *same* `handleChange` tick, store one verbatim `inchiKey: string` field (committed atomically with the InChI), and render color-coded segments by **slicing the verbatim string by index offset** — never reconstructing it. The InChIKey is a fixed 27-char string `AAAAAAAAAAAAAA-BBBBBBBBFV-P` (14-char skeleton hash, hyphen, 8-char remaining-layers hash + flag char `S`/`N` + version char `A`, hyphen, protonation char) with exactly **two hyphens** and a **10-char visible middle segment**. Crucially, because the key is a one-way hash, its segments do **NOT** drive canvas highlights — and that deliberate divergence from the InChI strip is itself the central teaching moment.
+The second consensus finding is that **the shipped pipeline already handles almost all inorganic InChI mechanics.** Inorganic Standard InChI is just an aggressively multi-fragment, charged molecule — and dot-components, `N*` multipliers, `/q` + `/p`, and multi-component AuxInfo coordinate-remapping were all already shipped (v1.0/v1.1, CuSO₄-verified). The verified anchor strings line up exactly with the existing machinery: ferrocene `1S/2C5H5.Fe/c2*1-2-4-5-3-1;/h2*1-5H;`, NaCl `1S/ClH.Na/h1H;/q;+1/p-1`, ferrocyanide `1S/6CN.Fe/c6*1-2;/q;;;;;;-4`. v1.5 is largely **additive: content prose + a per-component charge *reading* fix + presets + one live highlighting-verification gate. ZERO new dependencies.**
 
-The dominant risks are not technical-feasibility risks (those are gone) but **discipline risks** — repeating known project bugs in a new place. The standing no-reconstruct rule must hold (slice verbatim, never re-join segments); the key must ride the existing `generationRef` stale-result guard and empty-canvas guard (no parallel pipeline); the new strip must be a leaf sibling so the canvas never remounts (D-13); the copy button must reuse the StrictMode-safe `mountedRef` pattern; and the explanation prose must never imply the key is reversible, atom-mappable, or collision-proof. All of these have proven prevention patterns already in the codebase.
+The highest-value, lowest-cost fix is correcting a genuine factual error: the `/q` *explanation reading* is wrong for salts (`readingFor` case `'q'` returns the flat broken string "net charge: ;+1"; the blurb says "overall formal charge of the molecule"). The `/q` *highlight* path is already per-component and correct — only the prose is wrong. The single real technical unknown — and thus the milestone's blocking first step — is verifying that `remapAuxToPoolIds` coordinate-matches a lone bondless metal atom (ferrocene Fe, ferrocyanide Fe) instead of silently falling back to iteration order and highlighting the wrong atom. The overriding risk is the **"honesty trap"**: the Ketcher canvas still draws metal–ligand bonds that Standard InChI drops, so the disconnection itself must be the lesson ("the absence is the teaching point", mirroring v1.3 InChIKey) — the tool must **never** highlight a drawn metal bond, because no InChI token denotes it.
 
 ## Key Findings
 
 ### Recommended Stack
 
-See [STACK.md](./STACK.md). **No new dependencies.** Everything needed already ships in the installed 3.12.0 Ketcher packages. The InChIKey comes from the exact same WASM module that already produces the InChI, so there is no second cheminformatics engine, no bundle growth, and no risk of a divergent key. Segment splitting is pure app-code string slicing on a fixed grammar — no parsing library required.
+**Unchanged — that is the finding.** Zero new dependencies. All new behavior lands in existing in-repo modules (`layerInfo.ts`, `parseInchi.ts`, `highlightUtils.ts`, `LayerText.tsx`, `molecules.ts`). No RDKit, no OpenBabel, no second WASM engine, no `/RecMet` plumbing, no `indigo-ketcher` direct import (CLAUDE.md forbids it). Adding a reconnect engine would create a second source of truth that can disagree with Ketcher and would violate the verbatim-passthrough invariant. Ketcher/Indigo packages stay pinned at 3.12.0.
 
-**Core technologies (confirm, don't add):**
-- **ketcher-core 3.12.0** (installed): exposes `Ketcher.getInChIKey(): Promise<string>` and the `Ketcher` type — the InChIKey API lives here
-- **ketcher-standalone 3.12.0** (installed): `StandaloneStructServiceProvider` → WASM `IndigoService.getInChIKey` (`Command.GetInChIKey = 11`) — WASM-backed, no backend
-- **indigo-ketcher 1.40.0** (transitive, installed): underlying WASM that hashes structure → InChIKey — already loaded for `getInchi()`; **do NOT import directly**
-- **React 18 / Zustand 5 / CSS Modules + oklch tokens** (all installed): one new `inchiKey: string` store field; reuse the existing token palette and Vitest setup
+**Core technologies:**
+- ketcher-react / -standalone / -core 3.12.0: editor + WASM Standard InChI v1.06 — already shipped; emits `1S` with automatic, unavoidable metal disconnection.
+- In-repo pure-TS parsers (`parseInchi.ts`, `parseAuxMapping.ts`, `highlightUtils.ts`, `layerInfo.ts`): already multi-fragment + `/q`/`/p` aware — extend prose and fixtures only.
+- Vitest: add **REAL** inorganic fixtures (ferrocene, NaCl, ferrocyanide, Prussian blue) — never fabricated or predicted strings.
 
 ### Expected Features
 
-See [FEATURES.md](./FEATURES.md). No existing tool teaches the *anatomy* of an InChIKey interactively — that gap is exactly this milestone's value. The InChIKey strip mirrors the InChI strip's hover/color/copy treatment but with fewer, simpler regions (5 colored segments + dimmed hyphens) because it is "just a hash."
-
 **Must have (table stakes):**
-- Live InChIKey displayed below the InChI strip, computed from the same WASM source
-- Correct 27-char, 5-segment rendering with exact boundaries (two hyphens only; 10-char visible middle)
-- Per-segment color-coding (reuse oklch tokens; echo the corresponding InChI layer color where one exists)
-- Per-segment hover explanation cards (skeleton hash / remaining-layers hash / flag+version / protonation)
-- Explanatory content: fixed-length & purpose, one-way hash (not reversible, no atom mapping), collision caveat
-- Explicit "segments don't highlight atoms because it's a hash" teaching note
-- Copy-to-clipboard parity (PLSH-04), verbatim key
-- Empty/invalid structure → placeholder (PLSH-01 parity)
+- Corrected `/q` per-component reading + corrected blurb — the shipped reading is *factually wrong* for salts; smallest, highest-value fix.
+- Metal-disconnection explanation prose in the formula/`/c`/`/h` readings — explain the dot-separated metal component and the empty `/c` slot.
+- `/q` / `/p` per-component hover highlighting verified (and made token-precise) on the new presets.
+- Inorganic preset core set — each **live round-trip verified** before shipping.
+- `/p` salt proton-balance prose (HCl → Cl⁻ framing), paired with the `/q` fix.
 
 **Should have (competitive differentiators):**
-- "First block = same skeleton" DB-search insight (one sentence in the block-1 card)
-- Standard-vs-non-standard (`S`/`N`) and version (`A`) explained inside the flag/version card
-- The hash-as-lesson framing that turns *absence* of highlighting into pedagogy
+- "Why is the metal gone?" proactive callout on detected disconnection (structural signal: single-metal component + empty `/c` slot).
+- Salt component breakdown panel (per-ion formula · charge · proton offset, derived view only).
 
 **Defer (v2+):**
-- "Search this InChIKey on the web / PubChem" outbound link (trigger: users ask how to look it up)
-- Charged-species preset to live-demo the protonation char (ties into CONT-01 preset expansion)
-- First-block partial-match interactive / "how the hash is built" deep dive
-
-**Anti-features (explicitly NOT built):** canvas highlight on key-segment hover (impossible & misleading), decode/reconstruct molecule from a pasted key (one-way hash), editable paste-in key field, in-app database/substructure search.
+- Disconnection diff visualization (dimming the dropped metal bonds) — gated on AuxInfo reliability; research-heavy.
+- `/r` reconnected layer — **anti-feature / blocked** unless the stack ever moves off `getInchi()` to an options-capable invocation.
+- KMnO₄ / hexaamminecobalt presets — ship only after live round-trip confirmation (high risk).
+- 3D coordination geometry, crystallographic/lattice views, auto charge-balancing — out of scope / violate verbatim passthrough.
 
 ### Architecture Approach
 
-See [ARCHITECTURE.md](./ARCHITECTURE.md). The feature is a clean additive strip that reuses the existing **CSS/visual pattern** but **NOT** the `LayerText`/highlight machinery (that exists only to drive canvas highlights, which the key has none). The no-reconstruct rule is enforced *by construction*: the parser returns only `{kind, start, end}` index ranges, and the renderer slices the stored verbatim string — there is no code path that joins segment text.
+v1.5 is an **additive content + verification milestone, not a structural one.** The existing pipeline (parse → enrich → render hoverable spans → store hover → highlight hook → Ketcher) already handles every *structural* property an inorganic Standard InChI presents. The two governing invariants from v1.0–v1.4 must hold throughout: **no-remount** (never conditionally render `<Editor>`, never recreate `StandaloneStructServiceProvider`) and **verbatim passthrough** (displayed/copied string === raw Ketcher output; parsers return offsets, renderers slice verbatim).
 
-**Major components:**
-1. **`App.tsx`** (modified) — add `getInChIKey()` via `Promise.all` alongside `getInchi(true)` in the existing debounced handler; pass key into `setInchiData`
-2. **`store.ts`** (modified) — add `inchiKey: string` field; append optional arg to `setInchiData` for one atomic write per generation
-3. **`lib/parseInchiKey.ts`** (new, pure) — `parseInchiKeySegments(key)` returns offset ranges only; unit-tested, no DOM, malformed-tolerant
-4. **`lib/inchiKeyInfo.ts`** (new) — segment titles/blurbs/swatches map (mirrors `layerInfo.ts`)
-5. **`components/InchiKeySection.tsx`** (new) — verbatim-slice render, color spans, local hover index, copy button — NO canvas coupling
-6. **`components/InchiKeyExplanation.tsx`** (new) — per-segment card reusing `Explanation.module.css`
-
-Key pattern: **local `useState` hover index**, NOT the Zustand `subHover` bus (which is observed by `useKetcherHighlights` and would fire spurious canvas highlights and collide with the InChI strip's `hoverIdx`).
+**Major components touched:**
+1. `layerInfo.ts` (`readingFor` q/p + `LAYER_INFO` blurbs) — **primary content surface.** Rewrite q/p readings per-component by mirroring the existing `;`-split + `cumOffset` pattern from the `c`/`h`/`t` cases; correct the blurbs; add disconnection prose to `formula`/`c`; extend `ELEMENT_NAMES`/metal-color policy for `Fe`/`Na`/`Mn` etc.
+2. `parseAuxMapping.ts` (`remapAuxToPoolIds`) — **unchanged unless the verification gate fails.** Lone-metal coordinate match is the only plausible new edge case.
+3. `LayerText.tsx` (+ optional new `ChargeText`) / `highlightUtils.ts` (`buildSubHoverSpecs` `case 'charge'`) / `parseInchi.ts` (`SubHover` `kind:'charge'`) — **optional Phase E** token-precise charge hover; `buildHighlightSpecs case 'q'` is already correct and unchanged. `molecules.ts` — pure preset data additions.
 
 ### Critical Pitfalls
 
-See [PITFALLS.md](./PITFALLS.md). The top risks are all repeats of solved project bugs, now in a new surface:
-
-1. **Reconstructing the key from segments** (repeat of the InChI `.`-drop passthrough bug) — slice the verbatim `getInChIKey()` output by fixed offset for coloring only; never re-join. Assert `displayed === raw` and `copyPayload === raw` in tests.
-2. **Parallel pipeline / desync race** — issue `getInChIKey()` inside the *existing* `handleChange` debounce, in the same `generationRef` window, re-check `thisGen` after the await, write atomically. No second subscription, timer, or generation counter.
-3. **Wrong/empty key on empty/disconnected/multi-component structures** — gate behind the same empty guard; clear key to `''` in the same atomic write and in the catch path; validate full 27-char format (`/^[A-Z]{14}-[A-Z]{8}-[A-Z]{3}$/`) before slicing; state that multi-component molecules get ONE key for the whole assembly.
-4. **Canvas remount** (D-13 invariant) — add `InchiKeySection` as a leaf sibling after `InchiSection`; never touch `KetcherPanel`/`structServiceProvider`; add store fields, don't reshape existing ones.
-5. **Implying reversibility / atom-mapping / collision-proof** — key segments must NOT call `setHover`/`setSubHover`; prose states one-way hash, not reversible, no atom mapping, collisions improbable-but-real.
-
-Secondary: serial WASM cost (use `Promise.all`), StrictMode copy-confirmation bug (reuse `mountedRef` reset-on-mount), preset-load stale timing (inherited correctly by riding `handleChange`), mislabeled segment boundaries (pin offsets with constants + test).
+1. **The `/q` blurb/reading is actively wrong for salts** — renders "net charge: ;+1" and frames it as whole-molecule charge. Fix by splitting on `;`, aligning each slot to a formula component, emitting per-component prose ("Cl: neutral · Na: +1"); same treatment for `/p`. Inorganic chemists are the target user and will trust the wrong text.
+2. **Per-component `/q` off-by-one** — never `.filter(Boolean)` the slot array (empty slot = "this component is neutral" = data); expand `N*` (`6CN` = 7 components, not 2); assert `text.split(';').length === formulaFragmentCounts(formula).length`. Note `/q` can itself carry `N*` (Prussian blue `3*-4;4*+3`) and the `q` handler does **not** currently run through `expandLayerText`.
+3. **The honesty trap** — the canvas draws metal–ligand bonds Standard InChI drops. Make the disconnection itself the lesson; hovering `.Fe` highlights only the lone iron atom; **never** highlight a drawn Fe–ring bond for any token (mirror v1.3 INKEY-09 "absence is the lesson").
+4. **Lone-metal AuxInfo mapping silently highlights the wrong atom** — `remapAuxToPoolIds` may fall back to iteration order if the metal's `/rC:` coordinate is missing/`NaN`. Resolve via a **blocking live gate** (log match-vs-fallback) before any content work.
+5. **Presets that don't round-trip through `setMolecule` teach silently wrong** — every preset's expected InChI must be the **REAL string captured from the running app**, never predicted/hand-written (the v1.4 lesson: 333 unit tests passed while the feature was broken on fabricated fixtures). Ship the verified core before the ⚠ high-risk presets.
 
 ## Implications for Roadmap
 
-All four research files independently converged on the **same three-phase shape**: Source & wiring → Render & layout → Content & explanation. This ordering puts the (now de-risked) external-dependency piece first, the tested-pure-seam second, and the prose last.
+Based on research, suggested phase structure (consensus order from Architecture + Pitfalls):
 
-### Phase 1: Source & Wiring
-**Rationale:** Although the API is confirmed, fetching/storing/syncing the key gates everything downstream and carries every sync/race/empty-state pitfall. Lock the verbatim-passthrough invariant into the store contract *before* any rendering.
-**Delivers:** `inchiKey` store field; `getInChIKey()` fetched via `Promise.all` inside the existing debounced `handleChange`; atomic write with the InChI; empty/invalid + catch-path clearing; stale-generation guard extended to the key.
-**Addresses:** "Live InChIKey computed from the same source" (P1 table stakes); pure `parseInchiKey.ts` offset parser + tests (build the tested seam first, per the v1.2 precedent).
-**Avoids:** Pitfalls 1 (reconstruct), 2 (derive-from-InChI mismatch), 3 (desync race), 4 (empty/multi-component), 5 (serial WASM cost), 10 (preset-load stale timing).
+### Phase A: Live highlighting / AuxInfo verification gate (BLOCKING — do first)
+**Rationale:** The only real technical unknown. One check de-risks the entire milestone and isolates the only plausible new code (lone-metal remap). Must be a blocking human-verify, not a unit test (v1.4 lesson).
+**Delivers:** Confirmation that loading ferrocene (and ferrocyanide, AgNO₃) yields the verbatim `1S` string, that `remapAuxToPoolIds` resolves the metal pool ID **not via fallback** (logged), and that hovering `.Fe` highlights only the iron atom on canvas.
+**Avoids:** Pitfall 4 (silent wrong-atom highlight). If it fails, fix `remapAuxToPoolIds` epsilon/fallback here before proceeding.
 
-### Phase 2: Render & Layout
-**Rationale:** With a verbatim key in the store and a tested parser, build the visible strip as a leaf sibling that cannot remount the canvas.
-**Delivers:** `InchiKeySection` rendering verbatim slices as color-coded spans (reuse oklch tokens + `InchiSection.module.css`), dimmed hyphens, local hover index, copy button via a shared StrictMode-safe `useCopyButton` hook, empty-state placeholder, 27-char format gate before slicing.
-**Uses:** React 18 local `useState`, existing CSS Modules token system, `navigator.clipboard`.
-**Implements:** `InchiKeySection` + its CSS module; the no-canvas-coupling architecture edge.
-**Avoids:** Pitfalls 6 (canvas remount / break InChI strip), 9 (copy confirmation StrictMode), and the rendering half of 4 (length validation) and 8 (no highlight wiring on key segments).
+### Phase B: Per-component `/q` + `/p` reading fix + corrected blurbs
+**Rationale:** Highest-value table-stakes fix; corrects a genuine factual error; independent of presets (test with fixtures).
+**Delivers:** Rewritten `readingFor` q/p (mirror `case 't'`), corrected `LAYER_INFO.q`/`.p` salt-aware copy, REAL fixtures (NaCl `/q;+1/p-1`, ferrocyanide `/q;;;;;;-4`, Prussian blue `3*-4;4*+3`, CuSO₄).
+**Addresses:** "Corrected `/q` per-component reading + blurb" and "`/p` salt prose."
+**Avoids:** Pitfalls 1, 2 (wrong blurb, off-by-one slot alignment, `/p` combined story).
 
-### Phase 3: Content & Explanation
-**Rationale:** Prose depends on finalized segments; authored last against the verified spec.
-**Delivers:** `inchiKeyInfo.ts` blurbs (skeleton hash / remaining-layers hash / flag `S`-`N` + version `A` / protonation `N`/`O…`/`M…`); `InchiKeyExplanation` card; cross-cutting "one-way hash, not reversible, no atom mapping, collision caveat, one key per whole assembly" copy; slice-boundary + label unit test.
-**Addresses:** All explanatory-content table stakes + the hash-as-lesson differentiator.
-**Avoids:** Pitfalls 7 (mislabeled boundaries/meaning) and 8 (false reversibility/atom-map/collision-proof claims).
+### Phase C: Metal-disconnection explanation prose + honest-limitation callout
+**Rationale:** Copy-only; parallel-safe with B; delivers the milestone's headline "aha."
+**Delivers:** `formula`/`c` blurb + reading note (disconnected metal, empty `/c` slot); fold the "canvas shows bonds the InChI omits" sentence into the card (content only, derived boolean — no store field, no remount). Extend `ELEMENT_NAMES`/metal colors.
+**Avoids:** Pitfall 3 (honesty trap); no store field/remount for the callout.
+
+### Phase D: Inorganic presets (behind a live round-trip human-verify gate)
+**Rationale:** Depends only on the round-trip method confirmed in A; makes B and C demonstrable end-to-end.
+**Delivers:** `molecules.ts` core set — NaCl, KCl, NH₄Cl, MgCl₂, CuSO₄, AgNO₃, ferrocene — each with its **REAL captured InChI**. KMnO₄ / hexaamminecobalt deferred until round-trip confirmed.
+**Avoids:** Pitfall 5 (silent non-round-trip); blocking human-verify, no auto-green from unit tests.
+
+### Phase E (optional / fast-follow): Token-precise `/q` charge hover
+**Rationale:** Additive sugar gated behind B; the only phase that touches the parser/highlight data model.
+**Delivers:** `SubHover` `kind:'charge'` + `canonRange`; new `ChargeText` sub-renderer (mirror `ParityText`); `buildSubHoverSpecs case 'charge'`.
 
 ### Phase Ordering Rationale
-- **Dependency-driven:** the key value must exist in the store before it can be rendered, and segments must be finalized before prose is authored. Source → Render → Content is the only valid topological order.
-- **Risk-front-loaded:** the single external-dependency step is first (now confirmed safe), so no surprise reshapes downstream work — and every sync/race/empty pitfall is contained in one phase with the existing generation-guard tests as the regression gate.
-- **Reuse-aligned:** Phase 2 reuses CSS + copy pattern; Phase 3 reuses the explanation-card markup — neither requires new infrastructure, keeping the milestone LOW–MEDIUM complexity overall.
+- **A first** because it is the sole technical unknown and gates correctness of everything downstream; the v1.4 retrospective (fabricated fixtures masked a broken feature) makes a live canvas gate non-negotiable.
+- **B before/parallel to C** because B is the highest-value table-stakes fix and is preset-independent (fixtures suffice); C is copy-only and parallel-safe.
+- **D after A/B/C** because presets exist to demonstrate B and C end-to-end and depend only on the round-trip method.
+- **E last** because it is optional precision sugar gated behind B and is the only data-model change.
+- Every phase honors no-remount and verbatim passthrough.
 
 ### Research Flags
 
-Phases likely needing deeper research during planning:
-- **None.** The one open question (how to obtain the key) is resolved with HIGH confidence against installed source. The InChIKey format spec is stable and triple-sourced. No phase warrants `--research-phase`.
+Phases likely needing deeper research / live verification during planning:
+- **Phase A:** the make-or-break feasibility check — lone-metal coordinate matching for ferrocene/ferrocyanide is unverified; needs live-canvas verification and match-vs-fallback logging.
+- **Phase D:** SMILES round-trip fidelity in Ketcher standalone is per-preset uncertain (especially ⚠ KMnO₄ Mn(VII), hexaamminecobalt 10 components, ferrocene sandwich); each preset's real InChI must be captured live.
 
 Phases with standard patterns (skip research-phase):
-- **Phase 1:** the debounce/generation-guard/atomic-store pipeline is established and tested (D-05); the API call is a one-line sibling to `getInchi(true)`.
-- **Phase 2:** leaf-sibling layout (D-13), CSS token reuse, and the StrictMode copy pattern (WR-02) are all proven in the existing codebase.
-- **Phase 3:** content authoring against the verified, citable spec in FEATURES.md Part 1 — no further research needed.
+- **Phase B:** well-understood `;`-split + `cumOffset` pattern already exists in `c`/`h`/`t` cases — copy it.
+- **Phase C:** copy-only content edits in an established prose module.
+- **Phase E:** mirrors the shipped `ParityText` / CLYR sub-hover pattern exactly.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | API verified by reading installed `ketcher-core`/`ketcher-standalone` 3.12.0 source directly, not just docs; zero new deps |
-| Features | HIGH | InChIKey segment structure cross-verified across the IUPAC paper, Wikipedia, and the InChI Trust Technical FAQ |
-| Architecture | HIGH | Designed against the real codebase (`App.tsx`, `store.ts`, `InchiSection.tsx`, `useKetcherHighlights.ts`); reuses proven v1.0–v1.2 patterns |
-| Pitfalls | HIGH | Each pitfall mapped to a documented prior bug/decision (passthrough rule, D-05, D-13, WR-02, INCHI-06) with verified prevention |
+| Stack | HIGH | No-`/r` reframe and zero-new-deps verified against ketcher README API signature, Indigo options page, InChI Trust FAQ. |
+| Features | HIGH | InChI behavior + Ketcher API verified against primary sources; anchor preset InChI strings NIST/PubChem-verified. |
+| Architecture | HIGH | Existing pipeline read directly from source; `case 'q'` per-component highlight and flat `readingFor q` bug both confirmed in-code. |
+| Pitfalls | HIGH | Charge-alignment pitfalls traced against actual code + verified inorganic strings; MEDIUM only on preset round-trip and lone-metal AuxInfo (the point of the gate). |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
-
-- **`getInChIKey()` behavior on empty/disconnected canvas** (reject vs `''` vs degenerate): wrap in the existing try/catch and clear-to-empty path; confirm the exact behavior in the Phase 1 smoke test rather than assuming. (LOW risk — same behavior class as `getInchi()`.)
-- **Protonation char ±12 saturation to `A`** (extremely rare edge): footnote in content, not foreground; no test fixture required. (MEDIUM-confidence detail, negligible impact.)
-- **Card placement** (inside the strip vs. its own panel row): a design-handoff decision deferred to Phase 2 planning, not a research gap.
-- **Whether to extract a shared `useCopyButton` hook** (touches `InchiSection`, one extra modified file) vs. copy the helper: a Phase 2 implementation choice; extraction is recommended but optional.
+- **Lone-metal AuxInfo coordinate match (ferrocene/ferrocyanide):** unverified that `remapAuxToPoolIds` resolves a bondless metal without fallback — resolve in the blocking Phase A gate before content work.
+- **Preset SMILES round-trip fidelity:** several candidate SMILES (esp. KMnO₄, hexaamminecobalt, ferrocene's two forms) may parse to a different structure or fail; capture each preset's REAL live InChI in Phase D, ship verified core only.
+- **Bundled InChI version detail:** v1.07's "keep some metal bonds" behavior is NOT in Ketcher 3.12.0; build for full disconnection (MEDIUM).
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- Installed `ketcher-core@3.12.0` source — `ketcher.d.ts:52` (`getInChIKey(): Promise<string>`), `structService.types.d.ts:150`, `index.js:59610` (delegates to `structService.getInChIKey`)
-- Installed `ketcher-standalone@3.12.0` source — `main.js:761` (`IndigoService.getInChIKey`, `Command.GetInChIKey=11`), `main.js:625` (maps `ChemicalMimeType.InChIKey`); `indigo-ketcher@1.40.0` (Apache-2.0, already vendored)
-- IUPAC InChI paper (Heller et al., *J. Cheminformatics* 2015) — segment definitions & protonation mapping: https://jcheminf.biomedcentral.com/articles/10.1186/s13321-015-0068-4
-- InChI Trust Technical FAQ — char counts, `S`/`N` flag, version `A`, protonation incl. ±12 saturation, one-way hash, real-world collisions: https://www.inchi-trust.org/technical-faq/
-- Existing codebase patterns — `src/App.tsx` (debounce + `generationRef` D-05, `isHighlightingRef`, `isSettingMoleculeRef`, module-level `structServiceProvider` D-13), `src/components/InchiSection.tsx:28-44` (StrictMode `mountedRef` copy WR-02, verbatim slice), `src/store.ts`, `src/lib/handleMolSelectLogic.ts`
-- Project memory `feedback_inchi_passthrough.md` (no-reconstruct rule); PROJECT.md Key Decisions
+- Ketcher README — `getInchi(withAuxInfo?: boolean)` / `getInChIKey()` signatures (single boolean, no options param): https://github.com/epam/ketcher/blob/master/README.md
+- Indigo InChI options page — `/RecMet` listed; default = standard: https://lifescience.opensource.epam.com/indigo/options/inchi.html
+- InChI Trust Technical FAQ — automatic metal disconnection; `/r`/RecMet non-standard; per-component `;` semantics: https://www.inchi-trust.org/technical-faq/
+- Existing codebase, read directly: `src/lib/parseInchi.ts`, `highlightUtils.ts`, `layerInfo.ts`, `parseAuxMapping.ts`, `src/components/LayerText.tsx`, `Explanation.tsx`, `InchiSection.tsx`, `src/data/molecules.ts`
+- `.planning/PROJECT.md` — no-remount (D-13) + verbatim-passthrough invariants; v1.1 multi-fragment remap; v1.4 fabricated-fixture lesson
+- Verified anchor strings — ferrocene (PubChem CID 10219726), NaCl (NIST WebBook C7647145), ferrocyanide, Prussian blue
 
 ### Secondary (MEDIUM confidence)
-- Wikipedia, *International Chemical Identifier* (InChIKey section) — format string, collision estimate (matches IUPAC paper): https://en.wikipedia.org/wiki/International_Chemical_Identifier
-- InChIKey collision-resistance study, *J. Cheminformatics* 2012: https://jcheminf.biomedcentral.com/articles/10.1186/1758-2946-4-39
-- NCI/CADD InChIKey resolver blog (real-world lookup use): https://cactus.nci.nih.gov/blog/?tag=inchikey-resolver
-
-### Tertiary (LOW confidence)
-- (none — all findings corroborated by at least two sources or installed source)
+- Metallome blog — verbatim ferrocene/ferrocyanide/Prussian blue `1S` and `/r` worked examples: http://metallome.blogspot.com/2025/05/inchi-metal-reconnected-layer.html
+- Ketcher help.md — dative/coordinate bond palette, periodic table, charge tools: https://github.com/epam/ketcher/blob/master/documentation/help.md
+- "Making InChI FAIR for Inorganic Chemistry": https://hunterheidenreich.com/notes/chemistry/molecular-representations/notations/inchi-2025/
 
 ---
-*Research completed: 2026-06-18*
+*Research completed: 2026-06-22*
 *Ready for roadmap: yes*

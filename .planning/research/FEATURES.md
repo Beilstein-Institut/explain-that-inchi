@@ -1,233 +1,189 @@
-# Feature Research — v1.3 InChIKey Display & Explanation
+# Feature Research
 
-**Domain:** Educational chemistry web tool — adding a color-coded, hoverable, explained InChIKey strip below the existing InChI strip in "Explain that InChI"
-**Researched:** 2026-06-18
-**Confidence:** HIGH (InChIKey segment structure cross-verified across the IUPAC InChI paper, Wikipedia, and the InChI Trust Technical FAQ)
-
-> Supersedes the v1.2 feedback research previously in this file (preserved in the v1.2 milestone archive). This file is scoped to the v1.3 InChIKey feature.
+**Domain:** Inorganic / organometallic / salt explanation in an InChI explainer (v1.5 milestone)
+**Researched:** 2026-06-22
+**Confidence:** HIGH (InChI behavior + Ketcher API verified against primary sources; exact preset InChI strings verified for the two anchor presets)
 
 ---
 
-## Part 1 — The InChIKey Structure (Authoritative Reference)
+## TL;DR for the requirements writer
 
-This is the citable, segment-by-segment ground truth the explanation-content authors must encode. **All character counts are confirmed across three authoritative sources.**
+The single most important finding reshapes the milestone:
 
-### Canonical format
+> **The `/r` reconnected layer is UNREACHABLE with this app's stack and must be treated as an anti-feature, not a feature.**
 
-```
-AAAAAAAAAAAAAA - BBBBBBBB F V - P
-└────14─────┘  ╵ └──8──┘ │ │ ╵ └1┘
-  block 1     hyphen  block2 │ │ hyphen  protonation
-                            flag version
-```
+`/r` is produced only by the InChI **`RecMet`** option, which makes the InChI **non-standard**. Ketcher's only InChI entry point is `getInchi(withAuxInfo?: boolean)` — a single boolean, **no flavor/options parameter** — so the app can only ever obtain **Standard InChI** (`InChI=1S/...`), which by definition never contains `/r`. (HIGH — verified against InChI Technical FAQ, Indigo InChI options page, and the documented Ketcher API signature.)
 
-Worked example — **L-alanine: `QNAYBMKLOCPYGJ-REOHCLBHSA-N`**
+So the v1.5 teaching story is **not** "explain the reconnected layer." It is:
 
-| Segment | Chars | This example | Meaning |
-|---------|-------|--------------|---------|
-| First block | 14 | `QNAYBMKLOCPYGJ` | skeleton / connectivity hash |
-| (hyphen) | 1 | `-` | separator |
-| Second block | 8 | `REOHCLBH` | hash of remaining ("minor") layers: stereo, isotope, etc. |
-| Flag char | 1 | `S` | standard (`S`) vs non-standard (`N`) InChI |
-| Version char | 1 | `A` | InChI algorithm version (`A` = version 1) |
-| (hyphen) | 1 | `-` | separator |
-| Protonation char | 1 | `N` | net proton change (`N` = neutral) |
+1. **Explain metal _disconnection_** — why the metal vanished into its own dot-separated component and the bonds you drew are gone from the connectivity layer. This is the real "aha" for inorganic chemists and is fully achievable from the Standard InChI the app already gets.
+2. **Explain `/q` per-component charge + `/p` proton balance for salts/ions** — extend the already-shipped `q`/`p` layers (which already work for multi-fragment salts like CuSO₄, per v1.1) with salt-aware, per-component prose and highlighting.
+3. **Inorganic presets** that make 1 and 2 vivid.
 
-**Total: 14 + 1 + 8 + 1 + 1 + 1 + 1 = 27 characters, always.** Letters only (A–Z), no digits, no lowercase, fully ASCII — deliberately chosen to be URL- and database-search-friendly.
-
-> **CRITICAL FORMATTING NOTE for content authors:** The flag (`F`) and version (`V`) characters are **appended directly onto the end of the 8-char second block with NO internal hyphen** — they are positions 24 and 25 of the string. The full string has exactly **two hyphens** (after char 14, and after char 25). Do NOT render `...-S-A-N`; it is `...REOHCLBHSA-N`. The visible middle segment between the two hyphens is therefore **10 characters**: 8 hash chars + `S`/`N` flag + `A` version. (Confidence: HIGH — verified against the L-alanine reference example.)
-
-### Segment 1 — First block (14 chars): skeleton / connectivity hash
-
-- A **truncated SHA-256 (SHA-2, 256-bit) hash**, base-26 encoded (A–Z) for readability. (HIGH)
-- Encodes the **molecular skeleton / connectivity** — the InChI main layer: chemical formula, atom connections (`/c`), the hydrogen layer (`/h`), and the charge `/q` sublayer. It captures the constitution of the molecule **without** stereochemistry or isotope detail. (HIGH)
-- Teach this consequence: **two molecules sharing the first 14 chars are constitutional matches** (same skeleton) — which is why first-block / partial-key search is a common database technique. Stereoisomers and isotopologues of one compound share block 1 but differ in block 2.
-- No natural sub-token boundary inside block 1 — it is one opaque hash. Color as a single unit.
-
-### Segment 2 — Second block (8 chars): remaining-layers hash
-
-- Also a **truncated SHA-256 hash**, base-26 encoded. (HIGH)
-- Encodes the **"minor" layers**: stereochemistry, isotopic substitution, and (for non-standard InChI) the exact position of mobile/tautomeric hydrogens and metal-ligation data. (HIGH)
-- Teach this: a molecule with **no stereo/isotope info still has a non-empty second block** — the hash of "no minor layers" is itself a fixed string; it is never blank. Different stereoisomers differ here while sharing block 1.
-- No natural sub-token boundary inside the 8 hash chars. Color as a single unit.
-
-### Segment 3 — Flag character (1 char, position 24): standard vs non-standard
-
-- `S` = **Standard InChIKey** (generated from a Standard InChI — the default, overwhelmingly common case). (HIGH)
-- `N` = **Non-standard InChIKey** (generated from a non-default InChI). (HIGH)
-- This tool uses Ketcher/WASM standard InChI, so this char will essentially always be `S`. The card should still teach what `N` means.
-
-### Segment 4 — Version character (1 char, position 25): InChI algorithm version
-
-- `A` = **version 1** of the InChI algorithm (the only version in production use). `B` is reserved for a future version 2. (HIGH)
-- Always `A` in practice today. Teach as "which generation of the InChI software produced this key."
-
-> The flag (`S`/`N`) and version (`A`) are two distinct 1-char fields sitting adjacent with no separator. Combining them into one "version/flag" hover region is the recommended simplification (see Part 3).
-
-### Segment 5 — Protonation character (1 char, position 27): net protonation
-
-- Encodes the **net protonation / deprotonation of the core parent structure**, corresponding to the InChI `/p` charge sublayer. Protonation is deliberately **NOT hashed** — it is carried as this separate trailing flag so protonation variants of one compound differ only in the last character. (HIGH)
-- Full mapping (HIGH — confirmed in the IUPAC paper + InChI Trust FAQ):
-
-  | Char | Net protons | | Char | Net protons |
-  |------|-------------|-|------|-------------|
-  | `N`  | 0 (neutral) | | | |
-  | `O`  | +1 | | `M` | −1 |
-  | `P`  | +2 | | `L` | −2 |
-  | `Q`  | +3 | | `K` | −3 |
-  | `R`  | +4 | | `J` | −4 |
-  | ...  | up the alphabet adds protons | | ... | down the alphabet removes protons |
-
-  Mnemonic: `N` is the neutral center; walk **up** the alphabet (`O, P, Q…`) to **add** protons, **down** (`M, L, K…`) to **remove** them.
-- Edge case to footnote (not foreground): if the net change exceeds ±12 protons the flag saturates to `A` and can no longer distinguish further. Extremely rare. (MEDIUM)
-
-### Properties to teach (already scoped IN — confirmed correct)
-
-- **Fixed 27-character length** regardless of molecule size — a 6-atom molecule and a 600-atom protein both yield a 27-char key. This is the headline "why it's useful" point. (HIGH)
-- **Derived hash, web/DB-search friendly:** letters-only, fixed length, no problematic characters → ideal as a Google search token, a database key, or a URL fragment. This is the *primary real-world use* of an InChIKey. (HIGH)
-- **One-way / not reversible:** being a truncated cryptographic hash, **the InChI (and thus the molecule) cannot be reconstructed from the InChIKey.** A structure is only recoverable via a resolver/lookup service that already has the key→structure mapping indexed (PubChem, the NCI/CADD resolver). (HIGH)
-- **No atom mapping:** unlike the InChI layers in this tool, InChIKey segments are hashes — **they do NOT map to specific atoms/bonds.** The explanation must say this explicitly so users don't expect canvas highlighting on hover. This is the central UX contrast with the InChI strip (see Dependencies). (HIGH)
-- **Collision caveat:** collisions are *theoretically* possible (it is a lossy hash) but vanishingly rare. Citable framings: ~1 duplication per 75 databases of 1 billion unique structures each (Wikipedia); resistance on the order of ~2.2×10¹⁵ structures; an experimental study of ~77 million real+generated structures found effectively no real-world collisions (a couple of contrived/computer-generated stereoisomer edge cases are documented). **Teaching framing: the InChIKey is for lookup and indexing, not a cryptographic proof of identity — always confirm a hit against the full InChI.** (HIGH)
+Everything below ties back to the core value: every chunk hoverable, explained, and linked to atoms. Note that for `/q`/`/p` the "linked to atoms" part is partly the lesson — disconnected metals and charge tokens highlight **whole components**, and the metal's bonds are deliberately *absent* from `/c`, which is itself the teaching point (mirrors the v1.3 InChIKey "absence is the lesson" pattern).
 
 ---
 
-## Part 2 — Feature Landscape
+## Feature Landscape
 
 ### Table Stakes (Users Expect These)
 
+A chemist who loads ferrocene or NaCl and sees an unfamiliar dot-separated formula will expect the tool to *explain why*, not just color it. These are the minimum to make v1.5 feel complete.
+
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| InChIKey displayed live below the InChI strip | The milestone's whole point; mirrors the existing InChI display | LOW | Computed from same WASM source as the InChI (open question: ketcher API to obtain the key) |
-| Correct 27-char segmentation rendered | Educational accuracy is the product; wrong counts = broken tool | LOW | Use the exact boundaries in Part 1; remember only TWO hyphens |
-| Per-segment color-coding | The InChI strip sets this expectation; visual parity required | LOW | Reuse the oklch token system; tokens per Part 3 |
-| Per-segment hover explanation card | Core value ("every chunk hoverable, explained") | MEDIUM | Reuse the existing left explanation-card component + reading-code pattern |
-| Copy-to-clipboard button (verbatim key) | InChI already has PLSH-04; asymmetry would feel broken | LOW | Clone PLSH-04; copy the exact key string with visual confirmation |
-| Explain block structure + purpose + one-way-hash + collision caveat | Explicitly scoped in; this IS the educational payload | MEDIUM | Content from Part 1; the work is concise, correct prose |
-| Empty/invalid structure → placeholder, not error | Matches PLSH-01 behavior of the InChI strip | LOW | Reuse the existing placeholder pattern; the key is absent when the canvas is empty |
+| **Metal-disconnection explanation in the formula / `/c` / `/h` layers** — prose telling the user that InChI broke all bonds to the metal and split the species into dot-separated components | A chemist sees `2C5H5.Fe` and `/c2*1-2-4-5-3-1;` (the `;` with nothing after it = the Fe component has no bonds) and is confused unless told disconnection happened | MEDIUM | Per-component prose. The existing `formulaReading` already splits on `.` and renders multipliers (`2×`); extend with a note when a metal element is a standalone single-atom component. No change to the layer data model needed — the data is already there. |
+| **`/q` charge layer: per-component reading** — for `/q;+1` say "component 1 (chloride): neutral; component 2 (sodium): +1" rather than the current flat "net charge: +1" | The current `q` blurb ("overall formal charge of the molecule") is **wrong for salts** — `/q` is per-component, semicolon-separated, and empty slots mean "this component is neutral" | MEDIUM | Verified: NaCl = `InChI=1S/ClH.Na/h1H;/q;+1/p-1`. The `;` before `+1` is the empty (neutral) chloride slot. Parser must split `q.text` on `;` and align to components. The `readingFor` `q` case currently returns a single flat string — needs per-component expansion mirroring the existing multi-fragment pattern in the `c`/`h`/`t` cases. |
+| **`/q` / `/p` hover highlights the correct component's atoms** | Core value: hovering a charge token must light up *which* ions carry the charge | MEDIUM | v1.1 already fixed `/q` and `/p` highlighting for multi-fragment salts (CuSO₄). v1.5 should confirm it still works on the new presets and that hovering a *specific* per-component charge token (e.g. just the `+1`) highlights only that ion — likely needs sub-token hover, paralleling the c-layer CLYR work. |
+| **At least a few inorganic presets** that load and render in Ketcher | Users need one-click examples to see the new behavior; nobody hand-draws ferrocene to test a tool | LOW | Presets are embedded SMILES loaded via `setMolecule`; the format already exists in `molecules.ts`. The only risk is whether a given SMILES round-trips through Ketcher standalone — must be live-checked (flag for STACK/verification). |
+| **Corrected `q` / `p` legend + blurb copy** | The shipped `q` blurb describes whole-molecule charge; inorganic users will trust it and be misled on salts | LOW | One-line copy edit + the per-component expansion. Match the educational tone of `LAYER_INFO` (plain, second-person, one concrete worked example in `egLabel`/`eg`). |
 
 ### Differentiators (Competitive Advantage)
 
+These make "Explain that InChI" the tool chemists recommend specifically for the confusing inorganic cases. None are required to ship, but each strengthens the core value.
+
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| Explicit "this is a hash → no atoms highlight" teaching moment | Turns the *absence* of canvas highlighting into a lesson, pre-empting confusion | LOW | A short note in the idle/hover card; cheap, high pedagogical value |
-| "First block = same skeleton" insight | Teaches the practical DB-search technique (first-block / partial match) | LOW | One sentence in the block-1 card |
-| Protonation-char live demo via a charged preset | If a preset is charged/protonated, the last char visibly changes — memorable | MEDIUM | Depends on a charged species being among presets; else a static explanation |
-| "Search this key on the web / PubChem" affordance | The killer real-world use is pasting the key into Google/PubChem | LOW–MED | A small outbound link; just an external link, consistent with the no-backend/static ethos |
-| Standard-vs-nonstandard (`S`/`A`) explained even though always `S`/`A` here | Completeness; rewards curious users without cluttering the common path | LOW | Keep inside the flag/version card, not the main strip prose |
+| **"Why is the metal gone?" callout when disconnection is detected** — a contextual explanation surfaced when the loaded structure triggers metal disconnection (a metal appears as its own formula component) | This is *the* moment of confusion for inorganic InChI. Surfacing it proactively (not only on hover) is genuinely differentiating — no other InChI tool explains the disconnection rule interactively | MEDIUM | Detect: a dot-separated formula component that is a single metal element with an empty `/c` slot. Heuristic only — maintain a small metal-element set. Tie into the existing explanation-card system; reuse the idle/hover precedence machinery. |
+| **Disconnection diff visualization** — when hovering the metal component, dim the (now-absent) metal–ligand bonds on the canvas or annotate "these bonds were cut by InChI" | Makes the abstract disconnection rule physically visible on the drawing the user made — pure core-value payoff | HIGH | The canvas still *shows* the drawn dative/coordinate bonds; InChI dropped them. Highlighting "the bonds InChI ignored" requires mapping drawn bonds NOT present in `/c`. Novel highlight mode; flag as research-heavy. Defer if AuxInfo mapping for disconnected metals proves unreliable. |
+| **Salt component breakdown panel** — for a multi-component salt, a small per-ion summary (formula · charge · proton offset) derived from `/q` + `/p` | Turns the opaque `/q;+1/p-1` into "Na⁺ + Cl⁻" in chemist-readable terms | MEDIUM | Pure derived view over already-parsed layers; no new Ketcher calls. Strong educational value, low risk. |
+| **`/p` proton-balance salt prose** — explain that `/p-1` means one proton removed (e.g. HCl → Cl⁻) relative to the neutral drawn form | The `/p` layer is genuinely arcane; salts are where it actually shows up and where the explanation pays off | LOW-MEDIUM | Extend existing `p` blurb/reading with the salt framing. NaCl's `/p-1` is the canonical teaching example. |
 
 ### Anti-Features (Commonly Requested, Often Problematic)
 
+These will be requested ("why doesn't it show the reconnected form / the real coordination bonds / a 3D complex?") and must be explicitly declined with rationale, to protect scope and the static-build constraint.
+
 | Feature | Why Requested | Why Problematic | Alternative |
 |---------|---------------|-----------------|-------------|
-| Highlight canvas atoms on InChIKey-segment hover | The InChI strip does it, so symmetry is assumed | **Impossible & misleading** — segments are one-way hashes with no atom correspondence; faking it teaches a falsehood | Explicitly explain *why no highlight*; this is the core hash lesson |
-| Reconstruct / "decode" the molecule from a pasted InChIKey | Looks like the natural inverse feature | One-way hash — impossible locally; would need a resolver backend, violating the no-backend constraint | Link out to an external resolver (PubChem / NCI) as documentation, not a built-in feature |
-| Show the raw SHA-256 hex / base-26 math | "Show your work" appeal | Adds noise, implies the hash is reversible/inspectable, distracts from the lesson | One sentence: "truncated SHA-256, base-26 encoded"; link to the spec for the curious |
-| InChIKey-based substructure/database search in-app | Feels like a natural companion | Out of scope per PROJECT.md; shifts product identity, needs data/backend | External "search the web for this key" link only |
-| Editable / paste-in InChIKey field | Users may want to look up an arbitrary key | Cannot derive a structure from it (one-way); produces nothing locally | Keep input via the Ketcher canvas only; output-only key display |
-| Animating/decomposing the hash | Visual flair | Misrepresents hashing as a stepwise reversible transform | Static color-coded segments with explanations |
-
----
-
-## Part 3 — Color-Coding & Sub-Token Boundaries
-
-InChIKey segments are **hashes, not semantic layers** — so unlike the InChI strip there are NO meaningful sub-tokens inside the two hash blocks. The natural color boundaries are exactly the structural segments:
-
-| Segment | Suggested treatment | Sub-tokens? |
-|---------|---------------------|-------------|
-| First block (14) | One solid color — ideally echoing the InChI main/`c` (connectivity) layer color to reinforce the link | None — single opaque hash |
-| Second block (8) | One solid color — echo the InChI stereo/isotope (`b`/`t`/`i`) color family | None — single opaque hash |
-| Flag char `S/N` (1) | Distinct "metadata" accent | Optional: flag + version as two adjacent 1-char sub-tokens in one metadata region |
-| Version char `A` (1) | Same metadata accent as flag (or a paired shade) | See above |
-| Protonation char (1) | Distinct color — ideally **echoing the InChI `/p` charge-layer color** already in the palette | None |
-
-**Recommendations:**
-- Reuse the existing oklch token palette. Where an InChIKey segment corresponds to an InChI layer the tool already colors (connectivity → main/`c`; stereo/iso → `b`/`t`/`i`; protonation → `p`), **reuse that layer's color.** This reinforces "block 1 = the connectivity you saw above; block 2 = the stereo/isotope you saw above" — a strong, cheap pedagogical win.
-- The hyphens are structural punctuation — render them dimmed/neutral (matching how the InChI strip treats `/` separators), not as a colored segment.
-- For the flag (`S`) + version (`A`) pair: simplest is one combined "version/flag" segment with a single hover card covering both. Recommend **one combined segment** to avoid over-fragmenting a part users rarely care about.
-
-Net: **5 colored segments** (block 1, block 2, flag+version, protonation) + dimmed hyphens — fewer, simpler regions than the InChI strip, which suits the "it's just a hash" message.
+| **`/r` reconnected-layer parsing & explanation** | The original milestone framing assumed `/r` is what users see for organometallics | **Unreachable with this stack.** `/r` requires the non-standard `RecMet` option; `ketcher.getInchi(withAuxInfo?)` exposes no options parameter and emits Standard InChI only. The app will *never* receive a `/r` layer. (HIGH — verified) | Explain **disconnection** (the thing that actually happens in Standard InChI) instead. If `/r` is ever wanted, it's a STACK-level change (different WASM/InChI invocation) — out of scope for v1.5. Flag explicitly. |
+| **Drawing dative / coordinate bonds, then expecting them in `/c`** | Users want to draw ferrocene "correctly" with η⁵ or dative bonds | Even if Ketcher can draw a dative bond, **Standard InChI disconnects the metal regardless** — the bond will not appear in `/c`. Promising "draw the bond and see it" sets a false expectation | Teach that disconnection is *intentional InChI normalization*, independent of how the bond was drawn. The absent bond IS the lesson. |
+| **3D coordination geometry / octahedral–tetrahedral viewer** | Coordination complexes are inherently 3D; users may expect geometry | Out of scope per PROJECT.md ("3D structure viewer — InChI is a 2D notation; 3D adds scope without illuminating InChI"). InChI carries no coordination geometry at all | None — stays a 2D notation explainer. Reaffirm the existing out-of-scope decision. |
+| **Crystallographic / lattice / unit-cell structure for salts** | NaCl "is" a crystal; users might expect lattice info | InChI represents the discrete molecular/ionic species, not the solid-state lattice. Showing a lattice would misrepresent what InChI encodes | Explain that InChI describes the disconnected ions (Na⁺, Cl⁻), not the crystal — itself a useful clarification. |
+| **Supporting the v1.07 "keep metal bonds" decision-tree behavior** | Recent InChI (v1.07, 2025) preserves some metal–ligand bonds | Ketcher 3.12.0 bundles an older InChI library; the new behavior is not available. Building UI assuming preserved bonds would be wrong for what the app actually emits | Build for what Ketcher emits today (full disconnection). Note the v1.07 development as a "the standard is evolving" footnote at most. (MEDIUM — exact bundled InChI version to confirm at STACK level.) |
+| **Auto-charge-balancing / valence "correction" of drawn ions** | Users may draw `[Cl]` without a charge and expect the tool to fix it | The tool explains what InChI made of *their* drawing; silently editing the structure breaks the "verbatim passthrough" principle the project holds (see MEMORY: never reconstruct, always show library output) | Show the InChI of exactly what they drew; if it's odd, that's informative. Presets carry correct charges in SMILES. |
 
 ---
 
 ## Feature Dependencies
 
 ```
-InChIKey display (new)
-    └──requires──> live InChIKey value from ketcher-standalone WASM   [OPEN QUESTION]
-    └──reuses────> left explanation-card component (EXPL-01)
-    └──reuses────> copy-to-clipboard component (PLSH-04)
-    └──reuses────> oklch CSS token palette / segment-span rendering (INCHI-02)
-    └──reuses────> empty/placeholder behavior (PLSH-01)
+Inorganic presets (load via setMolecule)
+    └──enable demonstration of──> Metal-disconnection explanation
+                                       └──requires──> per-component formula/c/h reading (mostly EXISTS)
 
-InChIKey segment hover  ──explicitly DOES NOT──> canvas atom highlight (INCHI-03/04)
-    (this intentional contrast is what teaches the one-way-hash concept)
+/q per-component reading
+    └──requires──> split q.text on ';' + align to components (NEW)
+    └──enhances──> Salt component breakdown panel
+    └──pairs with──> /p proton-balance salt prose
+
+/q / /p per-component HOVER highlight
+    └──requires──> per-component charge sub-token hover (parallels shipped CLYR sub-hover work)
+    └──depends on──> v1.1 multi-fragment q/p highlight fix (EXISTS — verify on new presets)
+
+"Why is the metal gone?" callout
+    └──requires──> disconnection detection heuristic (metal element as standalone component w/ empty /c slot)
+    └──enhances──> Metal-disconnection explanation
+
+Disconnection diff visualization (absent bonds)
+    └──requires──> mapping drawn bonds NOT in /c  ──RISKY──> reliable AuxInfo mapping for disconnected metals
+
+/r reconnected layer  ──CONFLICTS WITH──> ketcher.getInchi() (no options param)  [ANTI-FEATURE]
 ```
 
 ### Dependency Notes
 
-- **InChIKey display requires the live key value:** PROJECT.md flags this as the one open technical question — how to obtain the InChIKey from ketcher-standalone's public API. Candidates to investigate in a requirements/spike: a `getInChIKey()`-style method, deriving the key from the `getInchi()` output via the InChI library's key generator, or the `indigo-ketcher` WASM exposing key generation. **This is the critical-path unknown and must be resolved before display work.** The tool already calls `getInchi(true)`.
-- **Reuses explanation-card + copy + token system:** the UI scaffolding exists from v1.0; the new work is mostly content + a parallel segment strip, not new infrastructure → complexity LOW–MEDIUM.
-- **Deliberately NO canvas highlight on hover:** the one place the InChIKey strip must *diverge* from the InChI strip. The divergence is itself the lesson. Ensure the key strip's hover wiring does **not** call `highlights.create`.
+- **Per-component `/q` reading requires a parser change, but a small one:** `q.text` is already captured as a layer; it just needs `.split(';')` and alignment to the formula's dot-separated components. The multi-fragment expansion machinery already exists in `readingFor` for `c`/`h`/`t` — follow that exact pattern. (HIGH)
+- **`/q`/`/p` highlighting partly exists:** v1.1 fixed multi-fragment `q`/`p` highlighting (CuSO₄). v1.5's new work is *per-token* precision (hovering one component's `+1`), analogous to the CLYR-01..05 sub-token refinement shipped in v1.4. (HIGH)
+- **Disconnection diff visualization conflicts with mapping reliability:** AuxInfo (`/rC:` coordinate matching, per v1.1) maps canonical→Ketcher atoms; whether it reliably maps a disconnected metal's drawn-but-dropped bonds is unverified. Gate this differentiator behind a live AuxInfo check on ferrocene/permanganate. (LOW confidence on feasibility — flag for STACK.)
+- **All presets depend on Ketcher round-tripping the SMILES:** embedded SMILES → `setMolecule` → live InChI. Some inorganic SMILES (especially with explicit charges or unusual valences) may not parse cleanly in Ketcher standalone. Each proposed preset's SMILES must be live-verified before commit. (MEDIUM — flag for verification.)
+
+---
+
+## Inorganic Preset Shortlist (concrete, Ketcher-drawable, demonstrates the new layers)
+
+Ordered simplest → most complex. SMILES are written for in-browser `setMolecule` loading. **Verify each round-trips in Ketcher standalone before shipping** (the ones marked ⚠ are most likely to need a fallback). Exact InChI shown where verified against a primary source; others are predicted from the documented disconnection rules (MEDIUM).
+
+| # | Molecule | SMILES | Demonstrates | Expected Standard-InChI feature | Confidence |
+|---|----------|--------|--------------|----------------------------------|-----------|
+| 1 | **Sodium chloride** (NaCl) | `[Na+].[Cl-]` | Simplest salt; `/q` per-component + `/p` | `InChI=1S/ClH.Na/h1H;/q;+1/p-1` — empty `;` slot = neutral chloride, `+1` = sodium, `/p-1` = deprotonated | **HIGH (verified)** |
+| 2 | **Potassium chloride** (KCl) | `[K+].[Cl-]` | Second simple salt; reinforces `/q;+1/p-1` with a different metal | `InChI=1S/ClH.K/h1H;/q;+1/p-1` (predicted, parallel to NaCl) | MEDIUM |
+| 3 | **Sodium acetate** | `CC(=O)[O-].[Na+]` | Organic anion + metal cation; `/q` with a *carbon-containing* charged component | Acetate (−1) + Na (+1); `/q-1;+1` style | MEDIUM |
+| 4 | **Ammonium chloride** | `[NH4+].[Cl-]` | Salt with **no metal at all** — shows `/q`/`/p` are about charge, not metals | Two-component `/q`; teaches disconnection ≠ metals-only | MEDIUM |
+| 5 | **Sodium bicarbonate** | `OC([O-])=O.[Na+]` | Real-world salt; bicarbonate anion charge localization | Multi-component `/q`; `/p` proton balance | MEDIUM |
+| 6 | **Magnesium chloride** (MgCl₂) | `[Mg+2].[Cl-].[Cl-]` | **Multi-charge + duplicated anion** → `N*` duplication in layers (ties into shipped CLYR-05) | `2Cl.Mg` style; `/q` with `+2` and duplicated chloride | MEDIUM |
+| 7 | **Copper(II) sulfate** (CuSO₄) | `[Cu+2].[O-]S(=O)(=O)[O-]` | Already exercised in v1.1; confirms multi-fragment `/q` highlighting on a classic inorganic salt | Cu²⁺ + sulfate²⁻; `/q` per component | MEDIUM (v1.1 used it) |
+| 8 | **Potassium permanganate** (KMnO₄) | `[K+].[O-][Mn](=O)(=O)=O` | High-charge metal-oxo; disconnects into K⁺ and permanganate; vivid `/q` | Permanganate anion + K⁺; metal-oxo disconnection | MEDIUM ⚠ (Mn valence/charge may need live check) |
+| 9 | **Ferrocene** | `[cH-]1cccc1.[cH-]1cccc1.[Fe+2]` (fallback: `C1=CC=C[CH]1.C1=CC=C[CH]1.[Fe]`) | **The anchor organometallic** — metal fully disconnected; `2C5H5.Fe`; empty `/c...;` slot for Fe; `N*` duplication of the two rings | `InChI=1S/2C5H5.Fe/c2*1-2-4-5-3-1;/h2*1-5H;` — note **no `/q`** (rings written neutral) and the trailing `;` = Fe has no connectivity | **HIGH (verified)** ⚠ (SMILES must round-trip; iron sandwich is the hardest to draw) |
+| 10 | **Hexaamminecobalt(III) chloride** | `[Co+3].N.N.N.N.N.N.[Cl-].[Cl-].[Cl-]` | Classic coordination complex; massive disconnection into Co³⁺ + 6 NH₃ + 3 Cl⁻; extreme multi-component `/q` | Many components; `/q` with `+3` and duplicated neutrals/anions | LOW ⚠ (large component count; likely needs Ketcher live check / may be too complex — keep as stretch) |
+| 11 | **Silver nitrate** (AgNO₃) | `[Ag+].[O-][N+](=O)[O-]` | Metal cation + polyatomic oxo-anion; nitrate's internal `+/−` charges plus the component net charge — good `/q` vs internal-charge teaching | Ag⁺ + nitrate; `/q` per component | MEDIUM |
+| 12 | **Calcium carbonate** (CaCO₃) | `[Ca+2].[O-]C([O-])=O` | Common, recognizable; divalent cation + divalent anion | Ca²⁺ + carbonate²⁻; `/q` two-component | MEDIUM |
+
+**Recommended shipping core (start here, all high-value, lower-risk):** #1 NaCl, #2 KCl, #6 MgCl₂, #7 CuSO₄, #9 ferrocene, #11 AgNO₃, #4 NH₄Cl. These cover: simplest salt, multi-charge + duplication, classic inorganic salt, the organometallic anchor, polyatomic oxo-anion, and the "charge isn't only about metals" case. Add #8 KMnO₄ and #10 hexaamminecobalt only after confirming they round-trip in Ketcher standalone.
+
+**Rationale anchors:**
+- **Ferrocene (#9)** is the headline demo: it shows disconnection + `N*` ring duplication + the empty connectivity slot for Fe, all in one verified string, and it is the molecule chemists most associate with "weird InChI."
+- **NaCl (#1)** is the headline `/q`+`/p` demo: the verified `/q;+1/p-1` is the cleanest possible illustration of "empty slot = neutral component" and "proton offset."
+- **MgCl₂ (#6)** connects v1.5 to the already-shipped `N*` duplicate-fragment highlighting (CLYR-05) — a duplicated chloride.
+- **NH₄Cl (#4)** prevents the misconception that disconnection/`/q` is a metals-only phenomenon.
 
 ---
 
 ## MVP Definition
 
-### Launch With (v1.3)
+### Launch With (v1.5 core)
 
-- [ ] Live InChIKey shown below the InChI strip — the milestone goal
-- [ ] Correct 5-segment rendering with the exact char counts/boundaries from Part 1 (two hyphens only)
-- [ ] Per-segment color-coding reusing oklch tokens (echo corresponding InChI layer colors)
-- [ ] Per-segment hover explanation cards with the Part 1 content (block 1 = skeleton/connectivity; block 2 = stereo/isotope; flag = standard S/N; version = A; protonation = N/O…/M… mapping)
-- [ ] Explanatory content: 27-char fixed length & purpose; one-way hash (not reversible, no atom mapping); collision caveat (lookup not identity proof)
-- [ ] Explicit "segments don't highlight atoms because it's a hash" note
-- [ ] Copy-to-clipboard button (PLSH-04 parity), copies verbatim key
-- [ ] Empty/invalid structure → placeholder (PLSH-01 parity)
+- [ ] **Corrected `/q` semantics: per-component charge reading + corrected blurb** — the shipped blurb is wrong for salts; smallest, highest-value fix. (table stakes)
+- [ ] **Metal-disconnection explanation prose** in the formula/connectivity reading — explain the dot-separated metal component and the empty `/c` slot. (table stakes)
+- [ ] **`/q` / `/p` per-component hover highlighting verified + made token-precise** on the new presets. (table stakes)
+- [ ] **Inorganic preset core set** (NaCl, KCl, MgCl₂, CuSO₄, ferrocene, AgNO₃, NH₄Cl) — each live-verified to round-trip. (table stakes)
+- [ ] **`/p` salt prose** (proton offset framed via HCl→Cl⁻). (low cost, pairs with `/q`)
 
-### Add After Validation (v1.x)
+### Add After Validation (v1.5.x / fast-follow)
 
-- [ ] "Search this InChIKey on the web / PubChem" outbound link — trigger: users ask how to look it up
-- [ ] Protonation-char live demo preset (a charged species among presets) — trigger: presets expanded (ties into CONT-01)
+- [ ] **"Why is the metal gone?" proactive callout** on detected disconnection. (differentiator)
+- [ ] **Salt component breakdown panel** (per-ion formula · charge · proton offset). (differentiator)
+- [ ] **KMnO₄ and hexaamminecobalt presets** once Ketcher round-trip confirmed. (preset depth)
 
 ### Future Consideration (v2+)
 
-- [ ] First-block partial-match teaching interactive — defer until core validated
-- [ ] Deep-dive "how the hash is built" optional disclosure — only if users request the math
+- [ ] **Disconnection diff visualization** (highlight bonds InChI dropped) — gated on AuxInfo reliability for disconnected metals; research-heavy. (differentiator)
+- [ ] **`/r` reconnected layer** — only if the stack ever moves off `getInchi()` to an options-capable InChI invocation. Currently an anti-feature. (blocked)
+
+---
 
 ## Feature Prioritization Matrix
 
 | Feature | User Value | Implementation Cost | Priority |
 |---------|------------|---------------------|----------|
-| Live InChIKey display + correct segmentation | HIGH | LOW (once API resolved) | P1 |
-| Resolve ketcher API for obtaining the key | HIGH | MEDIUM (unknown) | P1 (critical path) |
-| Per-segment hover explanation cards | HIGH | MEDIUM | P1 |
-| Color-coding (reuse tokens) | MEDIUM | LOW | P1 |
-| Copy-to-clipboard parity | MEDIUM | LOW | P1 |
-| "It's a hash, no atom highlight" teaching note | HIGH | LOW | P1 |
-| Collision/one-way explanatory content | HIGH | LOW (content) | P1 |
-| "Search on web/PubChem" outbound link | MEDIUM | LOW | P2 |
-| Charged-species preset for protonation demo | LOW | MEDIUM | P3 |
+| Corrected `/q` per-component reading + blurb | HIGH | LOW–MEDIUM | P1 |
+| Metal-disconnection explanation prose | HIGH | MEDIUM | P1 |
+| `/q`/`/p` per-component hover highlight (verify + token-precise) | HIGH | MEDIUM | P1 |
+| Inorganic preset core set | HIGH | LOW (data) + verify | P1 |
+| `/p` salt proton-balance prose | MEDIUM | LOW | P1 |
+| "Why is the metal gone?" callout | HIGH | MEDIUM | P2 |
+| Salt component breakdown panel | MEDIUM | MEDIUM | P2 |
+| KMnO₄ / hexaamminecobalt presets | MEDIUM | LOW + verify | P2 |
+| Disconnection diff visualization | HIGH | HIGH | P3 |
+| `/r` reconnected layer | (would be HIGH) | BLOCKED | — (anti-feature) |
 
-## Competitor Feature Analysis
+---
 
-| Feature | PubChem / typical DB pages | NCI/CADD resolver | Our Approach |
-|---------|----------------------------|-------------------|--------------|
-| Show InChIKey | Yes — static, plain text | Yes — as input field | Live, color-coded, segment-explained |
-| Explain the segments | No | No | **Yes — the differentiator** |
-| Resolve key → structure | N/A | Yes (server-side) | No (no backend); explain *why* and link out |
-| Copy button | Sometimes | No | Yes (parity with InChI) |
+## Competitor / prior-art note
 
-No existing tool teaches the *anatomy* of an InChIKey interactively — that gap is exactly this milestone's value.
+The relevant "competitor" is the official InChI documentation and PubChem's own InChI display — neither explains disconnection *interactively* or links charge tokens to atoms on a canvas. The differentiator for this tool is exactly the core value: making the disconnection rule and per-component charge **hoverable, explained, and tied to the drawing**. No competitor analysis changes the recommendations above.
+
+---
 
 ## Sources
 
-- IUPAC InChI paper (Heller et al., *J. Cheminformatics* 2015) — authoritative segment definitions & protonation mapping: https://jcheminf.biomedcentral.com/articles/10.1186/s13321-015-0068-4 (also https://pmc.ncbi.nlm.nih.gov/articles/PMC4486400/) — HIGH
-- Wikipedia, *International Chemical Identifier* (InChIKey section) — format string, block contents, collision estimate, one-way property: https://en.wikipedia.org/wiki/International_Chemical_Identifier — HIGH (matches the IUPAC paper)
-- InChI Trust Technical FAQ — char counts, S/N flag, version A, protonation incl. ±12 saturation, SHA-2/truncation/one-way, collision testing: https://www.inchi-trust.org/technical-faq/ — HIGH
-- InChIKey collision resistance experimental study, *J. Cheminformatics* 2012: https://jcheminf.biomedcentral.com/articles/10.1186/1758-2946-4-39 — HIGH
-- InChI Technical Manual (PDF): https://www.inchi-trust.org/download/104/InChI_TechMan.pdf — HIGH
-- NCI/CADD InChIKey resolver blog (real-world lookup use): https://cactus.nci.nih.gov/blog/?tag=inchikey-resolver — MEDIUM
+- InChI Technical FAQ — metal disconnection, reconnected `/r` layer, RecMet/FixedH being non-standard, per-component `;` semantics: <https://www.inchi-trust.org/technical-faq/>
+- InChI, the IUPAC International Chemical Identifier (J. Cheminformatics) — disconnection of metal bonds, reconnected layer definition: <https://jcheminf.biomedcentral.com/articles/10.1186/s13321-015-0068-4>
+- Indigo InChI options (RecMet listed; default = standard): <https://lifescience.opensource.epam.com/indigo/options/inchi.html>
+- Ketcher README / API (`getInchi(withAuxInfo?: boolean)` — single boolean, no options param): <https://github.com/epam/ketcher/blob/master/README.md>
+- Ferrocene Standard InChI (`InChI=1S/2C5H5.Fe/c2*1-2-4-5-3-1;/h2*1-5H;`) — PubChem CID 10219726 / NIST WebBook: <https://pubchem.ncbi.nlm.nih.gov/compound/Ferrocene>
+- Sodium chloride Standard InChI (`InChI=1S/ClH.Na/h1H;/q;+1/p-1`) — NIST WebBook: <https://webbook.nist.gov/cgi/cbook.cgi?ID=C7647145>
+- "Making InChI FAIR and Sustainable for Inorganic Chemistry" (v1.07 decision-tree behavior; FeCl₂ disconnection example): <https://hunterheidenreich.com/notes/chemistry/molecular-representations/notations/inchi-2025/>
 
 ---
-*Feature research for: InChIKey display & explanation panel (v1.3)*
-*Researched: 2026-06-18*
+*Feature research for: inorganic/organometallic/salt capabilities in an InChI explainer*
+*Researched: 2026-06-22*

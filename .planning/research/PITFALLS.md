@@ -1,295 +1,231 @@
-# Pitfalls Research
+# Domain Pitfalls — v1.5 Inorganic / Organometallic Capability
 
-**Domain:** Adding a live InChIKey display + per-segment hover explanations + copy button to the existing in-browser InChI explainer (Vite 8 + React 18 + TS + Ketcher 3.12.0 WASM + Zustand 5 + CSS Modules, static GitHub Pages, no backend)
-**Researched:** 2026-06-18
-**Confidence:** HIGH (API + InChIKey structure verified against ketcher-core/ketcher-standalone source and InChI Trust FAQ; integration pitfalls verified against current `App.tsx` / `InchiSection.tsx` / `store.ts`)
+**Domain:** Extending an in-browser InChI explainer to handle inorganic, organometallic, and salt species
+**Researched:** 2026-06-22
+**Confidence:** HIGH on the parser/charge-alignment pitfalls (traced against the actual code in `parseInchi.ts` / `highlightUtils.ts` / `parseAuxMapping.ts` / `layerInfo.ts` and the verified inorganic strings); MEDIUM on preset round-tripping and AuxInfo-for-lone-metals (API path is sound; both require live verification, which is itself the point of the pitfall).
 
-## Key verified facts (read these first)
+> Scope note. These are pitfalls **specific to adding inorganic features to THIS codebase**, not generic web-app warnings. Each names the warning sign, the prevention, a real-InChI test fixture, and which phase should own it. The team's two hard-won lessons — (a) fabricated fixtures that pass tests while the feature is broken, and (b) bypassed human-verify gates (PROJECT.md D-row "c-layer test fixtures must be REAL InChI", ⚠ Lesson v1.4) — are reinforced throughout and are non-negotiable for this milestone.
 
-- **The API exists and is independent.** `ketcher.getInChIKey(): Promise<string>` is declared in `node_modules/ketcher-core/dist/application/ketcher.d.ts:52` and routes to `StandaloneStructServiceProvider`'s WASM worker as a **separate command** (`Command.GetInChIKey = 11` in `ketcher-standalone/dist/main.js:38`). It is `output_format: 'inchi-key'` — Indigo computes the key from the current struct, **not** from the InChI string the app already holds. This is the load-bearing fact for the whole feature: the key is fetched, never derived in JS.
-- **Standard InChIKey is a fixed 27-char string:** `AAAAAAAAAAAAAA-BBBBBBBB-FVP` → 14-char skeleton hash, hyphen, 8-char "remaining layers" hash (stereo/isotope/protonation-ish), hyphen, then **F** = standard flag (`S` standard / `N` non-standard), **V** = version (`A` = InChI v1), **P** = protonation indicator (`N` neutral, then `O`, `M`, etc.). One-way hash: **not reversible, not atom-mappable.** Collisions are improbable but **do occur** in practice.
-- **No store fields exist for the key yet.** `store.ts` has `inchi`, `layers`, `auxMap`, `atomElements`, `hAtomPoolIds`, `hoverIdx`, `subHover`. Adding the key means a deliberate store-shape decision (see Pitfall 5 / 6).
-- **The existing debounce+generation guard lives in `App.tsx` `handleChange`** (150 ms timer, `generationRef` stale-result guard, `isHighlightingRef`, `isSettingMoleculeRef`). The InChIKey must ride this same pipeline, not a parallel one.
+---
 
 ## Critical Pitfalls
 
-### Pitfall 1: Reconstructing the InChIKey from parsed segments (violates the standing no-reconstruct rule)
+Mistakes that cause a shipped-but-wrong feature, a teaching error, or a rewrite.
 
-**What goes wrong:**
-The team renders the key as four color-coded spans, then "helpfully" rebuilds the displayed/copied string by concatenating the parsed `block1 + '-' + block2 + '-' + flags`. Any off-by-one in segment boundaries, a dropped hyphen, or a non-standard `N` flag the slicer didn't anticipate produces a corrupted key shown/copied to the user.
+### Pitfall 1 — The `/q` blurb is actively wrong for salts, and chemists will trust it
 
-**Why it happens:**
-Direct analogue of the documented InChI bug (memory `feedback_inchi_passthrough.md`): InChI mixtures contain `.` characters the layer parsers don't model, and re-joining `layer.text` silently drops them. The InChIKey is even more seductive because it *looks* perfectly regular (fixed 27 chars), tempting a "just rebuild it" shortcut.
+**What goes wrong:** `LAYER_INFO.q.blurb` reads *"The overall formal charge of the molecule"* and `readingFor`'s `q` case returns `'net charge: <b>' + layer.text + '</b>'`. For a salt this is a **factual error**. `/q` is **per-component, semicolon-separated**, and an empty slot means "this component is neutral." For NaCl (`/q;+1`) the current UI renders "net charge: ;+1" — both visually broken and conceptually wrong (the net charge of NaCl as written is 0; the `+1` belongs to the sodium component, balanced by `/p-1`).
 
-**How to avoid:**
-Treat the verbatim string from `getInChIKey()` as the single source of truth for both **display text** and **copy payload**. Slice it **by fixed byte offset** for coloring only (chars 0–13 skeleton, 15–22 second block, 24 flag, 25 version, 26 protonation), exactly like `InchiSection` slices the raw `inchi`. Never join segment text back into a string. Add a unit test asserting `displayedKey === rawKeyFromLibrary` and `copyPayload === rawKeyFromLibrary`.
+**Why it happens:** The blurb and reading were written for organic monocations/monoanions where `/q` is a single value. When multi-fragment `/q` *highlighting* was fixed in v1.1, the highlight code became per-component aware but the **prose did not**.
 
-**Warning signs:**
-A function named `buildInchiKey`, `joinKeySegments`, or any code path where the rendered/copied value is derived from segment arrays rather than the raw string.
+**Consequences:** An inorganic chemist — exactly the v1.5 target user — reads an authoritative-sounding but incorrect explanation. Worse than no explanation: the tool's entire value proposition is "trust this to demystify InChI."
 
-**Phase to address:**
-Earliest phase — the source/store phase. Bake the verbatim-passthrough invariant into the store contract and the copy handler before any rendering work.
+**Prevention:**
+- Rewrite `readingFor`'s `q` case to split `layer.text` on `;`, align each slot to a formula component (reuse the `multi`/`fragCounts`/`cumulativeOffset` pattern already present in the `c`/`h`/`t` cases — do **not** invent a new mechanism), and render per-component prose: `component 1 (Cl): neutral · component 2 (Na): +1`.
+- Rewrite the `q` blurb to state per-component, semicolon-separated semantics with empty-slot = neutral.
+- Do the identical treatment for `/p` (`readingFor` `p` case + `LAYER_INFO.p.blurb`).
 
----
+**Detection / warning sign:** Load NaCl; if the charge card contains a literal `;` or the word "molecule" (whole-species framing), it's still wrong.
 
-### Pitfall 2: Assuming the key derives from the displayed InChI (standard vs non-standard mismatch)
+**Worked fixture (REAL InChI, NIST-verified):** `InChI=1S/ClH.Na/h1H;/q;+1/p-1` — assert the reading produces two component clauses, first neutral, second +1.
 
-**What goes wrong:**
-The team computes the key client-side from the already-displayed InChI string, or assumes `getInChIKey()` always returns an `S`-flagged (standard) key matching the `getInchi(true)` output. If the two WASM calls ever use different option sets (e.g. one standard, one not), the key's flag char (`S`/`N`) and even its hash can disagree with the InChI strip directly above it — the user sees an internally inconsistent pair.
-
-**Why it happens:**
-`getInchi()` and `getInChIKey()` are **two separate WASM commands** computed independently from the struct (verified in `ketcher-standalone/dist/main.js`). Developers assume "the key is just a hash of the InChI" and don't realize they're two independent Indigo conversions that *should* agree but are produced separately.
-
-**How to avoid:**
-Always obtain the key from `ketcher.getInChIKey()` — never hash or transform the InChI string in JS. Both calls are issued against the same struct in the same `handleChange` tick (after `setMolecule`/draw settles), so they describe the same molecule. In the explanation copy, state that this is the **Standard InChIKey** and surface the flag character (`S`) as the live proof. Add an assertion/test that for the preset molecules the returned key's flag char is `S` and version char is `A`.
-
-**Warning signs:**
-Any code importing a JS hashing/base-something library; an explanation card that claims "the key is computed from the InChI above."
-
-**Phase to address:**
-Source phase — lock in `getInChIKey()` as the only key source; verification in the same phase.
+**Owning phase:** First content phase (corrected `/q`/`/p` semantics — P1 table stakes).
 
 ---
 
-### Pitfall 3: Key not in sync with the debounced InChI (parallel pipeline / race)
+### Pitfall 2 — The per-component `/q` off-by-one: aligning `;` charge slots to formula components
 
-**What goes wrong:**
-A separate `useEffect`/subscription or its own debounce timer is added for the key. Result: the InChI strip and the InChIKey update on different ticks — the strip shows molecule B while the key still shows molecule A for a frame or longer. Worse, a slow `getInChIKey()` call for an old struct resolves *after* a newer draw and overwrites the store with a stale key.
+**What goes wrong:** `/q` slots are positional and align **one-to-one with the dot-separated formula components in formula order**, including `N*` multiplier expansion. Three ways to get it wrong:
 
-**Why it happens:**
-`getInChIKey()` is async and the obvious first instinct is "give it its own effect." The app already solved this exact class of bug for InChI with the `generationRef` stale-result guard in `App.tsx` (D-05), but a new contributor may not extend that guard to the key.
+1. **Empty slots dropped.** A naive `text.split(';').filter(Boolean)` discards neutral slots and shifts every charge to the wrong component. The empty slot is **data** ("this component is neutral"), not noise.
+2. **`N*` multiplier not expanded in the component count.** `6CN.Fe` is **7** components (six CN + one Fe), not 2. The `/q` string `;;;;;;-4` has exactly **7** slots. If component counting stops at the dot-split (`["6CN","Fe"]` → 2), `-4` lands on slot index 1 instead of slot index 6 — the charge explains/highlights the wrong component.
+3. **Heavy-atom count vs component count confusion.** `formulaFragmentCounts` returns **heavy-atom counts per component** (`[2,2,2,2,2,2,1]` for `6CN.Fe`), whereas `/q` slots are **per component** (7 slots). Different cardinalities for different purposes — atom-offset accumulation (existing `c`/`h` machinery) vs. charge-slot alignment (new). Conflating them is the subtle trap.
 
-**How to avoid:**
-Issue `getInChIKey()` **inside the existing `handleChange` debounce**, in the same `thisGen = ++generationRef.current` window as `getInchi(true)`. Run both with `Promise.all`, then re-check `if (thisGen !== generationRef.current) return;` **after** the await before writing to the store, and write inchi + key in a **single `setInchiData`-style action** so they commit atomically. Do not add a second subscription, second debounce timer, or second generation counter.
+**Why it happens:** The existing `q` handler in `highlightUtils.ts` gets the *highlighting* alignment right because it walks `qFragments` and `fragmentAtomCountsQ` in lockstep with `cumulativeOffsetQ`. But the **number of `/q` slots must equal `formulaFragmentCounts(...).length`** for that lockstep to hold — and a hand-written *prose* path (Pitfall 1's fix) that re-implements the split is where the off-by-one silently reappears.
 
-**Warning signs:**
-A new `ketcher.editor.subscribe('change', ...)`; a second `setTimeout` debounce; a `setInchiKey` action called from a different tick than `setInchiData`; the key visibly lagging the strip by a frame when dragging atoms.
+**Worked example (ferrocyanide, verified):**
+```
+formula : 6CN.Fe
+/q      : ;;;;;;-4
+```
+- `formulaFragmentCounts("6CN.Fe")` = `[2,2,2,2,2,2,1]` → **7 components**, total 13 heavy atoms.
+- `"/q;;;;;;-4".slice(prefix).split(';')` = `["","","","","","","-4"]` → **7 slots**. ✓ counts match.
+- Slot index 6 (`-4`) ↔ component index 6 ↔ the **Fe** component. The `-4` is the **overall complex charge parked on the metal slot by the disconnection algorithm**, not a charge "on the iron atom" chemically — see Pitfall 3 for the messaging trap this creates.
 
-**Phase to address:**
-Source/wiring phase — extend the existing pipeline, verified with a "rapid edit" stale-result test mirroring the existing generation-guard tests.
+**Counter-example to test empty-slot handling (NaCl):** `/q;+1` → `["","+1"]` (2 slots) ↔ `formulaFragmentCounts("ClH.Na")` = `[1,1]` (2 components). Slot 0 empty (Cl neutral), slot 1 `+1` (Na). Drop the empty and `+1` wrongly maps to Cl.
 
----
+**Prevention:**
+- **Assert the invariant in code and tests:** `text.split(';').length === formulaFragmentCounts(formulaText).length`. On disagreement, render a safe degraded reading rather than a confidently wrong one.
+- **Never `.filter(Boolean)` the slot array.** Preserve empties positionally (exactly as `parseRcField` deliberately preserves empty coordinate triples — same discipline).
+- Reuse `formulaFragmentCounts` for component counting; do not re-derive from a dot-split.
 
-### Pitfall 4: Wrong/empty key on empty, invalid, or disconnected structures
+**Detection / warning sign:** Hover `-4` in ferrocyanide — must highlight iron, not a cyanide. Hover `+1` in NaCl — must highlight sodium, not chloride. A one-position shift is the signature.
 
-**What goes wrong:**
-On an empty canvas or a structure Indigo can't key, `getInChIKey()` either rejects, returns `''`, or returns a degenerate key. If unhandled, the segment renderer slices an empty/short string and shows garbled spans or throws; or a stale key persists after the canvas is cleared. Multi-component/salt structures (the project's historical correctness sore spot, INCHI-06) compute a **single** key for the whole mixture — there is no per-component key, and the protonation char reflects net charge of the assembly.
+**Test fixtures (REAL InChI):**
+| Species | InChI | Asserts |
+|---------|-------|---------|
+| NaCl | `1S/ClH.Na/h1H;/q;+1/p-1` | empty leading slot kept; `+1`→Na |
+| Ferrocyanide | `1S/6CN.Fe/c6*1-2;/q;;;;;;-4` | `N*` → 7 slots; `-4`→Fe (slot 6) |
+| Prussian blue | `1S/18CN.7Fe/c18*1-2;;;;;;;/q;;;;;;;;;;;;;;;;;;3*-4;4*+3` | **`N*` multiplier INSIDE a `/q` slot** (`3*-4`, `4*+3`) |
 
-**Why it happens:**
-The existing empty-canvas guard in `App.tsx` keys off `result.layers.length < 2` and resets the InChI store to empty — but a naively added key fetch may not be inside that guard, so it runs (and can throw) even when the InChI path already bailed. Disconnected structures historically broke atom mapping; the key path has its own edge behavior.
+**The Prussian-blue trap within the trap:** `/q` can itself carry `N*` multipliers (`3*-4;4*+3` = three components at −4, four at +3). `expandLayerText` already expands `N*` for `c`/`h`/`t`/`b` — but it is **NOT currently applied to the `q` layer** (the `q` case in `highlightUtils.ts` does a plain `layer.text.split(';')`). If you support Prussian blue, the `/q` path must run through `expandLayerText` too, or the multiplied charge slots won't align.
 
-**How to avoid:**
-Gate the key fetch behind the **same** empty/disconnected guard already used for InChI: if the InChI path resets to empty, the key must reset to empty in the same atomic write. Wrap `getInChIKey()` in the existing try/catch and, on throw, write empty key (do not blank under a stale generation — reuse the `thisGen` check in the catch, exactly as the InChI path does). Render the segment strip only when the key is a full 27-char standard key (`/^[A-Z]{14}-[A-Z]{8}-[A-Z]{3}$/`); otherwise show the same placeholder treatment as the empty InChI strip. For multi-component molecules, explicitly state in the explanation that the key represents the **entire** drawn assembly (one key, no per-fragment keys) — and add a multi-component preset to the test matrix.
-
-**Warning signs:**
-Console errors on canvas clear; a key lingering after "erase all"; `key.slice(15,23)` producing `undefined`/short spans; assuming each `.`-separated InChI component would yield its own key.
-
-**Phase to address:**
-Source phase (guard + empty handling) and rendering phase (length validation before slicing). Multi-component correctness verified in the same phase that closed INCHI-06.
-
----
-
-### Pitfall 5: Recomputing the key adds WASM cost / blocks the existing InChI on every keystroke
-
-**What goes wrong:**
-Adding `getInChIKey()` as a second sequential `await` after `getInchi(true)` in `handleChange` roughly doubles WASM round-trips per edit and can make the InChI strip feel laggier under rapid drawing, even though both are debounced at 150 ms.
-
-**Why it happens:**
-Sequential `await getInchi(); await getInChIKey();` serializes two independent worker calls. Each is a postMessage round-trip to the WASM worker (`ketcher-standalone/dist/main.js`).
-
-**How to avoid:**
-Fire both concurrently with `Promise.all([ketcher.getInchi(true), ketcher.getInChIKey()])` inside the single debounce tick, so the added latency is `max(a,b)` not `a+b`. Keep the 150 ms debounce; do not lower it. The atom-mapping/`render.ctab` work already in `handleChange` runs after, unchanged. At this app's scale (one molecule, interactive single user) this is the only performance concern that matters — no need to cache or memoize keys.
-
-**Warning signs:**
-Visible input lag while dragging; profiler showing two serial worker messages per debounce tick; a `getInChIKey()` call placed outside the debounce (e.g. on every `change` synchronously).
-
-**Phase to address:**
-Source/wiring phase — concurrent fetch is the default implementation, not an optimization to retrofit.
+**Owning phase:** First content phase (shares the parser change with Pitfall 1). Even if Prussian blue is not a shipped preset, add it as a **unit fixture** so the parser is correct.
 
 ---
 
-### Pitfall 6: Remounting the Ketcher canvas or breaking the existing InChI strip
+### Pitfall 3 — The honesty trap: the canvas draws metal–ligand bonds the InChI string drops
 
-**What goes wrong:**
-Restructuring the layout to fit the new key strip causes `KetcherPanel` to remount, which re-initializes the WASM worker (multi-second reload, lost canvas state). Or store-shape changes ripple into selectors that `InchiSection` depends on, breaking the working InChI strip / highlight wiring.
+**What goes wrong:** The user draws/loads ferrocene with bonds from Fe to both rings. Standard InChI **disconnects every metal–ligand bond** — the `/c` layer is `c2*1-2-4-5-3-1;` where the trailing `;` is Fe's *empty* connectivity slot (Fe has **no bonds** in the string). The canvas still shows the drawn bonds. The app's core promise is "hover a layer → it highlights what that layer denotes." If hovering the `/c` layer or the `.Fe` component implies the drawn Fe–ring bonds are "in" the InChI, the teaching is actively misleading.
 
-**Why it happens:**
-The project has an explicit, hard-won invariant: the `StandaloneStructServiceProvider` is module-level and `KetcherPanel` must never remount (D-13, and the v1.2 feedback feature was deliberately built as a leaf sibling for exactly this reason — "Feedback is ephemeral UI state, dialog is a leaf sibling… canvas never remounts"). A new InChIKey section sibling to `InchiSection` is safe; restructuring the `App` tree around the canvas is not.
+**Why it happens:** Two faithful systems disagree. The canvas is faithful to *what the user drew*; the InChI is faithful to *Standard InChI normalization*, which severs metal bonds. The app sits between them and must not paper over the gap.
 
-**How to avoid:**
-Add the InChIKey display as a **new sibling component** (e.g. `InchiKeySection`) placed after `InchiSection` in `App.tsx`, reading from the store via its own selectors — mirroring how `InchiSection` and `FeedbackDialog` are independent leaves. Do not touch `KetcherPanel`, the `structServiceProvider`, or the `onInit` path. When extending the store, **add** fields (`inchiKey`) rather than changing existing field shapes/actions; keep `setInchiData`'s existing signature working (add an optional param or a sibling `setInchiKey` written in the same atomic tick).
+**Consequences:** The single biggest credibility risk of the milestone. An organometallic chemist who sees the tool imply "InChI knows about the Fe–Cp bonds" will correctly distrust the whole tool — that is the one thing they already know is *not* true about InChI.
 
-**Warning signs:**
-The canvas flashes/reloads when the new section appears; WASM "initializing" state re-triggers after the key feature lands; existing `InchiSection.test.tsx` starts failing.
+**Prevention — message the gap, don't hide it (this is the v1.5 "aha", per FEATURES.md):**
+- Make the **disconnection itself the teaching point.** When a metal appears as its own single-atom component with an empty `/c` slot, surface prose: "InChI deliberately cut every bond to the iron. The metal becomes its own component; the bonds you drew are not in the connection layer. This is normal Standard-InChI behavior, not an error."
+- **Hovering the `.Fe` formula component highlights only the iron atom** (lone atom, no bonds) — faithful, because that is exactly what the string says about Fe.
+- **Do NOT highlight the drawn Fe–ring bonds for any InChI token** — no token denotes them. (The "disconnection diff" idea — dimming dropped bonds — is explicitly deferred to v2 in FEATURES.md; do not sneak it into v1.5.)
+- Mirror the proven v1.3 pattern: *the absence is the lesson* (INKEY-09 made InChIKey segments deliberately NOT highlight atoms).
 
-**Phase to address:**
-Rendering/layout phase — establish the leaf-sibling structure first; the existing canvas-never-remounts tests are the regression gate.
+**Detection / warning sign:** During live verification, hover every layer on ferrocene; confirm **no** highlight ever lights an Fe–ring bond.
 
----
+**Test fixture (REAL, PubChem-verified):** `1S/2C5H5.Fe/c2*1-2-4-5-3-1;/h2*1-5H;` — assert the `c` layer's bonds contain **only** intra-ring bonds and **zero** bonds incident to the Fe canonical index.
 
-### Pitfall 7: Mislabeling segment boundaries / meaning of the flag/version/protonation chars
-
-**What goes wrong:**
-The explanation cards state wrong lengths or wrong meanings: e.g. calling the second block "stereochemistry only" (it also carries isotope + protonation-derived info), calling `V` the protonation char, or slicing 13/8/3 instead of 14/8/3 — producing both wrong color spans and wrong prose.
-
-**Why it happens:**
-The 27-char layout is dense and the trailing `FVP` triplet is easy to mis-attribute. Training-data summaries of InChIKey are often vague about which block holds what.
-
-**How to avoid:**
-Use the verified layout (InChI Trust FAQ): chars **0–13** = 14-char skeleton hash (connectivity / Mobile-H layer); char **14** = hyphen; chars **15–22** = 8-char hash of the remaining layers (stereo + isotope + protonation-state contributions); char **23** = hyphen; char **24** = **F** flag (`S` standard / `N` non-standard); char **25** = **V** version (`A` = InChI v1); char **26** = **P** protonation indicator (`N` neutral net charge, other letters for ±1, ±2…). Encode these offsets as named constants with a unit test pinning each segment's slice and label. Keep prose factual and source-cited.
-
-**Warning signs:**
-Color spans that don't align with the hyphens; a card calling char 25 "protonation"; segment lengths that don't sum to 27.
-
-**Phase to address:**
-Content/explanation phase — segment offsets and copy authored against the verified spec, with a slice-boundary unit test.
+**Owning phase:** Disconnection-explanation phase (metal-disconnection prose, P1 table stakes), with a live-canvas verification gate on ferrocene.
 
 ---
 
-### Pitfall 8: Implying the key is reversible, atom-mappable, or collision-proof
+### Pitfall 4 — Lone-metal AuxInfo mapping: the iron highlights the wrong atom (or nothing)
 
-**What goes wrong:**
-The explanation says or implies the InChIKey can be decoded back to a structure, or — fatal for this app's mental model — that hovering a key segment highlights atoms (as InChI layers do). Or it overstates uniqueness ("guaranteed unique, no two molecules share a key").
+**What goes wrong:** Highlighting depends on the canonical→Ketcher-pool-ID map built by `parseAuxMapping` + `remapAuxToPoolIds`. A disconnected metal is a **single-atom component with no bonds**. Two specific failure modes:
 
-**Why it happens:**
-By analogy with the existing InChI strip, where every layer hover highlights canvas atoms (INCHI-03), users/devs expect the same of the key. But the key is a **one-way hash** — segments correspond to *hashed* layers, not to atoms.
+1. **Coordinate-match miss.** `remapAuxToPoolIds` matches each molfile rank's `(x,y)` to a live editor atom within `EPSILON = 0.05`. A lone metal has coordinates like any atom, so it *should* match — but if the metal's coordinate is absent/`NaN` in the `/rC:` field (Ketcher sometimes emits placeholder `;;;` triples — `parseRcField` preserves them as `NaN`), the match silently falls back to `fallbackPoolIds[rank]` (iteration order), which can resolve to the wrong atom.
+2. **Cross-component bleed in CN-rich ligands.** Ferrocyanide has six identical CN components plus Fe. The `N:` field uses `N*` local-rank notation; `parseAuxMapping`'s multi-fragment branch advances `fragFormulaIdx` per expanded instance. An off-by-one in `globalOffset`/`fragFormulaIdx` accounting (the exact bug the existing code guards against for CuSO₄) would map a CN carbon's canonical to Fe's pool ID, or vice versa.
 
-**How to avoid:**
-Explicitly design the key segments to **not** wire into `useKetcherHighlights`/`setHover` — they have no `auxMap` and must not call the highlight store actions. The hover cards explain meaning only. Copy must state: one-way hash, **not reversible** (recovery needs a lookup database), **no atom mapping**, and collisions are *highly improbable but not impossible* (FAQ confirms real-world collisions exist, especially for stereochemically complex molecules). This is called out as a first-class design constraint in PROJECT.md milestone notes ("its segments do NOT highlight canvas atoms").
+**Why it happens:** The coordinate-matching remap was added in v1.1 for CuSO₄-style interleaving and is sound — but a **lone bondless metal** and **six identical small ligands** are configurations not previously exercised. "It works for CuSO₄" is a hypothesis, not proof, for ferrocene/ferrocyanide.
 
-**Warning signs:**
-Key segment `onMouseEnter` calling `setHover`/`setSubHover`; canvas atoms lighting up on key hover; copy using the words "unique" or "decode" without qualification.
+**Consequences:** Wrong-atom highlight is a *silent* teaching error — it looks like it's working (an atom lights up) but it's the wrong atom. Highest-severity silent failure in the milestone.
 
-**Phase to address:**
-Content/explanation phase (prose) and rendering phase (ensure no highlight wiring on key segments).
+**Prevention:**
+- **Do the live-canvas verification gate FIRST**, before any content work (STACK.md's "one live verification gate"): load ferrocene, call `getInchi(true)`, confirm (a) the string is the expected `1S` form, (b) `remapAuxToPoolIds` resolves the Fe pool ID **not via fallback** (log which path fired), (c) hovering `.Fe` highlights the iron and only the iron.
+- Add a unit fixture for ferrocyanide asserting the full canonical→element map: six carbons, six nitrogens, one iron land on distinct, correctly-typed atoms (catches cross-component bleed deterministically without the canvas).
+- Repeat the live check for ferrocyanide (lone metal + many identical ligands) and one polyatomic-oxo-anion salt (AgNO₃).
 
----
+**Detection / warning sign:** In the live check, log match-vs-fallback per atom. **Any fallback firing on a metal atom is a red flag** — correctness then depends on iteration order coinciding with rank order.
 
-### Pitfall 9: Copy-button confirmation timing under React StrictMode
-
-**What goes wrong:**
-The new "copy key" button's "Copied!" state either never resets, or `setCopied(false)` fires on an unmounted component. Under React 18 StrictMode dev double-invoke (mount → cleanup → mount), a naive `mountedRef` left `false` after the first cleanup blocks the reset — the exact v1.1 bug (WR-02) already fixed in `InchiSection`.
-
-**Why it happens:**
-Copy-pasting the existing `handleCopy`/`setTimeout` pattern without copying the StrictMode-safe `mountedRef` reset-on-mount logic. The fix in `InchiSection.tsx:28-32` sets `mountedRef.current = true` **on every mount** (not just once) precisely to survive the double-invoke.
-
-**How to avoid:**
-Reuse the exact proven pattern from `InchiSection`: a `mountedRef` set to `true` in a `useEffect` mount callback (so StrictMode's remount re-arms it), cleanup sets it `false`, and the 3 s `setTimeout` reset checks `if (mountedRef.current)` before `setCopied(false)`. Better: extract the copy-with-confirmation into a shared hook (`useCopyButton`) so both the InChI and InChIKey buttons share one tested implementation. Copy the **verbatim** key string (Pitfall 1).
-
-**Warning signs:**
-"Copied!" never disappears in dev; a React "setState on unmounted component" warning; the confirmation getting stuck after toggling the section.
-
-**Phase to address:**
-Rendering phase — ideally via a shared `useCopyButton` hook authored with a StrictMode-double-mount test.
+**Owning phase:** A dedicated verification gate at the **start** of the milestone (blocks everything downstream). Make-or-break feasibility check.
 
 ---
 
-### Pitfall 10: Preset-load stale timing (mirroring the prior preset-highlight bug)
+### Pitfall 5 — Presets that don't round-trip through Ketcher `setMolecule` (silent wrong teaching)
 
-**What goes wrong:**
-After clicking a preset, the key briefly shows the previous molecule's key, or the key fails to update because the `change` event fired during `setMolecule()` was treated as a free-draw and bailed. This is the same class as the prior preset-highlight timing bug (`isSettingMoleculeRef`).
+**What goes wrong:** Presets are SMILES loaded via `setMolecule`. If a SMILES doesn't parse cleanly in ketcher-standalone — or parses to a *different* structure than intended — the canvas shows molecule A, the InChI describes A', and every explanation anchors to the wrong species. The failure is **silent**: something loads, so it looks fine.
 
-**Why it happens:**
-`setMolecule()` triggers a `change` event that `handleChange` must process to fetch InChI **and** the key. The `isSettingMoleculeRef` guard exists to prevent the preset selection from being cleared by that event — but the key fetch must still run on that tick.
+**Why it happens:** Inorganic SMILES stress Ketcher's parser in ways organic presets never did: explicit metal charges (`[Fe+2]`, `[Mn]`), unusual valences (permanganate Mn(VII)), dative bonds, aromatic-anion ligands (`[cH-]1cccc1`), large component counts.
 
-**How to avoid:**
-Because the key fetch is added **inside** the same `handleChange` (Pitfall 3), it automatically inherits the correct preset-load behavior — the guard only suppresses `setSelectedMolId(null)`, not the InChI/key fetch. Do **not** add a manual `getInChIKey()` call inside `handleMolSelectLogic` (the doc comment there explicitly warns a manual `getInchi` call would create a race — the same applies to the key). Verify with the preset-load test path that already exists for InChI.
+**High-risk molecules (named, from FEATURES.md shortlist):**
+- **KMnO₄** (`[K+].[O-][Mn](=O)(=O)=O`) — Mn(VII) valence/charge is the classic case Ketcher may reject or auto-"correct." ⚠
+- **Hexaamminecobalt(III) chloride** (`[Co+3].N.N.N.N.N.N.[Cl-].[Cl-].[Cl-]`) — 10 components; high round-trip risk. ⚠ (stretch only)
+- **Ferrocene** (`[cH-]1cccc1.[cH-]1cccc1.[Fe+2]`, fallback `C1=CC=C[CH]1.C1=CC=C[CH]1.[Fe]`) — cyclopentadienyl anion and iron sandwich are hardest to draw; the two SMILES forms may yield *different* InChI. ⚠
+- Anything with **dative/coordinate bonds** — Standard InChI disconnects them regardless (Pitfall 3).
 
-**Warning signs:**
-Key lags one molecule behind after preset clicks; a `getInChIKey()` call added to `handleMolSelectLogic`; flicker of the old key on preset switch.
+**Prevention — this is where the v1.4 fabricated-fixture lesson bites hardest:**
+- **Every preset's expected InChI must be the REAL string ketcher-standalone emits for that exact SMILES, captured from the running app — never hand-written or predicted.** FEATURES.md marks several preset InChI strings as "predicted (MEDIUM)"; predicted strings are hypotheses. Loading the preset and copying the live `getInchi` output is the only acceptable source for a fixture or doc assertion.
+- For each candidate: (1) load via `setMolecule`, (2) confirm the canvas structure matches intent (the formula + heavy-atom-count overlay already exists — use it), (3) capture the verbatim InChI, (4) pin that exact string. If a SMILES fails any step, it does not ship.
+- Ship the **verified core** (NaCl, KCl, MgCl₂, CuSO₄, AgNO₃, NH₄Cl, ferrocene) before the ⚠ stretch presets (KMnO₄, hexaamminecobalt).
 
-**Phase to address:**
-Source/wiring phase — verified against the existing preset-load + generation-guard tests.
+**Detection / warning sign:** Canvas formula overlay disagrees with the intended formula; or the captured InChI differs from the FEATURES.md "predicted" string (treat the prediction as wrong, the live output as truth).
 
-## Technical Debt Patterns
+**Owning phase:** Preset phase, **gated by a blocking human-verify step** (do not auto-mark presets green from unit tests alone — the v1.4 lesson: 333 unit tests passed while the feature was broken because the fixtures were fabricated).
 
-| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
-|----------|-------------------|----------------|-----------------|
-| Reconstruct key string from parsed segments for display/copy | "Cleaner" render code | Corrupted key shown/copied (repeat of the InChI `.`-drop bug); silent data integrity loss | **Never** — verbatim passthrough is a project invariant |
-| Separate `useEffect`/debounce for the key | Decoupled, easy to reason about in isolation | InChI/key desync + stale-result races; duplicates the generation-guard logic | **Never** — ride the existing `handleChange` |
-| Sequential `await getInchi(); await getInChIKey();` | Trivial to write | Doubles per-edit latency | Acceptable only as a throwaway spike; ship `Promise.all` |
-| New copy button without the StrictMode `mountedRef` reset-on-mount | Fewer lines | Re-introduces the v1.1 WR-02 stuck-confirmation bug in dev | Never — reuse the proven pattern / shared hook |
-| Wire key segments into the highlight store "for consistency" | Visual parity with InChI strip | Implies false reversibility/atom-mapping; misleads chemists | Never — key is a one-way hash |
+---
 
-## Integration Gotchas
+## Moderate Pitfalls
 
-| Integration | Common Mistake | Correct Approach |
-|-------------|----------------|------------------|
-| `ketcher.getInChIKey()` (WASM worker) | Assuming it derives from the displayed InChI string | It's an independent Indigo conversion (`output_format: 'inchi-key'`); call it directly, never hash the InChI in JS |
-| Existing `handleChange` debounce in `App.tsx` | Adding a parallel subscription/timer for the key | Fetch key inside the same debounce tick with `Promise.all`; reuse `generationRef` + empty-canvas guard; commit atomically |
-| Zustand store | Mutating `setInchiData` signature or field shapes | Add an `inchiKey` field + write it in the same atomic action; keep existing selectors/tests green |
-| `App` component tree / `KetcherPanel` | Restructuring layout in a way that remounts the canvas | Add `InchiKeySection` as a leaf sibling after `InchiSection`; never touch `KetcherPanel`/`structServiceProvider` (D-13) |
-| Clipboard copy | Copying a re-joined segment string | Copy the verbatim key from the library; reuse the StrictMode-safe copy pattern |
+### Pitfall 6 — `Fe`, `Na`, `Mn` and other two-letter / non-organic elements fall through the hardcoded element tables
 
-## Performance Traps
+**What goes wrong:** `ELEMENT_NAMES` (in `layerInfo.ts`) lists only `H,C,N,O,S,P,F,Cl,Br,I`. `elementColor`'s `known` array is the same set. For an unknown element, `formulaSegmentReading` falls back to the raw symbol (`Fe` → "1 Fe" instead of "1 iron") and `elementColor` returns generic `var(--c-formula)`. Ferrocene's formula reading would say "1 Fe" — not wrong but unpolished — and iron gets no distinct swatch color.
 
-| Trap | Symptoms | Prevention | When It Breaks |
-|------|----------|------------|----------------|
-| Serial WASM calls per edit | Input lag while dragging atoms | `Promise.all([getInchi(true), getInChIKey()])` in one debounce tick | Noticeable during rapid free-draw even with one user |
-| Key fetch outside the debounce | Worker flooded on every `change` | Key fetch lives inside the 150 ms `setTimeout`, behind the highlight guard | Immediately, on any continuous drag |
+**Prevention:** Extend `ELEMENT_NAMES` with the metals used in the preset set (iron, sodium, potassium, magnesium, copper, silver, manganese, calcium, cobalt) and decide a metal color policy (a single shared "metal" token is acceptable and arguably *clearer* than per-metal colors). Data-only; no logic change. **Warning sign:** formula card showing a bare element symbol instead of a name.
 
-## Security Mistakes
+**Owning phase:** Content/formula phase (cheap, do alongside Pitfall 1).
 
-| Mistake | Risk | Prevention |
-|---------|------|------------|
-| (Low relevance — static, no backend, no user input beyond the molecule) | n/a | The key is a derived hash of in-browser data; no new attack surface. Do not log keys to any external endpoint. |
+---
 
-## UX Pitfalls
+### Pitfall 7 — Verbatim-passthrough drift on multi-component / charged strings
 
-| Pitfall | User Impact | Better Approach |
-|---------|-------------|-----------------|
-| Key segments look hoverable-into-canvas like InChI layers | Chemists expect atom highlight, get nothing, assume it's broken | Visually/behaviorally distinguish: explanation-only hover cards; copy states "one-way hash, no atom mapping" |
-| Showing a stale/blank/garbled key on empty or mid-load canvas | Looks buggy; undermines trust in a teaching tool | Validate full 27-char standard format before rendering; reuse the empty-strip placeholder |
-| Implying uniqueness/reversibility | Chemists are the expert audience; overstatement damages credibility | State collisions are improbable-but-real and the key is not decodable without a database |
-| No indication the key covers the whole multi-component assembly | Confusion on salts/mixtures (the app's historical weak spot) | Explanation explicitly notes: one key for the entire drawing, no per-fragment keys |
+**What goes wrong:** The project's bedrock invariant (MEMORY: *never reconstruct InChI; display the verbatim Ketcher output*) is most tempting to violate here. A "salt component breakdown panel" or per-ion summary could lead someone to re-join parsed `q`/`p`/formula fields into a displayed string. The displayed/copied InChI and InChIKey must remain the **literal** WASM output, sliced by offset only (the v1.3 `parseInchiKey` returns offsets only; renderer slices verbatim — keep that discipline).
 
-## "Looks Done But Isn't" Checklist
+**Prevention:** Derived panels read **from** parsed layers but render their **own** prose; they never produce a string presented as "the InChI." InChIKey for inorganic species is computed by `ketcher.getInChIKey()` (handles multi-component/charged species) and displayed verbatim — no special-casing. **Warning sign:** any code path concatenating layer `.text` fields into something shown as an InChI/InChIKey.
 
-- [ ] **Verbatim passthrough:** displayed text AND copy payload both equal the raw `getInChIKey()` output — verify with a `displayed === raw` test, not eyeballing.
-- [ ] **Sync:** key and InChI always describe the same molecule even under rapid edits — verify stale-result generation guard covers the key.
-- [ ] **Empty/clear:** clearing the canvas resets the key (no lingering key) — verify it rides the existing empty guard.
-- [ ] **Multi-component:** a salt/mixture preset shows one valid standard key and the explanation says so — verify against an INCHI-06-style fixture.
-- [ ] **No canvas remount:** the canvas does not reload when the key section mounts — verify WASM init does not re-trigger.
-- [ ] **Copy confirmation:** "Copied!" resets after 3 s and survives StrictMode double-mount — verify in dev.
-- [ ] **No highlight wiring:** hovering a key segment does NOT light up canvas atoms — verify the segments don't call `setHover`/`setSubHover`.
-- [ ] **Segment boundaries:** color spans align exactly with the two hyphens (14/8/3) — verify slice constants with a test.
-- [ ] **Flag/version chars:** for preset molecules the flag is `S` and version is `A` — verify with a fixture assertion.
+**Owning phase:** Any phase introducing a derived/summary view (the salt-breakdown differentiator, if pursued).
 
-## Recovery Strategies
+---
 
-| Pitfall | Recovery Cost | Recovery Steps |
-|---------|---------------|----------------|
-| Reconstructed/corrupted key shipped | MEDIUM | Replace render+copy source with raw string; add `displayed === raw` regression test (same fix shape as the InChI passthrough fix) |
-| InChI/key desync or stale key | MEDIUM | Move key fetch into `handleChange`; extend `generationRef` post-await check to the key; commit atomically |
-| Canvas remount introduced | HIGH | Revert layout change; reinstate `InchiKeySection` as a leaf sibling; confirm `structServiceProvider` stays module-level |
-| Copy confirmation stuck (StrictMode) | LOW | Port the `mountedRef` reset-on-mount pattern from `InchiSection`; ideally extract `useCopyButton` |
-| False reversibility/atom-map UX | LOW | Remove highlight wiring from key segments; correct explanation prose |
+### Pitfall 8 — `/p` proton slots are also per-component and interact with `/q`
 
-## Pitfall-to-Phase Mapping
+**What goes wrong:** `/p` (mobile proton balance) is `;`-separated per component, same shape as `/q`, and for salts the two layers tell a *combined* story (NaCl: `/q;+1/p-1` — Na carries +1, the chloride lost a proton). Explaining `/p` as a whole-molecule proton count (current blurb) is the same error class as Pitfall 1. There's also a highlight subtlety: the existing `p` case highlights mobile-H-bearing atoms from `/h` — for a simple chloride salt there may be no mobile-H notation, triggering the heteroatom fallback, which could highlight the wrong component.
 
-Suggested phase shape: **(A) Source & wiring** → **(B) Render & layout** → **(C) Content & explanation**. Mapping below uses these labels.
+**Prevention:** Give `/p` the same per-component treatment as `/q` (prose + alignment). Verify `/p` highlighting on NaCl specifically (the canonical `/p-1` case). **Warning sign:** `/p` card framing protons as a single molecule-wide count, or `/p-1` on NaCl highlighting sodium instead of chloride.
 
-| Pitfall | Prevention Phase | Verification |
-|---------|------------------|--------------|
-| 1 — Reconstructing key from segments | A (Source) | `displayed === raw` and `copyPayload === raw` unit tests |
-| 2 — Derive-from-InChI / standard mismatch | A (Source) | Flag char `S`, version `A` asserted on presets; key sourced only from `getInChIKey()` |
-| 3 — Key not in sync (race) | A (Source) | Rapid-edit stale-result test reusing the generation guard |
-| 4 — Wrong/empty key on empty/disconnected/multi-component | A (Source) + B (Render) | Empty-canvas reset test; 27-char regex gate before slicing; multi-component fixture |
-| 5 — WASM recompute cost | A (Source) | `Promise.all` concurrent fetch; no lag in manual drag test |
-| 6 — Canvas remount / break InChI strip | B (Render/layout) | Canvas-never-remounts regression; existing `InchiSection.test.tsx` stays green |
-| 7 — Mislabeled segment boundaries/meaning | C (Content) | Slice-boundary + label unit test against verified 14/8/3 layout |
-| 8 — Implying reversible/atom-map/collision-proof | C (Content) + B (Render) | Key segments verified to NOT call highlight actions; prose review against FAQ facts |
-| 9 — Copy confirmation under StrictMode | B (Render) | StrictMode double-mount test; shared `useCopyButton` hook |
-| 10 — Preset-load stale timing | A (Source) | Preset-load path test; no manual key fetch in `handleMolSelectLogic` |
+**Owning phase:** First content phase (shares machinery with Pitfalls 1–2).
+
+---
+
+## Minor Pitfalls
+
+### Pitfall 9 — `formulaFragmentCounts` multiplier regex assumes a single uppercase letter
+
+**What goes wrong:** `formulaFragmentCounts` matches `/^(\d+)([A-Z])/` to detect the leading multiplier (`6CN`, `2C5H5`, `7Fe`). The `[A-Z]` matches the first letter so two-letter elements (`7Fe`) still count correctly — but it's worth a confirming test on `7Fe` (Prussian blue) that the iron-multiplier component counts as 7 single-iron components.
+
+**Prevention:** Add `7Fe` / `18CN` count assertions as unit fixtures (covered by the Prussian-blue fixture in Pitfall 2). **Warning sign:** component count mismatch on Prussian blue.
+
+**Owning phase:** Parser/fixture phase.
+
+### Pitfall 10 — Disconnection-detection heuristic over- or under-fires
+
+**What goes wrong:** The "why is the metal gone?" callout (differentiator) needs a heuristic: a formula component that is a single metal element with an empty `/c` slot. A hardcoded metal-element set that's too small misses cases; the empty-`/c`-slot signal is more reliable.
+
+**Prevention:** Prefer the structural signal (single-atom component + empty connectivity slot) over an element-name allowlist; keep the allowlist as secondary confirmation only. Defer this differentiator if it adds risk — it's P2, not table stakes. **Warning sign:** callout firing on a neutral organic fragment, or missing on a metal.
+
+**Owning phase:** Differentiator phase (P2 / fast-follow).
+
+---
+
+## Phase-Specific Warnings
+
+| Phase Topic | Likely Pitfall | Mitigation |
+|-------------|---------------|------------|
+| **AuxInfo / lone-metal mapping verification (do FIRST)** | #4 lone-metal maps wrong / via fallback; CN cross-bleed | Live gate on ferrocene + ferrocyanide; log match-vs-fallback; assert full canonical→element map in a unit fixture |
+| **`/q` + `/p` per-component semantics** | #1 wrong blurb, #2 off-by-one slot alignment, #8 `/p` combined story | Reuse existing `multi`/`cumulativeOffset` pattern; assert `slots.length === components.length`; never `.filter(Boolean)`; run `q` through `expandLayerText` for `N*`-in-`/q` |
+| **Metal-disconnection explanation prose** | #3 canvas-draws-bonds-InChI-drops honesty trap | Make absence the lesson; ferrocene assert zero Fe-incident bonds; never highlight drawn metal bonds |
+| **Element tables** | #6 `Fe`/`Na`/`Mn` fall through | Extend `ELEMENT_NAMES`; metal color policy (single shared token OK) |
+| **Inorganic presets** | #5 SMILES don't round-trip / load wrong silently | Capture REAL live InChI per preset; blocking human-verify; ship verified core before ⚠ KMnO₄/hexaammine |
+| **Derived/summary views** | #7 verbatim-passthrough drift | Derived prose only; never re-join into a displayed InChI/InChIKey |
+| **Differentiators (disconnection callout, breakdown panel)** | #10 heuristic mis-fires; scope creep | Structural signal over allowlist; keep P2/deferred |
+
+---
+
+## Anti-Features (explicitly DO NOT build — scope-creep traps)
+
+| Anti-feature | Why it's a trap | What to do instead |
+|--------------|-----------------|--------------------|
+| **`/r` reconnected-layer parsing** | `ketcher.getInchi(withAuxInfo?: boolean)` has no options param; the app can only ever receive Standard `1S` InChI, which **never** contains `/r`. A `/r` parser is dead code for output you cannot produce. (HIGH — STACK.md) | Explain metal **disconnection** (the thing that actually happens); mention `/r` only as the non-standard alternative the tool can't show |
+| **Patching ketcher to send `/RecMet`** | Produces **non-standard** `1/` InChI, breaks the "we explain *Standard* InChI" identity, desyncs InChIKey | Keep `getInchi(true)` exactly as shipped |
+| **Importing `indigo-ketcher` directly** to set `inchi-options` | Transitive dep; bypasses public API; version-skew risk; **CLAUDE.md explicitly forbids it** | Only the ketcher public API |
+| **Drawing dative/coordinate bonds and expecting them in `/c`** | Standard InChI disconnects metals regardless of how bonds are drawn; "draw the bond, see it" is a false promise | Teach disconnection as intentional normalization — the absent bond IS the lesson (Pitfall 3) |
+| **3D coordination geometry / octahedral-tetrahedral viewer** | Out of scope per PROJECT.md; InChI carries no coordination geometry | Stay a 2D notation explainer |
+| **Crystallographic / lattice / unit-cell view for salts** | InChI represents discrete ionic species, not the solid-state lattice | Explain InChI describes Na⁺ + Cl⁻, not the crystal |
+| **Auto charge-balancing / valence "correction" of drawn ions** | Silently editing the structure breaks verbatim passthrough (MEMORY: never reconstruct) | Show the InChI of exactly what was drawn; presets carry correct charges in SMILES |
+| **Disconnection diff visualization** (dimming dropped bonds) in v1.5 | Gated on unverified AuxInfo reliability for disconnected metals; research-heavy | Deferred to v2 per FEATURES.md; do not sneak into v1.5 |
+
+---
 
 ## Sources
 
-- ketcher-core API surface — `node_modules/ketcher-core/dist/application/ketcher.d.ts:51-52` (`getInchi`, `getInChIKey`) and `dist/index.js:58366` / `:59610` (`getInChIKey(struct)` → `structService`); `output_format: ChemicalMimeType.InChIKey`. HIGH.
-- ketcher-standalone worker — `node_modules/ketcher-standalone/dist/main.js:38,55,68,761` (`Command.GetInChIKey`, `WorkerEvent.GetInChIKey`, `SupportedFormat.InChIKey`, async `getInChIKey`). Confirms key is a separate WASM command, not derived from InChI. HIGH.
-- InChIKey structure / reversibility / collisions — InChI Trust Technical FAQ (https://www.inchi-trust.org/technical-faq/): 27-char `AAAAAAAAAAAAAA-BBBBBBBB-FVP`, one-way hash, real-world collisions. HIGH.
-- Existing implementation patterns — `src/App.tsx` (debounce + `generationRef` D-05, `isHighlightingRef`, `isSettingMoleculeRef`, module-level `structServiceProvider` D-13), `src/components/InchiSection.tsx:28-44` (StrictMode `mountedRef` copy pattern WR-02, verbatim slice rendering), `src/store.ts` (store shape), `src/lib/handleMolSelectLogic.ts` (preset-load guard, "no manual getInchi" race warning). HIGH.
-- Project history — `.planning/PROJECT.md` Key Decisions (D-13 canvas-never-remount, feedback-as-leaf-sibling, INCHI-06 multi-fragment correctness, getInChIKey open question in v1.3 milestone notes); memory `feedback_inchi_passthrough.md` (no-reconstruct rule). HIGH.
-
----
-*Pitfalls research for: adding live InChIKey display to the InChI explainer*
-*Researched: 2026-06-18*
+- This codebase, traced directly (HIGH): `src/lib/parseInchi.ts` (`formulaFragmentCounts`, `expandLayerText`, `enrichLayers`), `src/lib/highlightUtils.ts` (`q`/`p` cases — confirmed `q` does a plain `split(';')` and does **not** run through `expandLayerText`), `src/lib/parseAuxMapping.ts` (`remapAuxToPoolIds` coordinate matching, `EPSILON=0.05`, `NaN` placeholder preservation), `src/lib/layerInfo.ts` (`ELEMENT_NAMES`, `elementColor` allowlists; `q`/`p` blurbs and `readingFor`).
+- `.planning/PROJECT.md` — verbatim-passthrough + no-remount invariants; D-row "c-layer test fixtures must be REAL InChI" (⚠ Lesson v1.4); v1.1 multi-fragment `/q`/`/p` highlight fix.
+- `.planning/research/STACK.md` — no `/r` reachable; AuxInfo describes the disconnected structure; the one live verification gate.
+- `.planning/research/FEATURES.md` — per-component `/q`/`/p` semantics, preset shortlist with ⚠ round-trip risks, anti-features, "absence is the lesson" pattern.
+- Verified inorganic InChI strings (milestone context, cross-checked NIST/PubChem): ferrocene `1S/2C5H5.Fe/c2*1-2-4-5-3-1;/h2*1-5H;`; NaCl `1S/ClH.Na/h1H;/q;+1/p-1`; ferrocyanide `1S/6CN.Fe/c6*1-2;/q;;;;;;-4`; Prussian blue `1S/18CN.7Fe/c18*1-2;;;;;;;/q;;;;;;;;;;;;;;;;;;3*-4;4*+3`.

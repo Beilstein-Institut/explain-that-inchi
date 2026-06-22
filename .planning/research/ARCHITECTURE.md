@@ -1,265 +1,273 @@
-# Architecture Research — v1.3 InChIKey display & explanation
+# Architecture Research
 
-**Domain:** InChIKey display & explanation strip — integration into the existing "Explain that InChI" single-page tool
-**Researched:** 2026-06-18
-**Confidence:** HIGH (read against the real codebase; InChIKey API verified in the bundled `ketcher-core` 3.12.0 source)
+**Domain:** Integrating inorganic / organometallic / salt capabilities into a shipped in-browser InChI explainer (v1.5)
+**Researched:** 2026-06-22
+**Confidence:** HIGH (existing architecture read directly from source; multi-fragment patterns confirmed in-code; reframe confirmed by parallel Stack+Features research)
 
-## Executive Summary
+---
 
-The InChIKey feature is a **clean additive strip** that sits below the existing InChI strip and mirrors its hover treatment (color-coded segments + per-segment explanation card + copy button) **but does NOT touch the canvas-highlight pipeline**. The InChIKey is a one-way hash; its segments are positional substrings of a fixed-format 27-character string, not atom-mapped. This is the key architectural simplification: everything downstream of `buildHighlightSpecs` / `useKetcherHighlights` is irrelevant to the InChIKey.
+## TL;DR for the Roadmap
 
-Three findings drive the design:
+v1.5 is an **additive content + verification milestone**, not a structural one. The existing pipeline (parse → enrich → render hoverable spans → store hover → highlight hook → Ketcher) already handles every *structural* property an inorganic Standard InChI throws at it (dot-separated components, `N*` multipliers, `/q`, `/p`, multi-fragment AuxInfo remap). The work is:
 
-1. **Source is already in the public API.** `ketcher.getInChIKey(): Promise<string>` exists on the `Ketcher` class in `ketcher-core@3.12.0` (verified in `node_modules/ketcher-core/dist/index.modern.js` line 59582; it delegates to `structService.getInChIKey(struct)` in the standalone WASM provider). **This resolves the STACK research's open question — no new dependency, no separate library, no reconstruction.** It fits the existing debounced `getInchi(true)` call site exactly.
+1. **Make `/q` (and `/p`) read PER-COMPONENT** — a small change in two functions (`readingFor` in `layerInfo.ts` for the explanation card; a new `q`/`p` case in `LayerText.tsx` for sub-token hover). The highlight builder (`highlightUtils.ts` `case 'q'`) **already splits `/q` on `;` per component** — confirmed in source.
+2. **Add metal-disconnection explanation prose** — copy-only changes in `layerInfo.ts` (`LAYER_INFO` blurbs + `readingFor` q/p readings), optionally one honest-limitation callout surfaced through the existing `Explanation.tsx` card (no new surface).
+3. **Add inorganic presets** — pure data additions to `molecules.ts`; no loader changes expected.
+4. **Verify highlighting end-to-end** on a disconnected lone-metal component — the **single live-verification gate** (ferrocene → hover `.Fe` formula component / `/q` → iron lights up on canvas).
 
-2. **The no-reconstruct rule is honored by construction.** The verbatim key string is stored as-is. The parser is a tiny *pure offset computer* that returns `{kind, start, end}` index ranges; the renderer slices the **stored verbatim string** (`key.slice(start, end)`) — never re-joining segment text. This mirrors how `InchiSection` sources `rawText` from `l.text` rather than rebuilding.
+The two governing invariants from v1.0–v1.4 must hold throughout: **no-remount** (never conditionally render `<Editor>`, never recreate `StandaloneStructServiceProvider`) and **verbatim passthrough** (displayed/copied string === raw Ketcher output; parsers return offsets, renderers slice verbatim).
 
-3. **Reuse the visual/CSS pattern, NOT the LayerText/highlight machinery.** `LayerText` exists purely to emit `subHover` specs that drive canvas highlights — the InChIKey has none, so reusing it would carry irrelevant complexity. Build a small parallel `InchiKeySection` + `InchiKeyExplanation` pair that reuse the existing CSS module classes (`.inchiLayer`, `.copyBtn`, `.copiedFeedback`, etc.) and the explanation-card markup, but with a far simpler hover model (one local `useState` index — no Zustand `subHover`, no `useKetcherHighlights`).
+---
 
-## Standard Architecture
+## Standard Architecture (existing — fixed for v1.5)
 
-### System Overview — where InChIKey slots in
+### System Overview
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│ App.tsx — pipeline owner                                               │
-│  editor 'change' → debounce 150ms → getInchi(true)  ──┐                 │
-│                                   → getInChIKey()  ────┤ NEW            │
-│                                                        ▼                │
-│                              parseInchiWithAux + remapAuxToPoolIds      │
-│                                                        ▼                │
-│                              store.setInchiData(... , inchiKey) NEW arg │
+│  Ketcher (WASM, module-level StructServiceProvider — NEVER remount)    │
+│      getInchi(true) → "InChI=1S/…\nAuxInfo=1/0/N:…/rC:…"                │
+└───────────────────────────────┬──────────────────────────────────────┘
+                                 ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│  parseAuxMapping.ts :: parseInchiWithAux(raw)                          │
+│    ├ split on "\nAuxInfo="                                             │
+│    ├ parseInchi(inchiStr)            → enriched Layer[]  (offsets-only) │
+│    ├ parseAuxMapping(auxBody, formula) → AuxMap canonical→molfile-rank  │
+│    ├ buildAtomElements(layers)      → Record<canon, element>           │
+│    └ parseRcField(auxBody)          → molfileCoords[]                   │
+└───────────────────────────────┬──────────────────────────────────────┘
+                                 ▼  (in hook: remapAuxToPoolIds → canon→poolId)
+┌──────────────────────────────────────────────────────────────────────┐
+│  Zustand store (src/store.ts): layers, auxMap, atomElements, hoverIdx, │
+│                                 subHover, keyHover, …                   │
+└──────────────┬─────────────────────────────────────┬──────────────────┘
+               ▼ (read)                               ▼ (read)
+┌──────────────────────────────┐   ┌───────────────────────────────────┐
+│ InchiSection.tsx              │   │ Explanation.tsx                    │
+│   per-layer pill +            │   │   readingFor(layer, atomElements,  │
+│   <LayerText> hoverable spans │   │            fragCounts) → card prose│
+│   → setSubHover / setHover    │   │   LAYER_INFO[type].blurb            │
+└──────────────┬───────────────┘   └───────────────────────────────────┘
+               ▼ (store.subHover / hoverIdx)
+┌──────────────────────────────────────────────────────────────────────┐
+│  useKetcherHighlights.ts  →  buildHighlightSpecs / buildSubHoverSpecs  │
+│       (highlightUtils.ts) → struct.findBondId → highlights.create      │
 └──────────────────────────────────────────────────────────────────────┘
-                                   │ (Zustand store)
-        ┌──────────────────────────┼──────────────────────────────┐
-        ▼                          ▼                               ▼
-┌───────────────┐         ┌────────────────────┐      ┌────────────────────┐
-│ InchiSection  │         │ InchiKeySection NEW │      │ Explanation         │
-│ (InChI strip) │         │ (InChIKey strip)    │      │ (InChI layer card   │
-│  LayerText →  │         │  pure slice render  │      │  + Legend)          │
-│  subHover →   │         │  local hover index  │      │                     │
-│  canvas hl    │         │  NO canvas hl       │      │ InchiKeyExplanation │
-└───────┬───────┘         └─────────┬──────────┘      │   NEW (card only)   │
-        │                           │                 └────────────────────┘
-        ▼                           ▼ (no arrow to canvas — hash isn't mapped)
-┌──────────────────────────────────────────┐
-│ useKetcherHighlights → Ketcher canvas      │  ← InChIKey does NOT participate
-└──────────────────────────────────────────┘
 ```
 
-### Component Responsibilities
+### Component Responsibilities (and what v1.5 touches)
 
-| Component | New/Modified | Responsibility |
-|-----------|--------------|----------------|
-| `App.tsx` | **Modified** | Add `getInChIKey()` alongside `getInchi(true)` in the debounced handler; pass key into `setInchiData`. |
-| `store.ts` | **Modified** | Add `inchiKey: string` field + extend `setInchiData` signature. Verbatim only. |
-| `lib/parseInchiKey.ts` | **New (pure)** | `parseInchiKeySegments(key): InchiKeySegment[]` — returns `{kind,start,end}` index ranges. Display-metadata only; never returns reassembled text. Unit-testable, no DOM. |
-| `lib/inchiKeyInfo.ts` | **New** | `INCHIKEY_SEGMENT_INFO` map (title/blurb/swatch per segment kind) + `INCHIKEY_DEFAULT_INFO`. Mirrors `layerInfo.ts` shape. |
-| `components/InchiKeySection.tsx` | **New** | Renders verbatim key, slices by segment ranges, color-codes spans, copy button, local hover index. |
-| `components/InchiKeyExplanation.tsx` | **New** | Per-segment explanation card; reuses `Explanation.module.css` card markup. |
-| `components/InchiKeySection.module.css` | **New (thin)** | Reuses InchiSection tokens/classes where possible. |
+| Component | Responsibility | v1.5 change |
+|-----------|----------------|-------------|
+| `src/lib/parseInchi.ts` | Layer split + enrichment; pure parsers; `formulaFragmentCounts`, `expandLayerText` | **None expected.** `/q`/`/p` already land in `enrichLayers` default branch (atoms:[], bonds:[]). Add inorganic test fixtures only. Possibly extend `SubHover` union with a `charge` kind (see Q1, Phase E). |
+| `src/lib/parseAuxMapping.ts` | AuxInfo → `AuxMap`, element map, molfile coords, coordinate-matching `remapAuxToPoolIds` | **None.** Lone-metal component is just another coordinate to match. Verify (not change). |
+| `src/lib/highlightUtils.ts` | `buildHighlightSpecs` / `buildSubHoverSpecs` → `HighlightSpec[]` | `case 'q'` **already per-component** (splits on `;`, offsets via `formulaFragmentCounts`). Add a `case 'charge'` to `buildSubHoverSpecs` only if per-token charge hover (Q1/Phase E) is in scope. |
+| `src/lib/layerInfo.ts` | `LAYER_INFO` prose, `readingFor`, color/legend helpers | **PRIMARY content change.** Rewrite `readingFor` `q`/`p` cases to per-component; correct `LAYER_INFO.q`/`.p` blurbs; add metal-disconnection note to `formula`/`c` readings. |
+| `src/components/LayerText.tsx` | Per-layer hoverable sub-token spans | **Add a `q`/`p` sub-renderer** (currently they hit the `default: <>{rawText}</>` branch → no per-token hover). Mirror `ParityText`'s `;`-split + `cumOffset` loop. |
+| `src/components/Explanation.tsx` | Left card (idle / hover / key-hover precedence) | Optional honest-limitation callout (reuse existing card; content only). |
+| `src/data/molecules.ts` | Preset SMILES list | **Data additions** (NaCl, KCl, MgCl₂, CuSO₄, ferrocene, AgNO₃, NH₄Cl). |
 
-## Recommended Project Structure
+---
+
+## Question-by-Question Integration
+
+### Q1 — Per-component `/q` (and `/p`)
+
+**Current state, verified in source:**
+
+- **Highlighting is ALREADY per-component.** `highlightUtils.ts` `case 'q'` (lines ~262–305) does exactly the requested split: `const qFragments = layer.text.split(';')`, then a `cumulativeOffsetQ` loop using `formulaFragmentCounts(formulaLayer.text)` to map each non-empty/non-`0` charge slot to that component's canonical range, then `auxMap[...]` → pool IDs (with a precise "formally-charged atom" preference and a whole-fragment fallback). **No change needed for whole-component `/q` highlight.** This is the same v1.1 machinery that fixed CuSO₄. The ferrocyanide example `/q;;;;;;-4` (7 slots) lines up with `formulaFragmentCounts("6CN.Fe")` → 7 components, so the existing loop resolves it. `/p` (`case 'p'`) highlights mobile-H/heteroatoms rather than per-component charge — acceptable, since `/p` is a proton offset, not a per-component charge vector.
+- **Explanation reading is WRONG for salts (the real bug).** `layerInfo.ts` `readingFor` `case 'q'` returns the flat string `'net charge: <b>' + layer.text + '</b>'` (lines 363–364) — so `/q;+1` literally reads "net charge: `;+1`". `case 'p'` is the same flat shape (lines 365–366). **This is the smallest, highest-value fix.**
+- **Sub-token hover does not exist for `q`/`p`.** In `LayerText.tsx`, `q` and `p` are not in the dispatch `switch` (lines 35–42) → they fall to `default: return <>{rawText}</>`, a single inert text node. Hovering an individual `+1` is impossible today; the whole-pill hover (via `InchiSection.tsx` `hoverIdx`) triggers the per-component highlight builder, but you cannot target one component's charge.
+
+**Cleanest change — reuse the existing `;`-split / `cumOffset` / per-fragment pattern that already lives in several places:**
+
+1. **`readingFor` (`layerInfo.ts`) — per-component prose.** Rewrite `case 'q'` (and `case 'p'`) to mirror the **existing `case 't'`** in the same function (lines 339–350): split `layer.text` on `;`, walk with `cumulativeOffset += fragCounts[fi] ?? 0`, and for each slot emit component-aware prose. Empty slot → "component _i_ (formula): neutral"; signed slot → "component _i_: **+1**". `fragCounts` is **already passed in** — `readingFor(layer, atomElements, fragCounts)` is called from `Explanation.tsx:60` with `fragCounts` already computed via `formulaFragmentCounts` (`Explanation.tsx:55`). Use `atomElements` + the component's canonical range to name the ion. Pure prose change; no data-model change.
+
+2. **`LayerText.tsx` — new `q`/`p` sub-renderer** (only if per-token hover/highlight, FEATURES P1 "token-precise", is in scope). Add `case 'q': case 'p': return <ChargeText text={rawText} fragCounts={fragCounts} />;` to the dispatch (lines 35–42). Model `ChargeText` directly on **`ParityText`** (lines 265–301): split on `;`, `let cumOffset = 0`, push a `;` separator between segments, wrap each non-empty signed slot in a `styles.inchiSubtoken` span carrying a new `SubHover` of kind `'charge'` with the component's `canonRange = [cumOffset+1, cumOffset+fragCounts[fi]]`. That `canonRange` computation is the exact pattern `FormulaText` already uses (lines 91–96).
+
+3. **`highlightUtils.ts` `buildSubHoverSpecs` — new `case 'charge'`** (paired with #2). Given `subHover.canonRange = [lo, hi]`, filter `Object.entries(auxMap)` (or the struct's formally-charged pool IDs, mirroring the precise/fallback logic already in `case 'q'`) to that range, colour `--c-charge`. Reuses the precise-vs-delocalized fallback already written in `case 'q'`.
+
+**Functions that change:** `layerInfo.ts::readingFor` (q, p cases) + `LAYER_INFO.q`/`.p` copy (**always**); `LayerText.tsx::LayerText` dispatch + new `ChargeText` (**if token-precise hover**); `highlightUtils.ts::buildSubHoverSpecs` new `case 'charge'` + `SubHover` type extension in `parseInchi.ts` (**if token-precise hover**). **No change to `highlightUtils.ts::buildHighlightSpecs case 'q'` — it is already correct.**
+
+**Patterns to cite for the implementer:**
+- `;`-split + `cumOffset` per-fragment loop: `readingFor case 't'` (`layerInfo.ts:339`), `ParityText` (`LayerText.tsx:293`), `enrichLayers case 'c'/'h'/'t'` (`parseInchi.ts:388-426`), `buildHighlightSpecs case 'q'` (`highlightUtils.ts:288`).
+- `canonRange` fragment scoping: `FormulaText` multi-dot branch (`LayerText.tsx:80-116`) → consumed by `buildSubHoverSpecs case 'element'` (`highlightUtils.ts:419-422`).
+
+### Q2 — Metal-disconnection explanation
+
+**Where the prose lives:** `src/lib/layerInfo.ts`.
+- **`LAYER_INFO.formula.blurb`** and/or **`LAYER_INFO.c.blurb`**: extend to note that Standard InChI **disconnects metal–ligand bonds**, splitting the species into dot-separated components, and that a metal can appear as its own single-atom component with an **empty `/c` slot** (the trailing `;` with nothing after it). Verbatim copy editing — match the existing second-person, one-worked-example tone.
+- **`readingFor` `case 'formula'` / `case 'c'`**: per-component readings already exist (`formulaReading` splits on `.` and renders `N×` multipliers — `layerInfo.ts:156-174`; `readingFor case 'c'` already returns "no heavy-atom bonds" for a bondless fragment — line 293). Small enhancement: when a component is a single metal atom with an empty connection segment, surface "iron: not bonded in this layer (disconnected metal)".
+
+**UI affordance (honest-limitation callout):** Keep it a **content change, not a structural one.** `Explanation.tsx` already has three precedence states (key-hover → layer-hover → idle/legend) all rendering the same card. Two low-risk options, both reusing that card:
+- **Cheapest:** fold the "the canvas shows metal–ligand bonds the InChI omits" sentence into the `formula`/`c` blurb so it appears whenever the user hovers those layers on a disconnected species. Zero new component, zero new store field.
+- **Differentiator (P2, defer):** a proactive "Why is the metal gone?" callout that detects disconnection (a dot-component that is a single metal element with an empty `/c` slot — maintain a small metal-element `Set`) and renders an extra sentence in the idle card. Needs at most a derived boolean computed from `layers` inside `Explanation.tsx` — **no store field, no remount.** Treat as fast-follow.
+
+**Do NOT** build a "diff visualization" that highlights the dropped bonds in v1.5 (FEATURES P3) — it depends on mapping drawn-but-absent bonds and is gated on the same AuxInfo reliability the verification gate checks.
+
+### Q3 — Inorganic presets
+
+**Pure data additions to `src/data/molecules.ts`.** Each entry is `{ id, name, formula, smiles }`; presets load via the existing `setMolecule(smiles)` path (`handleMolSelectLogic`). Recommended core set (from FEATURES, simplest→hardest): NaCl `[Na+].[Cl-]`, KCl `[K+].[Cl-]`, NH₄Cl `[NH4+].[Cl-]`, MgCl₂ `[Mg+2].[Cl-].[Cl-]`, CuSO₄ `[Cu+2].[O-]S(=O)(=O)[O-]`, AgNO₃ `[Ag+].[O-][N+](=O)[O-]`, ferrocene `[cH-]1cccc1.[cH-]1cccc1.[Fe+2]`.
+
+**Preset-loading guard changes:** none expected. `setMolecule` accepts any SMILES Ketcher can parse; a single-atom metal component (`[Na+]`, `[Fe+2]`) is a valid molfile atom. The only risk is **SMILES round-trip fidelity in Ketcher standalone** (charged/unusual-valence atoms) — a per-preset **live-verification** item, not a code guard. The empty-canvas / invalid-structure guard in `App.tsx` (D-13: `parseInchi('InChI=1S//')` → 1 layer) already degrades cleanly if a preset fails to produce an InChI. Ship presets only after confirming each round-trips (KMnO₄, hexaamminecobalt flagged ⚠ — defer).
+
+### Q4 — Highlighting verification (the single gate)
+
+**Confirmed: no structural change is needed for a disconnected lone-metal component.** The full path already handles it:
+- `parseAuxMapping` builds `auxMap` for every canonical atom including the metal's (the metal is one entry in the `N:` list).
+- `parseRcField` yields the metal atom's `/rC:` coordinate; `remapAuxToPoolIds` matches it to the live editor atom by `|dx| + |−y−y| < 0.05` — **order-free coordinate matching, exactly what v1.1 added for interleaved multi-component pool IDs** (`parseAuxMapping.ts:180-213`). A bondless atom still has coordinates, so it maps.
+- `buildHighlightSpecs case 'formula'` highlights it by element colour; `case 'q'` highlights its component when the `/q` slot is non-empty. Both iterate `layer.atoms` / per-component ranges through `auxMap`.
+
+**The one live gate (do FIRST in the milestone):** Load/draw **ferrocene**, call `getInchi(true)`, confirm in the running app:
+1. string is `1S` of the form `2C5H5.Fe/c2*1-2-4-5-3-1;/h2*1-5H;` (verbatim passthrough intact),
+2. `remapAuxToPoolIds` resolves the **Fe** atom's pool ID (not dropped to a bad fallback),
+3. **hovering the `.Fe` formula component (and the `/q` charge if present) highlights the iron atom on canvas.**
+
+If (2)/(3) hold, the entire highlighting feature is green and the rest of v1.5 is content + presets. If they fail, the lone-metal coordinate match is the **only** new mapping edge case to fix (likely `remapAuxToPoolIds` epsilon / fallback). This gate must be a **blocking human-verify** — the v1.4 retrospective lesson (fabricated fixtures passed 333 tests while the feature was broken) applies directly: do not let unit tests substitute for the live canvas check.
+
+### Q5 — Suggested build order
 
 ```
-src/
-├── App.tsx                              # MOD: getInChIKey() in pipeline
-├── store.ts                             # MOD: + inchiKey field
-├── lib/
-│   ├── parseInchiKey.ts                 # NEW: pure offset parser (no DOM, no reconstruct)
-│   ├── inchiKeyInfo.ts                  # NEW: segment titles/blurbs/swatches
-│   └── __tests__/parseInchiKey.test.ts  # NEW: offset correctness, malformed-key guards
-└── components/
-    ├── InchiKeySection.tsx              # NEW: the strip (parallel to InchiSection)
-    ├── InchiKeySection.module.css       # NEW: thin, reuses InchiSection tokens
-    └── InchiKeyExplanation.tsx          # NEW: the card (parallel to Explanation)
+Phase A — Live-verification gate (BLOCKING, do first)
+  └ ferrocene/NaCl in running app: verbatim 1S string, Fe/Na pool-ID remap,
+    formula+/q hover highlights the metal. Gate the rest of the milestone on this.
+        ↓ (unblocks everything; if it fails, fix remapAuxToPoolIds here)
+Phase B — Per-component /q + /p reading & corrected copy   [depends on: A confirms data shape]
+  ├ layerInfo.ts: rewrite readingFor q/p (mirror case 't' ;-split + cumOffset)
+  ├ layerInfo.ts: correct LAYER_INFO.q / .p blurbs (per-component, salt-aware)
+  └ tests: NaCl /q;+1/p-1, ferrocyanide /q;;;;;;-4, CuSO4 (REAL fixtures, not fabricated)
+        ↓
+Phase C — Metal-disconnection explanation prose            [depends on: A; parallel-safe with B]
+  ├ layerInfo.ts: formula/c blurb + reading note (disconnected metal, empty /c slot)
+  └ Explanation.tsx (optional): fold honest-limitation sentence into the card (content only)
+        ↓
+Phase D — Inorganic presets                                 [depends on: A for round-trip method]
+  ├ molecules.ts: NaCl, KCl, NH4Cl, MgCl2, CuSO4, AgNO3, ferrocene (each live round-trip verified)
+  └ makes B and C demonstrable end-to-end
+        ↓
+Phase E (optional / fast-follow) — token-precise /q hover   [depends on: B]
+  ├ parseInchi.ts: extend SubHover with kind:'charge' + canonRange
+  ├ LayerText.tsx: ChargeText sub-renderer (mirror ParityText)
+  └ highlightUtils.ts: buildSubHoverSpecs case 'charge'
+P2/P3 deferred: "Why is the metal gone?" proactive callout; salt breakdown panel;
+                disconnection diff visualization; KMnO4 / hexaamminecobalt presets.
 ```
 
-### Structure Rationale
+**Ordering rationale:** A is first because one check de-risks the whole milestone and isolates the only plausible new code (lone-metal remap). B is the highest-value table-stakes fix and is independent of presets (test with fixtures). C is copy-only and can run parallel to B. D depends on nothing but the round-trip method confirmed in A and makes B/C vivid. E is additive sugar gated behind B. Every phase honors **no-remount** (no `<Editor>` conditionals, no new StructServiceProvider) and **verbatim passthrough** (parsers stay offset-only; renderers slice raw text).
 
-- **Parser in `lib/` (pure, tested first).** Follows the proven v1.2 pattern ("Pure DOM-free `buildFeedbackUrl()` built/tested first" — isolated all hard logic behind a unit-tested seam). The only "hard" logic here is offset computation and malformed-key tolerance; isolate and test it before any rendering.
-- **Parallel components, not extensions.** `InchiSection`/`LayerText` carry multi-fragment canonical-offset machinery (~370 lines) whose entire purpose is canvas highlighting. The InChIKey has zero canvas semantics, so a parallel ~80-line component is cleaner than threading a "no-highlight" mode through the existing one.
-- **Reuse CSS, not TSX.** The visual contract (mono font, color-coded chunks, copy button, hover dim/active) is identical. The CSS module classes are the right reuse seam; the rendering logic is not.
+---
 
-## Architectural Patterns
+## Architectural Patterns (reused, not invented)
 
-### Pattern 1: Parse-for-offsets, render-from-verbatim (the no-reconstruct seam)
+### Pattern 1: `;`-split + cumulative-offset per-fragment loop
 
-**What:** The parser returns only positional metadata. The component renders `key.slice(seg.start, seg.end)` from the **stored verbatim string**. Concatenating all rendered slices (plus the dashes, also sliced from the verbatim string) reproduces the original byte-for-byte by construction — there is no code path that joins segment fields.
-
-**When to use:** Always, for the InChIKey. This is the literal enforcement of the project-memory rule "never reconstruct — display the verbatim library output."
-
-**Trade-offs:** None meaningful. Slightly more index bookkeeping than returning substrings, but it makes the no-reconstruct invariant a structural guarantee rather than a discipline.
-
+**What:** Split a multi-component layer text on `;`, walk components left-to-right adding `fragCounts[fi]` to a running `cumulativeOffset` so each component's local atom numbers become global canonical IDs.
+**When to use:** Any per-component reading/highlight/render of `/q`, `/p`, `/c`, `/h`, `/t`, `/b`.
+**Trade-offs:** Requires `formulaFragmentCounts(formula.text)` (available everywhere). Robust to `N*` multipliers via `expandLayerText`.
+**Example (the canonical instance to copy):**
 ```typescript
-// lib/parseInchiKey.ts — pure, no DOM
-export type InchiKeySegmentKind = 'skeleton' | 'rest' | 'flags' | 'protonation';
-
-export interface InchiKeySegment {
-  kind: InchiKeySegmentKind;
-  start: number;   // index into the verbatim key
-  end: number;     // exclusive
-}
-
-// Standard InChIKey: 14-char skeleton "-" 8-char rest + version(1) + flag(1) "-" protonation(1)
-//   e.g. UHOVQNZJYSORNB-UHFFFAOYSA-N
-//        [0,14) skeleton  -  [15,23) rest  [23] version  [24] flag  -  [26] protonation
-export function parseInchiKeySegments(key: string): InchiKeySegment[] {
-  if (!key) return [];
-  const segs: InchiKeySegment[] = [];
-  const dash1 = key.indexOf('-');
-  if (dash1 < 0) return [{ kind: 'skeleton', start: 0, end: key.length }]; // tolerate malformed
-  segs.push({ kind: 'skeleton', start: 0, end: dash1 });            // heavy-atom connectivity hash
-  const dash2 = key.indexOf('-', dash1 + 1);
-  const block2End = dash2 < 0 ? key.length : dash2;
-  const flagsStart = Math.max(dash1 + 1, block2End - 2);
-  segs.push({ kind: 'rest', start: dash1 + 1, end: flagsStart });   // remaining-layers hash
-  segs.push({ kind: 'flags', start: flagsStart, end: block2End });  // version char + stereo/layer flag
-  if (dash2 >= 0 && dash2 + 1 < key.length) {
-    segs.push({ kind: 'protonation', start: dash2 + 1, end: key.length }); // protonation indicator
-  }
-  return segs;
-}
+// layerInfo.ts readingFor case 't' / highlightUtils.ts case 'q'
+const segments = layer.text.split(';');
+let cumOffset = 0;
+segments.forEach((seg, fi) => {
+  // ...use seg with atoms offset by cumOffset...
+  cumOffset += fragCounts[fi] ?? 0;
+});
 ```
 
-```tsx
-// InchiKeySection.tsx — render strictly from the verbatim string by slice
-{segments.map((seg, i) => (
-  <span key={i}
-        className={[styles.inchiLayer, hover === i ? styles.active : '', hover !== null && hover !== i ? styles.dim : ''].filter(Boolean).join(' ')}
-        style={{ color: `var(--c-${swatch(seg.kind)})` }}
-        onMouseEnter={() => setHover(i)}>
-    {inchiKey.slice(seg.start, seg.end)}   {/* verbatim — never reassembled */}
-  </span>
-))}
-{/* dashes also rendered from the verbatim string, e.g. inchiKey.slice(seg.end, nextSeg.start) */}
-```
+### Pattern 2: `canonRange` fragment scoping for sub-hover
 
-### Pattern 2: Local hover state, not the Zustand `subHover` bus
+**What:** A `SubHover` carries `canonRange: [lo, hi]`; the highlight builder filters `auxMap`/`layer.atoms` to that inclusive canonical range so a hover lights up only the hovered component.
+**When to use:** Per-token charge hover (Q1/Phase E); already used for per-fragment element hover.
+**Example:** `FormulaText` multi-dot branch (`LayerText.tsx:91-107`) → `buildSubHoverSpecs case 'element'` (`highlightUtils.ts:419-422`).
 
-**What:** InChIKey hover is purely cosmetic (color the card + dim siblings). Use a component-local `const [hover, setHover] = useState<number|null>(null)` instead of writing to the shared store.
+### Pattern 3: Offsets-only parser, verbatim-slicing renderer
 
-**When to use:** Whenever the hover does not need to drive the canvas or be observed across a global boundary. The InChIKey card can live inside `InchiKeySection` (or read a local prop), so no global state is needed.
+**What:** Parsers return canonical indices / token offsets; the displayed string is always `raw.slice(...)`, never reconstructed.
+**When to use:** Always. The project's load-bearing invariant (MEMORY: "never reconstruct InChI").
+**Trade-offs:** Slightly more plumbing (rawText passed alongside parsed Layer) but guarantees displayed === copied === WASM output.
 
-**Trade-offs:** If a future requirement wants the InChIKey card rendered in the same physical `Explanation` panel as the InChI card, lift the hover index to the store. For v1.3 as scoped (self-contained strip + its own card), local state is correct and avoids polluting the InChI store's `hoverIdx`/`subHover`. **Do not reuse `setHover`/`setSubHover`** — those are wired to `useKetcherHighlights` and would fire spurious canvas highlights for hash characters and collide with the InChI strip's own `hoverIdx`.
+---
 
-### Pattern 3: Copy button reuse (PLSH-04 parity)
-
-**What:** Copy the verbatim `inchiKey` via the exact `handleCopy` pattern already in `InchiSection` (lines 28–44): `navigator.clipboard.writeText(inchiKey)`, `mountedRef` guard, 3s "Copied!" reset, silent catch. Reuse `.copyBtn` / `.copiedFeedback` CSS classes and the same SVG.
-
-**When to use:** Directly. Cleanest reuse seam is a small `useCopyToClipboard(value)` hook (the logic is identical, including the StrictMode-safe mountedRef dance); extract it once and use it from both strips. If the roadmap prefers minimal touch, copy the helper verbatim into the new component instead.
-
-**Trade-offs:** Extracting the hook touches `InchiSection` too (one extra modified file) but removes duplication. Recommended.
-
-## Data Flow
-
-### InChIKey generation flow (added to existing pipeline)
+## Data Flow Changes (v1.5)
 
 ```
-editor 'change' event
-   ↓ (isHighlightingRef guard, 150ms debounce — UNCHANGED)
-thisGen = ++generationRef.current
-   ↓
-const [raw, key] = await Promise.all([ketcher.getInchi(true), ketcher.getInChIKey()])  // NEW sibling await
-   ↓ (stale-result guard: if thisGen !== generationRef.current return)  — UNCHANGED, now guards key too
-parseInchiWithAux(raw) + remapAuxToPoolIds(...)   // existing
-   ↓
-store.setInchiData(inchi, layers, auxMap, atomElements, hAtomPoolIds, key)   // key appended
-   ↓ empty/invalid path: setInchiData('', [], {}, {}, [], '')                // key cleared too
+Hover a /q component token (Phase E)
+    ↓
+LayerText ChargeText span → setSubHover({kind:'charge', canonRange:[lo,hi]})
+    ↓
+store.subHover → useKetcherHighlights → buildSubHoverSpecs case 'charge'
+    ↓
+filter auxMap to [lo,hi] (or struct formally-charged) → highlights.create(--c-charge)
 ```
+Everything else (formula/`/q` whole-pill hover, metal highlight) flows through the **unchanged** existing path. The only new edge in the graph is the `kind:'charge'` sub-hover, and it is optional (Phase E).
 
-**Sequencing note:** `Promise.all` of the two independent WASM round-trips minimizes latency; check `thisGen` once after both resolve. (A sequential pair of awaits with one post-check is equally correct, just marginally slower.) Either way the existing stale-generation guard must run after the key resolves so a slow prior result cannot overwrite newer state.
+---
 
-**Empty/invalid guard:** Reuse the existing `result.layers.length < 2` empty-canvas guard — set `inchiKey` to `''` there. `getInChIKey()` may throw on an empty/disconnected canvas exactly like `getInchi()`; the existing `try/catch` already covers this, just clear the key in the catch path too.
+## Anti-Patterns (domain-specific, v1.5)
 
-### Render flow
+### Anti-Pattern 1: Building a `/r` reconnected-layer parser
+**What people do:** Assume Standard InChI emits a `/r` reconnected layer and write a parser for it.
+**Why it's wrong:** ketcher 3.12.0's `getInchi(withAuxInfo?: boolean)` has no options string; it emits **Standard InChI only** (`1S/…`), which by definition never contains `/r`. The parser would be dead code.
+**Do this instead:** Explain *why the metal is disconnected* (Q2). Treat `/r` as an anti-feature.
 
-```
-store.inchiKey (verbatim string)
-   ↓ (selector)
-InchiKeySection
-   ├─ parseInchiKeySegments(inchiKey) → segment offsets   (recompute on render; cheap, pure)
-   ├─ render spans via inchiKey.slice(start,end)           (verbatim)
-   ├─ local hover index → dim/active + card content
-   └─ InchiKeyExplanation(hoveredKind) → INCHIKEY_SEGMENT_INFO[kind]  (title + blurb)
-```
+### Anti-Pattern 2: Reconstructing the metal's bonds / charge-balancing the drawing
+**What people do:** Re-derive coordination bonds or "fix" an under-specified ion before display.
+**Why it's wrong:** Violates verbatim passthrough (MEMORY). The tool explains exactly what the WASM made of the user's drawing.
+**Do this instead:** Show the disconnected `1S` output verbatim; the absent bond IS the lesson.
 
-`parseInchiKeySegments` is cheap and pure — recompute inline on render (like `formulaFragmentCounts` is in `InchiSection`); no need to store segments. Store only the verbatim string.
+### Anti-Pattern 3: Adding a store field or remounting for the disconnection callout
+**What people do:** Introduce a new Zustand field / conditionally render around `<Editor>` to show the callout.
+**Why it's wrong:** Breaks the no-remount invariant (re-initializes WASM, flashes the loading overlay).
+**Do this instead:** Derive the callout boolean from `layers` inside `Explanation.tsx`; render it in the existing card.
 
-### Store change (minimal)
-
-```typescript
-interface InchiState {
-  // ...existing...
-  inchiKey: string;               // NEW — verbatim getInChIKey() output, '' when empty
-  setInchiData: (inchi, layers, auxMap, atomElements, hAtomPoolIds?, inchiKey?) => void;  // append param
-}
-// initial: inchiKey: ''
-// setInchiData: (..., inchiKey = '') => set({ ..., inchiKey })
-```
-
-Prefer appending an optional `inchiKey` arg to `setInchiData` (keeps the single atomic store write per generation, matching the existing pattern) over a separate `setInchiKey` (which would split one logical update into two and risk a transient mismatch between the InChI and its key).
-
-## Build Order
-
-Ordered to put the API-dependent piece first (it gates everything) and the tested-pure-seam second:
-
-1. **Verify + wire the source (gates everything).** Confirm `ketcher.getInChIKey()` returns the expected `AAAAAAAAAAAAAA-BBBBBBBBFV-P` string in the running app (present in `ketcher-core@3.12.0` — see Sources). Add the call to the debounced handler and the `inchiKey` store field. Smoke-test that the verbatim key reaches the store. **This is the only step with external-dependency risk; do it first so a surprise here reshapes nothing downstream.**
-2. **Pure parser + tests (`parseInchiKey.ts`).** Cases: standard key, charged species (protonation char ≠ `N`), non-standard flag char, and **malformed/short strings** (tolerate gracefully — never throw, never drop characters). Assert the invariant: concatenating all `key.slice(start,end)` + the rendered dashes equals the original key exactly.
-3. **Explanation content (`inchiKeyInfo.ts`).** Author the skeleton-hash / rest-hash / version+flag / protonation blurbs, plus the cross-cutting "one-way hash, not reversible, no atom mapping, collision caveat" copy required by the milestone.
-4. **`InchiKeySection` strip.** Verbatim-slice rendering, color-coded spans, dashes, local hover, copy button. Reuse `InchiSection.module.css` classes.
-5. **`InchiKeyExplanation` card + mount in `App.tsx`.** Place below `<InchiSection />`. Decide card placement (inside the strip vs. its own panel row) per design handoff.
-6. **Empty/invalid + copy parity polish.** Empty-canvas placeholder, "Copied!" confirmation, token-fidelity pass.
-
-**Dependency on STACK research:** Step 1 *is* the answer to STACK's open question — the InChIKey source is `ketcher.getInChIKey()` (no new package). If a future Ketcher upgrade ever removed it, the fallback is the standalone `structService.getInChIKey(struct)` it wraps; no third-party JS InChIKey library is needed.
-
-## Anti-Patterns
-
-### Anti-Pattern 1: Reusing `LayerText` for the InChIKey
-
-**What people do:** Render InChIKey segments through the existing `LayerText` dispatcher "for consistency."
-**Why it's wrong:** `LayerText`'s entire job is emitting `subHover` specs (`{kind:'atom'|'element'|'stereo'|...}`) that `buildSubHoverSpecs` turns into canvas highlights via per-fragment canonical offsets. None applies to a hash. You'd carry ~370 lines of irrelevant offset logic and fight to suppress highlight side-effects.
-**Do this instead:** A flat `inchiKey.slice()` render in a small parallel component.
-
-### Anti-Pattern 2: Writing InChIKey hover into `store.hoverIdx` / `store.subHover`
-
-**What people do:** Reuse the existing `setHover`/`setSubHover` actions.
-**Why it's wrong:** Those fields are observed by `useKetcherHighlights`, which would attempt to highlight canvas atoms from hash-character hovers (nonsensical) and would collide with the InChI strip's shared `hoverIdx`.
-**Do this instead:** Local `useState` for the InChIKey hover index; keep it out of the InChI store's hover fields.
-
-### Anti-Pattern 3: Reconstructing the key from segment labels
-
-**What people do:** Have the parser return `{label:'...text...'}` and render `seg.label`, or join segments to "build" the displayed key.
-**Why it's wrong:** Violates the project-memory invariant; risks normalization/order drift exactly like the InChI passthrough bug the memory warns about.
-**Do this instead:** Parser returns offsets only; component slices the stored verbatim string. The invariant becomes structural.
-
-### Anti-Pattern 4: Storing parsed segments in Zustand
-
-**What people do:** Add `inchiKeySegments: InchiKeySegment[]` to the store beside the string.
-**Why it's wrong:** Redundant derived state to keep in sync; the parse is pure and trivially cheap to recompute on render (like `formulaFragmentCounts`).
-**Do this instead:** Store only the verbatim string; derive segments in the component.
+---
 
 ## Integration Points
 
-| Boundary | Communication | Notes |
-|----------|---------------|-------|
-| `App.tsx` ↔ WASM (Ketcher) | `await ketcher.getInChIKey()` | Sibling to existing `getInchi(true)`; same debounce, same stale-gen guard. Verified public API in 3.12.0. |
-| `App.tsx` ↔ store | `setInchiData(..., inchiKey)` | Single atomic write per generation; append optional arg. |
-| store ↔ `InchiKeySection` | `useInchiStore(s => s.inchiKey)` selector | Read verbatim string only. |
-| `InchiKeySection` ↔ `InchiKeyExplanation` | local hover index (prop or local state) | NOT the global store; no canvas coupling. |
-| `InchiKeySection` ↔ canvas | **none** | Deliberate: hash is not atom-mapped. The absence of this edge is the defining property of the feature. |
+### External Services
 
-## Scaling Considerations
+| Service | Integration Pattern | Notes |
+|---------|---------------------|-------|
+| Ketcher WASM (Indigo) | `ketcher.getInchi(true)` / `getInChIKey()` | Single boolean param — no `/RecMet`, no options. Standard InChI only. Unchanged. |
 
-Not applicable in the traditional sense — single-page, single-molecule, client-only. The only "scale" axis is per-keystroke recompute cost: `getInChIKey()` is one extra WASM round-trip per debounced change (150ms), negligible relative to `getInchi(true)` + AuxInfo parsing already running. `parseInchiKeySegments` is O(27 chars). No concerns.
+### Internal Boundaries
+
+| Boundary | Communication | v1.5 notes |
+|----------|---------------|-----------|
+| `parseInchi.ts` ↔ `highlightUtils.ts` | shared `Layer`/`SubHover`/`AuxMap` types | Extend `SubHover` with `kind:'charge'` only if Phase E. |
+| `LayerText.tsx` → store → `useKetcherHighlights` | `setSubHover` / `setHover` | New `'charge'` sub-hover is the only new message (optional). |
+| `layerInfo.ts` → `Explanation.tsx` | `readingFor` / `LAYER_INFO` | Primary content change surface; both already receive `fragCounts`. |
+| `molecules.ts` → `setMolecule` | SMILES string | Data-only; per-preset live round-trip required. |
+
+---
+
+## New-vs-Modified Summary (for the roadmapper)
+
+| File | New or Modified | Scope | Phase |
+|------|-----------------|-------|-------|
+| `layerInfo.ts` `readingFor` q/p | Modified | per-component reading (mirror case 't') | B |
+| `layerInfo.ts` `LAYER_INFO.q`/`.p` | Modified | corrected salt-aware copy | B |
+| `layerInfo.ts` `LAYER_INFO.formula`/`.c` + readings | Modified | disconnection prose | C |
+| `Explanation.tsx` | Modified (optional) | honest-limitation callout (content, derived boolean) | C |
+| `molecules.ts` | Modified | preset data additions | D |
+| `parseInchi.ts` `SubHover` | Modified (optional) | add `kind:'charge'` + canonRange | E |
+| `LayerText.tsx` `ChargeText` | New (optional) | q/p sub-renderer (mirror `ParityText`) | E |
+| `highlightUtils.ts` `buildSubHoverSpecs case 'charge'` | New (optional) | per-token charge highlight | E |
+| `highlightUtils.ts` `buildHighlightSpecs case 'q'` | **Unchanged** | already per-component | — |
+| `parseAuxMapping.ts` `remapAuxToPoolIds` | **Unchanged unless gate fails** | lone-metal coord match | A (verify) |
+
+---
 
 ## Sources
 
-- Existing pipeline & store (read directly): `src/App.tsx` (lines 125–207 debounced handler), `src/store.ts`, `src/components/InchiSection.tsx`, `src/components/LayerText.tsx`, `src/components/Explanation.tsx`, `src/lib/parseInchi.ts`, `src/lib/layerInfo.ts`, `src/hooks/useKetcherHighlights.ts` — HIGH
-- `ketcher.getInChIKey()` public API: `node_modules/ketcher-core/dist/index.modern.js` line 59582 (`key: "getInChIKey"` → `this.structService.getInChIKey(struct)`); standalone impl present in `node_modules/ketcher-standalone/dist/main.js` — **HIGH (read from installed 3.12.0 source)**
-- InChIKey format (27 chars: 14 skeleton `-` 8 rest + version + flag `-` protonation): IUPAC InChI Technical Manual / standard definition — HIGH (stable, long-established spec)
-- v1.2 "pure helper tested first" precedent: PROJECT.md Key Decisions — HIGH
+- Existing source (read directly, HIGH): `src/lib/parseInchi.ts`, `highlightUtils.ts`, `layerInfo.ts`, `parseAuxMapping.ts`, `src/components/LayerText.tsx`, `Explanation.tsx`, `InchiSection.tsx`, `src/data/molecules.ts`
+- `.planning/research/STACK.md` — no-`/r` reframe, AuxInfo-describes-disconnected-structure, zero-new-deps (HIGH)
+- `.planning/research/FEATURES.md` — per-component `/q` semantics, preset shortlist, anti-features (HIGH)
+- `.planning/PROJECT.md` — shipped invariants (no-remount D-13, verbatim passthrough), v1.1 multi-fragment remap, v1.4 c-layer/retrospective lesson (HIGH)
+- MEMORY: "never reconstruct InChI" (HIGH)
 
 ---
-*Architecture research for: InChIKey strip integration*
-*Researched: 2026-06-18*
+*Architecture research for: inorganic capabilities integration into the InChI explainer (v1.5)*
+*Researched: 2026-06-22*
