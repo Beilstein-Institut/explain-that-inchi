@@ -2,7 +2,7 @@
 // Tests step navigation, counter display, all four close paths,
 // and the App-level empty-canvas auto-load logic.
 // Uses real InChI fixture (alanine) for any store-related assertions per project convention.
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { HelpTour } from '../HelpTour';
 
