@@ -63,20 +63,24 @@ Items acknowledged and deferred at v1.3 milestone close on 2026-06-19 (same v1.0
 - v1.1 (patch): `.planning/MILESTONES.md` — 70 commits since v1.0, tag `v1.1`
 - v1.0: `.planning/milestones/v1.0-ROADMAP.md` / `v1.0-REQUIREMENTS.md`, tag `v1.0`
 
+## Roadmap Evolution
+
+- Phase 16 added: Pin-to-freeze highlights and guided Help tour (spec: docs/superpowers/specs/2026-06-22-pin-freeze-and-help-tour-design.md)
+
 ## Blockers
 
 None
 
 ## Current Position
 
-Phase: Milestone v1.4 complete
+Phase: 16 — Pin-to-freeze highlights and guided Help tour (added, not planned)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-06-22 — Milestone v1.4 completed and archived
+Status: Awaiting planning
+Last activity: 2026-06-22 — Phase 16 added to roadmap from design spec
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Plan Phase 16 with /gsd-plan-phase 16
 
 ## Session Continuity
 

@@ -77,6 +77,17 @@ Full phase details: `.planning/milestones/v1.4-ROADMAP.md`
 | 14. Reset control | v1.4 | 1/1 | Complete   | 2026-06-19 |
 | 15. C-layer hover precision | v1.4 | 2/2 | Complete    | 2026-06-22 |
 
+### Phase 16: Pin-to-freeze highlights and guided Help tour
+
+**Goal:** Let users click an InChI chunk (layer or sub-token) to freeze its highlight + explanation for inspection, and add a Help button (next to Reset) that launches a stepped, spotlight-style guided tour of the app.
+**Spec:** docs/superpowers/specs/2026-06-22-pin-freeze-and-help-tour-design.md
+**Requirements**: TBD
+**Depends on:** Phase 15
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 16 to break down)
+
 ---
 *Roadmap created: 2026-05-18*
 *Updated: 2026-06-19 — v1.4 milestone (Reset control & c-layer hover precision) roadmapped; Phases 14–15 added*
