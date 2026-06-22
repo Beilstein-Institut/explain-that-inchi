@@ -1,7 +1,7 @@
 ---
 phase: 14-reset-control
 verified: 2026-06-19T00:00:00Z
-status: human_needed
+status: verified
 score: 5/5 must-haves verified
 overrides_applied: 0
 human_verification:
@@ -20,7 +20,7 @@ human_verification:
   - test: "Load preset then Reset deselects the active example (RESET-01, RESET-03)"
     expected: "After clicking a preset (e.g. Caffeine), then clicking Reset: canvas clears, no example highlighted in the list, all panels return to idle"
     why_human: "Requires the setSelectedMolId(null) call in handleReset to actually cause the mol-list button to lose its 'active' CSS class — requires visual inspection"
-re_verification: null
+re_verification: "2026-06-22 live-canvas (Playwright/Chromium): loaded Caffeine then clicked Reset — c-layer/InChI cleared to empty-hint, Examples deselected (no .active), canvas blanked (17->2 svg labels), NO loading overlay (no remount, RESET-04), 0 console errors; second Reset is a safe no-op (RESET-05). All RESET-01..05 confirmed."
 ---
 
 # Phase 14: Reset Control — Verification Report

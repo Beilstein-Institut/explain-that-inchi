@@ -8,11 +8,11 @@
 
 ### Reset control (RESET)
 
-- [ ] **RESET-01**: A "Reset" control is present immediately to the left of the "Send feedback" control.
-- [ ] **RESET-02**: Activating Reset clears the molecule from the Ketcher canvas, equivalent to Ketcher's own built-in clear/reset action.
-- [ ] **RESET-03**: Activating Reset returns all dependent app state to its empty/idle state — InChI strip, InChIKey, explanation card, legend, mapping, and any active hover/highlight — matching the placeholder state shown before any molecule is drawn.
-- [ ] **RESET-04**: Reset does not remount the Ketcher canvas or re-initialize WASM (preserves the established leaf-sibling, no-remount invariant).
-- [ ] **RESET-05**: Activating Reset on an already-empty canvas is a safe no-op — no error, idle state preserved.
+- [x] **RESET-01**: A "Reset" control is present immediately to the left of the "Send feedback" control.
+- [x] **RESET-02**: Activating Reset clears the molecule from the Ketcher canvas, equivalent to Ketcher's own built-in clear/reset action.
+- [x] **RESET-03**: Activating Reset returns all dependent app state to its empty/idle state — InChI strip, InChIKey, explanation card, legend, mapping, and any active hover/highlight — matching the placeholder state shown before any molecule is drawn.
+- [x] **RESET-04**: Reset does not remount the Ketcher canvas or re-initialize WASM (preserves the established leaf-sibling, no-remount invariant).
+- [x] **RESET-05**: Activating Reset on an already-empty canvas is a safe no-op — no error, idle state preserved.
 
 ### C-layer hover precision (CLYR)
 
@@ -40,11 +40,11 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| RESET-01 | Phase 14 | Pending |
-| RESET-02 | Phase 14 | Pending |
-| RESET-03 | Phase 14 | Pending |
-| RESET-04 | Phase 14 | Pending |
-| RESET-05 | Phase 14 | Pending |
+| RESET-01 | Phase 14 | Complete |
+| RESET-02 | Phase 14 | Complete |
+| RESET-03 | Phase 14 | Complete |
+| RESET-04 | Phase 14 | Complete |
+| RESET-05 | Phase 14 | Complete |
 | CLYR-01 | Phase 15 | Complete |
 | CLYR-02 | Phase 15 | Complete |
 | CLYR-03 | Phase 15 | Complete |
