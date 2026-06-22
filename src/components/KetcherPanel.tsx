@@ -14,6 +14,8 @@ interface KetcherPanelProps {
   onFeedbackClick?: () => void;
   /** Clears the canvas and resets all app state to idle. Rendered to the left of Send feedback. */
   onResetClick?: () => void;
+  /** Opens the guided Help tour. Rendered next to Reset on the section-label row. */
+  onHelpClick?: () => void;
 }
 
 export function KetcherPanel({
@@ -25,12 +27,18 @@ export function KetcherPanel({
   isLoading,
   onFeedbackClick,
   onResetClick,
+  onHelpClick,
 }: KetcherPanelProps) {
   return (
     <section>
       <div className="section-label">
         <span>Draw a molecule to see its InChI</span>
         <div className="section-label-actions">
+          {onHelpClick && (
+            <button type="button" className="help-trigger" onClick={onHelpClick}>
+              Help
+            </button>
+          )}
           {onResetClick && (
             <button type="button" className="reset-trigger" onClick={onResetClick}>
               Reset
@@ -45,7 +53,7 @@ export function KetcherPanel({
       </div>
       <div className={styles.ketcher}>
         {/* Canvas column: Editor + loading overlay + canvas-meta overlay */}
-        <div className={`${styles.canvasWrap} canvas-wrap`}>
+        <div className={`${styles.canvasWrap} canvas-wrap`} data-tour-id="editor">
           {/* Editor is ALWAYS rendered — never conditional. Removing and remounting
               causes WASM to re-initialize from scratch. */}
           <Editor
