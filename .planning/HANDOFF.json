@@ -1,31 +1,32 @@
 {
   "version": "1.0",
-  "timestamp": "2026-06-17T12:59:53.794Z",
-  "phase": "10",
-  "phase_name": "feedback-dialog-context-capture-entry-point",
-  "phase_dir": ".planning/phases/10-feedback-dialog-context-capture-entry-point",
-  "plan": 3,
+  "timestamp": "2026-06-19T12:59:49.926Z",
+  "phase": "15",
+  "phase_name": "c-layer-hover-precision",
+  "phase_dir": ".planning/phases/15-c-layer-hover-precision",
+  "plan": 2,
   "task": 2,
   "total_tasks": 2,
   "status": "paused",
   "completed_tasks": [
-    {"id": "10-01", "name": "Expose fullBody on BuildFeedbackUrlResult", "status": "done", "commit": "25ba315"},
-    {"id": "10-02", "name": "FeedbackDialog component + CSS module + tests", "status": "done", "commit": "a8fab82"},
-    {"id": "10-03", "name": "Wire feedback into App (pill, mount, submit handler)", "status": "done", "commit": "6f73b1e"},
-    {"id": "fix-1", "name": "Hide closed FeedbackDialog (scope flex to [open])", "status": "done", "commit": "e1070dc"},
-    {"id": "fix-2", "name": "Move Send feedback trigger onto section-label row", "status": "done", "commit": "49a0dce"}
+    {"id": "15-01", "name": "c-layer parser & highlight foundation (tokenizeCLayerSeg, SubHover bond/branch, buildSubHoverSpecs)", "status": "done", "commit": "e673f8a"},
+    {"id": "15-02", "name": "Refactor ConnectionText.renderSegment to two-pass token rendering", "status": "done_code_summary_uncommitted", "commit": "9f9358a"}
   ],
   "remaining_tasks": [
-    {"id": "verify", "name": "Run gsd-verifier to produce 10-VERIFICATION.md", "status": "not_started"},
-    {"id": "complete", "name": "phase.complete 10 — marks phase + milestone v1.2 done (last phase)", "status": "not_started"}
+    {"id": "reconcile-15-02", "name": "Commit untracked 15-02-SUMMARY.md; update STATE.md/ROADMAP.md to mark 15-02 complete (gsd-sdk query roadmap.update-plan-progress 15 15-02 complete)", "status": "not_started"},
+    {"id": "verify-phase", "name": "Run code-review gate + gsd-verifier (verify CLYR-01..05 against codebase), then gsd-sdk query phase.complete 15", "status": "not_started"}
   ],
   "blockers": [],
   "human_actions_pending": [],
   "decisions": [
-    {"decision": "Render the Send feedback trigger inside KetcherPanel's existing .section-label row (justify-content: space-between)", "rationale": "A standalone right-aligned toolbar row created a wasted empty band; a negative-margin lift collided with the header meta. Sharing the 'Draw a molecule...' label row avoids both.", "phase": "10"},
-    {"decision": "Scope .feedbackDialog flex layout to [open] only", "rationale": "Author 'display: flex' overrode the UA 'dialog:not([open]) { display: none }' by cascade origin, leaving the closed dialog rendered behind the Ketcher canvas.", "phase": "10"}
+    {"decision": "Ran executors sequentially on the main working tree (no worktree isolation)", "rationale": "Single plan per wave = zero parallelism benefit; 15-02 is a checkpoint plan (autonomous:false) where mid-plan worktree teardown breaks continuation", "phase": "15"},
+    {"decision": "Did NOT spawn the Wave 2 (15-02) executor — user rejected the dispatch", "rationale": "15-02 implementation was already committed (9f9358a) and all 333 tests pass; re-execution would duplicate work", "phase": "15"}
   ],
-  "uncommitted_files": [],
-  "next_action": "Run the gsd-verifier agent against phase 10 to create 10-VERIFICATION.md, then `gsd-sdk query phase.complete 10` to mark the phase and milestone v1.2 complete.",
-  "context_notes": "All 3 plans built via worktree-isolated executors, merged sequentially. The 10-03 human-verify checkpoint surfaced two real UI bugs, both fixed, browser-verified via Playwright (no console errors, dialog opens/closes cleanly), committed, and pushed to origin/master at d925dbc. 264 tests pass, tsc + vite build clean. Phase is functionally done and shipped; only GSD verification/completion bookkeeping remains."
+  "uncommitted_files": [
+    ".planning/phases/15-c-layer-hover-precision/15-02-SUMMARY.md (untracked — 15-02 SUMMARY, needs commit)",
+    ".planning/STATE.md (modified — 15-01 tracking writes; 15-02 not yet marked complete)",
+    ".planning/ROADMAP.md (modified — 15-01 tracking writes; 15-02 not yet marked complete)"
+  ],
+  "next_action": "Reconcile 15-02: commit 15-02-SUMMARY.md, run `gsd-sdk query roadmap.update-plan-progress 15 15-02 complete`, then proceed to the code-review gate, phase verification (gsd-verifier), and `gsd-sdk query phase.complete 15`. Do NOT re-execute 15-02 — its code is already committed and tests are green.",
+  "context_notes": "Phase 15 has 2 plans. 15-01 executed cleanly this session (commits 55a9f21/a50f4d7/297a5b8/e673f8a, SUMMARY committed). 15-02 implementation is committed (9f9358a); LayerText.tsx has the two-pass refactor (imports tokenizeCLayerSeg/collectBranchHyphens/CLayerToken). All 333 tests pass, INCLUDING the previously-RED src/__tests__/LayerText.clyr.test.tsx that 15-02 was meant to turn GREEN. The 15-02-SUMMARY.md exists but is uncommitted and tracking files don't reflect 15-02 completion yet. Phase is effectively CODE-COMPLETE but not formally closed. ANOMALY to flag for the verifier: 15-02 was planned autonomous:false (checkpoint) but its checkpoint gate appears bypassed during execution; the verifier should confirm CLYR-01..05 against the actual codebase rather than trusting the SUMMARY narrative."
 }

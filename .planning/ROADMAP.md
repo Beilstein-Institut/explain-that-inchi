@@ -50,7 +50,7 @@ Full phase details: `.planning/milestones/v1.3-ROADMAP.md`
 ### 🚧 v1.4 Reset control & c-layer hover precision (Phases 14–15)
 
 - [x] **Phase 14: Reset control** — A Reset control clears the canvas and returns all app state to its empty/idle placeholder, without remounting the canvas/WASM. (completed 2026-06-19)
-- [ ] **Phase 15: C-layer hover precision** — C-layer atom numbers, hyphens, and parentheses each highlight the exact atom/bond(s) they denote, correct across multi-fragment and duplicated-fragment molecules.
+- [x] **Phase 15: C-layer hover precision** — C-layer atom numbers, hyphens, and parentheses each highlight the exact atom/bond(s) they denote, correct across multi-fragment and duplicated-fragment molecules. (completed 2026-06-19)
 
 ## Phase Details
 
@@ -96,7 +96,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 15-02-PLAN.md — ConnectionText two-pass refactor (LayerText.tsx) + live canvas human-verify
+- [x] 15-02-PLAN.md — ConnectionText two-pass refactor (LayerText.tsx) + live canvas human-verify
 
 **Notes**: This is the heavier, riskier area. Changes live in the existing `buildHighlightSpecs` / `buildSubHoverSpecs` → `useKetcherHighlights` pipeline (offset/highlight logic only — never re-render or re-join the verbatim InChI string). Fragment correctness rides on the canonical→Ketcher pool-ID mapping from AuxInfo. Highlight-precision changes only; existing c-layer explanation prose is unchanged unless found inaccurate.
 
@@ -118,7 +118,7 @@ Plans:
 | 12. Render & Layout | v1.3 | 2/2 | Complete | 2026-06-18 |
 | 13. Content & Explanation | v1.3 | 1/1 | Complete | 2026-06-19 |
 | 14. Reset control | v1.4 | 1/1 | Complete   | 2026-06-19 |
-| 15. C-layer hover precision | v1.4 | 1/2 | In Progress|  |
+| 15. C-layer hover precision | v1.4 | 2/2 | Complete   | 2026-06-22 |
 
 ---
 *Roadmap created: 2026-05-18*
