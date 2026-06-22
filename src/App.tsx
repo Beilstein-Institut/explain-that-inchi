@@ -13,6 +13,7 @@ import { useKetcherHighlights } from './hooks/useKetcherHighlights';
 import { MOLECULES } from './data/molecules';
 import { handleMolSelectLogic } from './lib/handleMolSelectLogic';
 import { FeedbackDialog } from './components/FeedbackDialog';
+import { HelpTour } from './components/HelpTour';
 import { buildFeedbackUrl } from './lib/buildFeedbackUrl';
 import type { FeedbackCategory, FeedbackContext, BuildFeedbackUrlResult } from './lib/buildFeedbackUrl';
 
@@ -24,6 +25,7 @@ export default function App() {
   const [isReady, setIsReady] = useState(false);
   const [selectedMolId, setSelectedMolId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
   // smiles is fetched once per dialog-open (handleFeedbackOpen); undefined until the user
   // opens the dialog or if getSmiles() throws (D-12).
   const [previewSmiles, setPreviewSmiles] = useState<string | undefined>(undefined);
@@ -107,6 +109,17 @@ export default function App() {
     await ketcherRef.current.setMolecule('');
     useInchiStore.getState().resetAll();
     setSelectedMolId(null);
+  };
+
+  // Opens the Help tour. If the canvas is empty, auto-loads Caffeine first so every
+  // step has real content (D-02, spec line 107). The sample STAYS after the tour closes —
+  // onClose only sets tourOpen false, never calls setMolecule('') or resetAll() (spec line 108).
+  const handleHelpClick = async () => {
+    const isEmpty = useInchiStore.getState().layers.length === 0;
+    if (isEmpty && ketcherRef.current) {
+      await handleMolSelect('caffeine');
+    }
+    setTourOpen(true);
   };
 
   // Assembles FeedbackContext at submit time with a live getSmiles() call (D-12 / D-13 / D-14).
@@ -240,6 +253,7 @@ export default function App() {
         onSubmit={handleFeedbackSubmit}
         contextPreview={contextPreview}
       />
+      <HelpTour open={tourOpen} onClose={() => setTourOpen(false)} />
       <KetcherPanel
         isReady={isReady}
         onInit={handleInit}
@@ -249,6 +263,7 @@ export default function App() {
         isLoading={isLoading}
         onFeedbackClick={handleFeedbackOpen}
         onResetClick={handleReset}
+        onHelpClick={handleHelpClick}
       />
       <InchiSection />
       <InchiKeySection />

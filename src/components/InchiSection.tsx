@@ -75,7 +75,7 @@ export function InchiSection() {
   const effectiveIdx = pinned ? pinned.idx : hoverIdx;
 
   return (
-    <section className={styles.inchiSection}>
+    <section className={styles.inchiSection} data-tour-id="inchi-string">
       <div
         className={styles.inchiDisplay}
         data-empty={isEmpty ? 'true' : undefined}

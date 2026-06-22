@@ -1,0 +1,141 @@
+/* HelpTour CSS Module
+   Custom stepped spotlight overlay for the guided Help tour.
+   All classes use var(--token) references from src/styles.css.
+   Scrim uses the same approved raw oklch literal as FeedbackDialog::backdrop.
+*/
+
+/* Full-viewport dimmer — pointer events only on the dimmer itself (children override) */
+.dimmer {
+  position: fixed;
+  inset: 0;
+  z-index: 9997;
+  /* No background here — the spotlight div's box-shadow provides the dimming */
+  overflow: hidden;
+}
+
+/* Callout card surface — mirrors FeedbackDialog surface tokens */
+.callout {
+  background: var(--bg-canvas);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 20px;
+  width: 320px;
+  max-width: calc(100vw - 24px);
+  box-shadow: 0 4px 24px oklch(0.2 0.015 255 / 0.18);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Header row: step counter + close button */
+.calloutHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* "N of 8" counter — mono label style */
+.stepCounter {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* Close (×) button */
+.closeBtn {
+  background: transparent;
+  border: none;
+  color: var(--ink-faint);
+  font-family: var(--font-sans);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  transition: color 120ms;
+}
+.closeBtn:hover {
+  color: var(--ink);
+}
+.closeBtn:focus-visible {
+  outline: 2px solid var(--c-formula);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Step title — serif, mirrors dialog title pattern */
+.stepTitle {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--ink);
+  margin: 0;
+}
+
+/* Step body — sans, readable */
+.stepBody {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+/* Navigation controls row: Back + Next/Finish */
+.controls {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+/* Secondary nav button (Back) */
+.navBtn {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  font-weight: 500;
+  border-radius: 6px;
+  padding: 0 14px;
+  height: 32px;
+  cursor: pointer;
+  transition: background 120ms;
+}
+.navBtn:hover:not(:disabled) {
+  background: var(--line-soft);
+}
+.navBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.navBtn:focus-visible {
+  outline: 2px solid var(--c-formula);
+  outline-offset: 2px;
+}
+
+/* Primary nav button (Next / Finish) — uses formula accent colour */
+.navBtnPrimary {
+  background: var(--c-formula);
+  color: var(--bg-canvas);
+  border: none;
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  font-weight: 500;
+  border-radius: 6px;
+  padding: 0 14px;
+  height: 32px;
+  cursor: pointer;
+  transition: background 120ms;
+}
+.navBtnPrimary:hover {
+  background: oklch(from var(--c-formula) calc(l + 0.05) c h);
+}
+.navBtnPrimary:focus-visible {
+  outline: 2px solid var(--c-formula);
+  outline-offset: 2px;
+}
