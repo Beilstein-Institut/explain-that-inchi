@@ -14,7 +14,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { buildSubHoverSpecs } from '../highlightUtils';
 import type { StructLike } from '../highlightUtils';
 import type { Layer, AuxMap, CLayerToken } from '../parseInchi';
-import { tokenizeCLayerSeg, collectBranchHyphens } from '../parseInchi';
+import { tokenizeCLayerSeg, collectBranchPointBonds } from '../parseInchi';
 
 // Replicates LayerText.tsx ConnectionText open-paren bondPairs derivation (single fragment,
 // offset 0, no canonicalFn). This is the exact code path that decides whether a paren is
@@ -25,7 +25,7 @@ function deriveBranchBondPairs(seg: string, openTokenIdx: number): [number, numb
   if (open.type !== 'open' || open.closeTokenIdx === -1) {
     throw new Error(`token ${openTokenIdx} is not a matched open paren`);
   }
-  const branchHyphens = collectBranchHyphens(tokens, openTokenIdx, open.closeTokenIdx);
+  const branchHyphens = collectBranchPointBonds(tokens, openTokenIdx);
   return branchHyphens.flatMap((h) =>
     h.leftLocal == null || h.rightLocal == null
       ? []
@@ -141,43 +141,54 @@ describe('tokenizeCLayerSeg — alanine "1-2(4)3(5)6" (real InChI, adjacency bra
   });
 });
 
-describe('branch bondPairs derived by adjacency (CLYR-03 regression)', () => {
-  it('alanine "1-2(4)...": branch (4) → bondPairs {2-4} (RED: collectBranchHyphens gives [])', () => {
+// CLYR-03 (user-confirmed): a parenthesis highlights the bonds INCIDENT TO the
+// branch-point atom (the atom the branch hangs off) — chain-in + branch + chain-out,
+// typically three. NOT the whole substituent.
+describe('branch bondPairs = branch-point atom incident bonds (CLYR-03)', () => {
+  it('alanine "1-2(4)...": branch (4) hangs off atom 2 → incident bonds {1-2, 2-4, 2-3}', () => {
     const tokens = tokenizeCLayerSeg('1-2(4)3(5)6');
     const oi = openTokenIndex(tokens, 0);
     const pairs = deriveBranchBondPairs('1-2(4)3(5)6', oi);
-    expect(pairKeys(pairs)).toEqual(new Set(['2-4']));
+    expect(pairKeys(pairs)).toEqual(new Set(['1-2', '2-4', '2-3']));
   });
 
-  it('alanine "...3(5)6": branch (5) → bondPairs {3-5}', () => {
+  it('alanine "...3(5)6": branch (5) hangs off atom 3 → incident bonds {2-3, 3-5, 3-6}', () => {
     const tokens = tokenizeCLayerSeg('1-2(4)3(5)6');
     const oi = openTokenIndex(tokens, 1);
     const pairs = deriveBranchBondPairs('1-2(4)3(5)6', oi);
-    expect(pairKeys(pairs)).toEqual(new Set(['3-5']));
+    expect(pairKeys(pairs)).toEqual(new Set(['2-3', '3-5', '3-6']));
   });
 
-  it('nested "9(11(3)13)10(2)12": outer branch → bondPairs {9-11, 11-3, 11-13}', () => {
+  it('nested "9(11(3)13)10(2)12": outer branch hangs off atom 9 → incident bonds {9-11, 9-10}', () => {
     const seg = '9(11(3)13)10(2)12';
     const tokens = tokenizeCLayerSeg(seg);
     const oi = openTokenIndex(tokens, 0);
+    const pairs = deriveBranchBondPairs(seg, oi);
+    expect(pairKeys(pairs)).toEqual(new Set(['9-11', '9-10']));
+  });
+
+  it('nested "9(11(3)13)...": inner branch (3) hangs off atom 11 → incident bonds {9-11, 11-3, 11-13}', () => {
+    const seg = '9(11(3)13)10(2)12';
+    const tokens = tokenizeCLayerSeg(seg);
+    const oi = openTokenIndex(tokens, 1);
     const pairs = deriveBranchBondPairs(seg, oi);
     expect(pairKeys(pairs)).toEqual(new Set(['9-11', '11-3', '11-13']));
   });
 
-  it('nested "9(11(3)13)...": inner branch (3) → bondPairs {11-3}', () => {
-    const seg = '9(11(3)13)10(2)12';
-    const tokens = tokenizeCLayerSeg(seg);
-    const oi = openTokenIndex(tokens, 1);
-    const pairs = deriveBranchBondPairs(seg, oi);
-    expect(pairKeys(pairs)).toEqual(new Set(['11-3']));
-  });
-
-  it('nested "...10(2)12": trailing branch (2) → bondPairs {10-2}', () => {
+  it('nested "...10(2)12": trailing branch (2) hangs off atom 10 → incident bonds {9-10, 10-2, 10-12}', () => {
     const seg = '9(11(3)13)10(2)12';
     const tokens = tokenizeCLayerSeg(seg);
     const oi = openTokenIndex(tokens, 2);
     const pairs = deriveBranchBondPairs(seg, oi);
-    expect(pairKeys(pairs)).toEqual(new Set(['10-2']));
+    expect(pairKeys(pairs)).toEqual(new Set(['9-10', '10-2', '10-12']));
+  });
+
+  it('ciprofloxacin first branch hangs off atom 14 → exactly 3 incident bonds {11-14, 14-8, 14-21}', () => {
+    const seg = '18-13-7-11-14(8-15(13)20-5-3-19-4-6-20)21(10-1-2-10)9-12(16(11)22)17(23)24';
+    const tokens = tokenizeCLayerSeg(seg);
+    const oi = openTokenIndex(tokens, 0);
+    const pairs = deriveBranchBondPairs(seg, oi);
+    expect(pairKeys(pairs)).toEqual(new Set(['11-14', '14-8', '14-21']));
   });
 });
 

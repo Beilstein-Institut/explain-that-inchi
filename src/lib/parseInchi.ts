@@ -175,54 +175,67 @@ export function tokenizeCLayerSeg(seg: string): CLayerToken[] {
 }
 
 /**
- * Derives every bond inside a branch — by atom ADJACENCY, not by hyphen characters.
- *
- * Real InChI encodes branch bonds by adjacency: the stem bond (attach atom → first
- * branch atom) and every subsequent consecutive-atom bond are implicit. A single-atom
- * branch like "(4)" off atom 2 carries no internal hyphen token at all, yet still
- * represents the bond 2-4. The previous hyphen-only collector returned [] for such
- * branches, leaving the parentheses non-interactive on real molecules (clyr-03-paren-bonds).
- *
- * This walks the token slice [oi, ci] using the same adjacency semantics as
- * parseConnectionBonds, seeded with the open token's attachLocal (the parent atom the
- * branch hangs off). Nested sub-branches are handled by the open/close stack exactly
- * as in parseConnectionBonds, so their bonds are included automatically.
- *
- * Returns pseudo-hyphen tokens ({ type:'hyphen', leftLocal, rightLocal }) so existing
- * callers can read the bond endpoints uniformly. All values are LOCAL (pre-offset).
- *
- * Used by ConnectionText (LayerText.tsx) to build bondPairs for branch hovers.
+ * Walks an entire c-layer segment by atom ADJACENCY (the same semantics as
+ * parseConnectionBonds) and returns every bond as a pseudo-hyphen token, preserving
+ * the parent→child direction in which each bond is emitted. All values are LOCAL
+ * (pre-offset). Hyphen characters carry no adjacency information — adjacency covers them.
  */
-export function collectBranchHyphens(
-  tokens: CLayerToken[],
-  oi: number,
-  ci: number,
-): Extract<CLayerToken, { type: 'hyphen' }>[] {
-  const open = tokens[oi];
-  if (open?.type !== 'open') return [];
-
+function segmentBonds(tokens: CLayerToken[]): Extract<CLayerToken, { type: 'hyphen' }>[] {
   const bonds: Extract<CLayerToken, { type: 'hyphen' }>[] = [];
   const stack: (number | null)[] = [];
-  let last: number | null = open.attachLocal;
-
-  for (let i = oi + 1; i < ci; i++) {
-    const t = tokens[i];
+  let last: number | null = null;
+  for (const t of tokens) {
     if (t.type === 'atom') {
-      if (last != null) {
-        bonds.push({ type: 'hyphen', pos: -1, leftLocal: last, rightLocal: t.localN });
-      }
+      if (last != null) bonds.push({ type: 'hyphen', pos: -1, leftLocal: last, rightLocal: t.localN });
       last = t.localN;
     } else if (t.type === 'open') {
       stack.push(last);
     } else if (t.type === 'close') {
       last = stack.pop() ?? null;
     } else if (t.type === 'other' && t.slice === ',') {
-      // Comma inside a branch: next atom bonds to the enclosing branch root.
       if (stack.length) last = stack[stack.length - 1] as number | null;
     }
-    // 'hyphen' tokens carry no adjacency information here — adjacency already covers them.
   }
   return bonds;
+}
+
+/**
+ * Derives the bonds a parenthesis hover should highlight (CLYR-03).
+ *
+ * A parenthesis in the c-layer marks a BRANCH POINT: the atom the branch hangs off
+ * (the open token's attachLocal). Hovering either '(' or ')' highlights every bond
+ * INCIDENT TO that branch-point atom — the chain bond coming in, the bond into the
+ * branch, and the chain bond continuing after the ')'. For a typical branch atom that
+ * is exactly three bonds (e.g. ciprofloxacin "...11-14(8-...)21..." → 11-14, 14-8,
+ * 14-21). This is the user-confirmed semantics; an earlier version highlighted the
+ * whole substituent (clyr-03-paren-bonds), which lit up most of the molecule.
+ *
+ * Bonds are computed from the FULL segment by adjacency, then filtered to those
+ * touching the branch-point atom, deduplicated by unordered endpoint pair (first-seen
+ * direction kept). Returns pseudo-hyphen tokens so callers read endpoints uniformly.
+ * All values are LOCAL (pre-offset).
+ *
+ * Used by ConnectionText (LayerText.tsx) to build bondPairs for branch hovers.
+ */
+export function collectBranchPointBonds(
+  tokens: CLayerToken[],
+  oi: number,
+): Extract<CLayerToken, { type: 'hyphen' }>[] {
+  const open = tokens[oi];
+  if (open?.type !== 'open') return [];
+  const p = open.attachLocal;
+  if (p == null) return [];
+
+  const seen = new Set<string>();
+  const out: Extract<CLayerToken, { type: 'hyphen' }>[] = [];
+  for (const b of segmentBonds(tokens)) {
+    if (b.leftLocal !== p && b.rightLocal !== p) continue;
+    const key = b.leftLocal! < b.rightLocal! ? `${b.leftLocal}-${b.rightLocal}` : `${b.rightLocal}-${b.leftLocal}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(b);
+  }
+  return out;
 }
 
 /**

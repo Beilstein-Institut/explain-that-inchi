@@ -70,7 +70,7 @@ describe('LayerText ConnectionText — REAL InChI c-layer hover spans (CLYR-03 r
     expect(pairKeys(hit!.endpointPairs)).toEqual(new Set(['1-2']));
   });
 
-  it('alanine "1-2(4)3(5)6": open-paren of single-atom branch (4) is INTERACTIVE and emits 2->4 bond', () => {
+  it('alanine "1-2(4)3(5)6": open-paren of branch (4) is INTERACTIVE and emits atom-2 incident bonds {1-2,2-4,2-3}', () => {
     const { container } = render(
       <LayerText layer={cLayer} rawText="1-2(4)3(5)6" fragCounts={[6]} />
     );
@@ -87,8 +87,8 @@ describe('LayerText ConnectionText — REAL InChI c-layer hover spans (CLYR-03 r
     expect(hit).toBeDefined();
     expect(hit!.kind).toBe('branch');
     expect(hit!.bondPairs).toBeDefined();
-    // Branch (4) hangs off atom 2 → stem bond 2-4 (derived by adjacency, NOT by a hyphen).
-    expect(pairKeys(hit!.bondPairs)).toEqual(new Set(['2-4']));
+    // Branch (4) hangs off atom 2 → highlight ALL bonds incident to atom 2 (chain-in, branch, chain-out).
+    expect(pairKeys(hit!.bondPairs)).toEqual(new Set(['1-2', '2-4', '2-3']));
   });
 
   it('alanine "1-2(4)3(5)6": close-paren emits identical bondPairs as its open-paren', () => {
@@ -114,10 +114,10 @@ describe('LayerText ConnectionText — REAL InChI c-layer hover spans (CLYR-03 r
     expect(closeHit).toBeDefined();
     expect(closeHit!.kind).toBe('branch');
     expect(pairKeys(closeHit!.bondPairs)).toEqual(pairKeys(openHit!.bondPairs));
-    expect(pairKeys(closeHit!.bondPairs)).toEqual(new Set(['2-4']));
+    expect(pairKeys(closeHit!.bondPairs)).toEqual(new Set(['1-2', '2-4', '2-3']));
   });
 
-  it('alanine "1-2(4)3(5)6": second branch (5) hangs off atom 3 → emits 3->5 bond', () => {
+  it('alanine "1-2(4)3(5)6": second branch (5) hangs off atom 3 → incident bonds {2-3,3-5,3-6}', () => {
     const { container } = render(
       <LayerText layer={cLayer} rawText="1-2(4)3(5)6" fragCounts={[6]} />
     );
@@ -129,13 +129,13 @@ describe('LayerText ConnectionText — REAL InChI c-layer hover spans (CLYR-03 r
     const hit = lastHit();
     expect(hit).toBeDefined();
     expect(hit!.kind).toBe('branch');
-    expect(pairKeys(hit!.bondPairs)).toEqual(new Set(['3-5']));
+    expect(pairKeys(hit!.bondPairs)).toEqual(new Set(['2-3', '3-5', '3-6']));
   });
 
-  // Nested branch: "9(11(3)13)10(2)12"
-  // Outer branch on atom 9: (11(3)13) → bonds 9-11, 11-3, 11-13.
-  // Inner branch on atom 11: (3) → bond 11-3.
-  it('nested "9(11(3)13)10(2)12": outer open-paren emits adjacency bonds 9-11, 11-3, 11-13', () => {
+  // Nested branch: "9(11(3)13)10(2)12" — paren highlights the branch-POINT atom's incident bonds.
+  // Outer branch hangs off atom 9 (only 9-11, 9-10 in this segment).
+  // Inner branch hangs off atom 11 (9-11, 11-3, 11-13). Trailing off atom 10 (9-10, 10-2, 10-12).
+  it('nested "9(11(3)13)10(2)12": outer open-paren hangs off atom 9 → incident bonds {9-11,9-10}', () => {
     const { container } = render(
       <LayerText layer={cLayer} rawText="9(11(3)13)10(2)12" fragCounts={[13]} />
     );
@@ -150,10 +150,10 @@ describe('LayerText ConnectionText — REAL InChI c-layer hover spans (CLYR-03 r
     const hit = lastHit();
     expect(hit).toBeDefined();
     expect(hit!.kind).toBe('branch');
-    expect(pairKeys(hit!.bondPairs)).toEqual(new Set(['9-11', '11-3', '11-13']));
+    expect(pairKeys(hit!.bondPairs)).toEqual(new Set(['9-11', '9-10']));
   });
 
-  it('nested "9(11(3)13)10(2)12": inner open-paren (3) on atom 11 emits 11-3 bond', () => {
+  it('nested "9(11(3)13)10(2)12": inner open-paren (3) on atom 11 → incident bonds {9-11,11-3,11-13}', () => {
     const { container } = render(
       <LayerText layer={cLayer} rawText="9(11(3)13)10(2)12" fragCounts={[13]} />
     );
@@ -166,10 +166,10 @@ describe('LayerText ConnectionText — REAL InChI c-layer hover spans (CLYR-03 r
     const hit = lastHit();
     expect(hit).toBeDefined();
     expect(hit!.kind).toBe('branch');
-    expect(pairKeys(hit!.bondPairs)).toEqual(new Set(['11-3']));
+    expect(pairKeys(hit!.bondPairs)).toEqual(new Set(['9-11', '11-3', '11-13']));
   });
 
-  it('nested "9(11(3)13)10(2)12": trailing branch (2) on atom 10 emits 10-2 bond', () => {
+  it('nested "9(11(3)13)10(2)12": trailing branch (2) on atom 10 → incident bonds {9-10,10-2,10-12}', () => {
     const { container } = render(
       <LayerText layer={cLayer} rawText="9(11(3)13)10(2)12" fragCounts={[13]} />
     );
@@ -182,7 +182,7 @@ describe('LayerText ConnectionText — REAL InChI c-layer hover spans (CLYR-03 r
     const hit = lastHit();
     expect(hit).toBeDefined();
     expect(hit!.kind).toBe('branch');
-    expect(pairKeys(hit!.bondPairs)).toEqual(new Set(['10-2']));
+    expect(pairKeys(hit!.bondPairs)).toEqual(new Set(['9-10', '10-2', '10-12']));
   });
 
   it('multi-fragment "1-2(4)3;1-2-3" frag2 branch offset-applied (canonical >= 7)', () => {
@@ -199,13 +199,13 @@ describe('LayerText ConnectionText — REAL InChI c-layer hover spans (CLYR-03 r
     const hit = lastHit();
     expect(hit).toBeDefined();
     expect(hit!.kind).toBe('branch');
-    // fragment-1 branch (4) off atom 2 → 2-4
-    expect(pairKeys(hit!.bondPairs)).toEqual(new Set(['2-4']));
+    // fragment-1 branch (4) off atom 2 → incident bonds {1-2,2-4,2-3}
+    expect(pairKeys(hit!.bondPairs)).toEqual(new Set(['1-2', '2-4', '2-3']));
   });
 
-  it('N* "2*1-2(3)4": branch bondPairs cover both fragment instances', () => {
+  it('N* "2*1-2(3)4": branch-point incident bonds cover both fragment instances', () => {
     // "1-2(3)4" with 2 identical fragments, 4 atoms each.
-    // Branch (3) off atom 2 → instance 1: 2-3, instance 2: 6-7.
+    // Branch (3) off atom 2 → incident bonds {1-2,2-3,2-4}; per instance: {1-2,2-3,2-4} and {5-6,6-7,6-8}.
     const { container } = render(
       <LayerText layer={cLayer} rawText="2*1-2(3)4" fragCounts={[4, 4]} />
     );
@@ -218,6 +218,6 @@ describe('LayerText ConnectionText — REAL InChI c-layer hover spans (CLYR-03 r
     expect(hit).toBeDefined();
     expect(hit!.kind).toBe('branch');
     expect(hit!.bondPairs).toBeDefined();
-    expect(pairKeys(hit!.bondPairs)).toEqual(new Set(['2-3', '6-7']));
+    expect(pairKeys(hit!.bondPairs)).toEqual(new Set(['1-2', '2-3', '2-4', '5-6', '6-7', '6-8']));
   });
 });

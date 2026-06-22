@@ -6,7 +6,7 @@
 import React from 'react';
 import { useInchiStore } from '../store';
 import type { Layer, SubHover, CLayerToken } from '../lib/parseInchi';
-import { formulaFragmentCounts, tokenizeCLayerSeg, collectBranchHyphens } from '../lib/parseInchi';
+import { formulaFragmentCounts, tokenizeCLayerSeg, collectBranchPointBonds } from '../lib/parseInchi';
 import styles from './InchiSection.module.css';
 
 // Static lookup — avoids dynamic class name construction which breaks CSS Modules.
@@ -167,10 +167,10 @@ function ConnectionText({ text, fragCounts }: { text: string; fragCounts: number
           // Malformed — unmatched open paren
           parts.push(<span key={key++}>{'('}</span>);
         } else {
-          // Branch bonds are derived by ATOM ADJACENCY (stem + nested), not hyphen chars.
-          // collectBranchHyphens now returns adjacency-derived pseudo-hyphen bonds, so a
-          // single-atom branch like "(4)" off atom 2 yields the stem bond 2-4 (clyr-03).
-          const branchHyphens = collectBranchHyphens(tokens, tokenIdx, token.closeTokenIdx);
+          // CLYR-03: a parenthesis highlights the bonds INCIDENT TO the branch-point atom
+          // (the atom the branch hangs off) — the chain-in, branch, and chain-out bonds
+          // (typically 3). Not the whole substituent (clyr-03-paren-bonds, user-confirmed).
+          const branchHyphens = collectBranchPointBonds(tokens, tokenIdx);
           const bondPairs: [number, number][] = branchHyphens.flatMap(h => {
             if (h.leftLocal == null || h.rightLocal == null) return [];
             if (canonicalFn) {
