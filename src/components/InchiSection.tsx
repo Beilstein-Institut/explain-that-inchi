@@ -4,6 +4,7 @@
 // D-06: inline style for accent colors (CSS var token per layer type).
 // D-07: setSubHover wired on all sub-token spans (via LayerText).
 // D-08: hint text from formula layer.
+// Phase 16: click-to-pin — onClick on layers/sub-tokens pins/releases highlight.
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useInchiStore } from '../store';
@@ -16,6 +17,7 @@ export function InchiSection() {
   const inchi = useInchiStore(state => state.inchi);
   const layers = useInchiStore(state => state.layers);
   const hoverIdx = useInchiStore(state => state.hoverIdx);
+  const pinned = useInchiStore(state => state.pinned);
 
   const formulaLayer = layers.find(l => l.type === 'formula');
   const fragCounts = formulaLayer ? formulaFragmentCounts(formulaLayer.text) : [];
@@ -31,6 +33,32 @@ export function InchiSection() {
     return () => { mountedRef.current = false; };
   }, []);
 
+  // Phase 16: add click-anywhere and Esc listeners to release pin.
+  // Listeners are added only while pinned and removed on unpin (T-16-01 mitigation).
+  useEffect(() => {
+    if (!pinned) return;
+
+    const handleClickAnywhere = () => {
+      useInchiStore.getState().clearPinned();
+    };
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        useInchiStore.getState().clearPinned();
+      }
+    };
+
+    // Use capture phase so the listener fires before any element's onClick.
+    // The layer span's onClick checks getState().pinned — which is already cleared by
+    // the time the bubble-phase handler runs — so no re-pin happens on the same gesture.
+    document.addEventListener('click', handleClickAnywhere, { capture: true });
+    window.addEventListener('keydown', handleEsc);
+
+    return () => {
+      document.removeEventListener('click', handleClickAnywhere, { capture: true });
+      window.removeEventListener('keydown', handleEsc);
+    };
+  }, [pinned]);
+
   const isEmpty = layers.length === 0;
 
   async function handleCopy() {
@@ -42,6 +70,9 @@ export function InchiSection() {
       // Silent failure — clipboard API may be unavailable in some contexts
     }
   }
+
+  // Phase 16: derive effective index from pinned or live hover for active/dim computation.
+  const effectiveIdx = pinned ? pinned.idx : hoverIdx;
 
   return (
     <section className={styles.inchiSection}>
@@ -59,10 +90,12 @@ export function InchiSection() {
           <>
             <span className={styles.inchiPrefix}>InChI=</span>
             {layers.map((l, i) => {
-              const isActive = hoverIdx === i;
-              const isDim = hoverIdx !== null && hoverIdx !== i;
+              const isActive = effectiveIdx === i;
+              const isDim = effectiveIdx !== null && effectiveIdx !== i;
               const tokenColor = `var(--c-${swatchVar(l.type)})`;
               const bgColor = `var(--c-${swatchVar(l.type)}-bg)`;
+              // Phase 16: layer is pinned at layer level (no sub-token selected)
+              const isLayerPinned = pinned !== null && pinned.idx === i && pinned.sub === null;
               return (
                 <React.Fragment key={i}>
                   {i > 0 && <span className={styles.inchiSlash}>/</span>}
@@ -71,12 +104,15 @@ export function InchiSection() {
                       styles.inchiLayer,
                       isActive ? styles.active : '',
                       isDim ? styles.dim : '',
+                      isLayerPinned ? styles.pinned : '',
                     ].filter(Boolean).join(' ')}
                     data-layer={l.type}
                     style={{
                       color: tokenColor,
                       ...(isActive ? { background: bgColor } : {}),
-                    }}
+                      // Pass layer accent var for the pinned ring color (D-03)
+                      '--layer-accent': tokenColor,
+                    } as React.CSSProperties}
                     onMouseEnter={() => {
                       useInchiStore.getState().setHover(i);
                       useInchiStore.getState().setSubHover(null);
@@ -85,9 +121,24 @@ export function InchiSection() {
                       // in Explanation cannot show a stale key card over a layer hover.
                       useInchiStore.getState().setKeyHoverKind(null);
                     }}
+                    onClick={() => {
+                      // Any click while pinned only releases — the document capture
+                      // listener (added in the useEffect above) already called clearPinned()
+                      // before this bubble-phase handler fires, so getState().pinned is null.
+                      // This guard is belt-and-suspenders for any edge case.
+                      if (useInchiStore.getState().pinned) { return; }
+                      useInchiStore.getState().setPinned({ idx: i, sub: null });
+                    }}
                   >
                     {l.prefix && <span className={styles.prefix}>{l.prefix}</span>}
-                    <LayerText layer={l} rawText={l.text} fragCounts={fragCounts} />
+                    {/* rawText={l.text} kept verbatim — passthrough invariant (spec line 148, CONTEXT D) */}
+                    <LayerText
+                      layer={l}
+                      rawText={l.text}
+                      fragCounts={fragCounts}
+                      layerIdx={i}
+                      pinnedSub={pinned && pinned.idx === i ? pinned.sub : null}
+                    />
                   </span>
                 </React.Fragment>
               );
@@ -103,6 +154,9 @@ export function InchiSection() {
               </svg>
             </button>
             {copied && <span className={styles.copiedFeedback}>Copied!</span>}
+            {pinned && (
+              <span className={styles.pinnedHint}>Pinned — click anywhere or press Esc to release.</span>
+            )}
           </>
         )}
       </div>
