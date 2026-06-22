@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Reset control & c-layer hover precision
 status: completed
-stopped_at: Phase 15 context gathered
-last_updated: "2026-06-22T07:19:36.692Z"
-last_activity: 2026-06-22 — Milestone v1.4 completed and archived
+stopped_at: Phase 16 context gathered
+last_updated: "2026-06-22T12:52:25.529Z"
+last_activity: 2026-06-22 — Phase 16 added to roadmap from design spec
 progress:
-  total_phases: 2
+  total_phases: 3
   completed_phases: 2
   total_plans: 3
   completed_plans: 3
-  percent: 100
+  percent: 67
 ---
 
 # Project State
@@ -84,6 +84,6 @@ Last activity: 2026-06-22 — Phase 16 added to roadmap from design spec
 
 ## Session Continuity
 
-Last session: 2026-06-19T12:58:59.931Z
-Stopped at: Phase 15 context gathered
-Resume file: None
+Last session: 2026-06-22T12:52:25.516Z
+Stopped at: Phase 16 context gathered
+Resume file: .planning/phases/16-pin-to-freeze-highlights-and-guided-help-tour/16-CONTEXT.md
