@@ -124,3 +124,19 @@ files_changed:
 
 - hypothesis: store/hook dispatch drops branch subHover — ELIMINATED. `buildHighlightSpecs` delegates to `buildSubHoverSpecs` for any non-null subHover (highlightUtils.ts:75-77); `branch` case present (line 460). Dispatch is intact.
 - hypothesis: findBondId fails on real struct for branches — ELIMINATED. Bond case (hyphens) uses identical findBondId and works; difference is purely the bondPairs data.
+
+## Follow-up correction (2026-06-22) — paren scope semantics
+
+After the adjacency fix (22b8227) made parens interactive, live review on ciprofloxacin
+showed hovering the first `(` highlighted 10 bonds (the whole piperazinyl substituent) —
+the D-03 "whole branch" spec, but visually it lit up most of the molecule and was rejected.
+
+User-confirmed corrected semantics: a parenthesis highlights the bonds INCIDENT TO the
+branch-point atom (chain-in + branch + chain-out, typically 3), not the whole branch.
+
+Fix (commit 1d5afdf): replaced `collectBranchHyphens` with `collectBranchPointBonds`
+(src/lib/parseInchi.ts) — computes full-segment adjacency bonds, filters to those touching
+the open token's `attachLocal`, dedupes. LayerText.tsx calls it; open/close stay symmetric.
+
+Live-verified: every paren in ciprofloxacin now highlights exactly 3 bonds; first paren
+= {11-14, 14-8, 14-21}. Full suite 343/343, tsc clean. Spec updated: 15-CONTEXT.md D-03b.

@@ -41,9 +41,15 @@ hover behavior.
   their own number tokens.
 
 ### Parenthesis / branch hover (CLYR-03)
-- **D-03:** Hovering a parenthesis highlights the **whole branch's bonds, including
-  nested sub-branches, plus the "stem" bond** that links the branch to its attachment
-  point on the parent chain. (Mental model: "this entire substituent.")
+- **D-03 (SUPERSEDED 2026-06-22):** ~~Hovering a parenthesis highlights the whole branch's
+  bonds, including nested sub-branches, plus the "stem" bond ("this entire substituent").~~
+  This was implemented (commit 22b8227) but rejected on live review: for real molecules
+  (e.g. ciprofloxacin's piperazinyl branch) it lit up most of the molecule (10 bonds).
+- **D-03b (current, user-confirmed 2026-06-22):** Hovering a parenthesis highlights the
+  bonds **incident to the branch-point atom** (the atom the branch hangs off) — the
+  chain-in bond, the bond into the branch, and the chain-out bond after the `)`. Typically
+  exactly 3. (Mental model: "this is where the chain branches.") Implemented in commit 1d5afdf
+  via `collectBranchPointBonds`.
 - **D-04:** A matching `(` / `)` pair is **symmetric** — hovering either the opening or
   the closing parenthesis highlights the identical bond set for that branch. Both
   parentheses are interactive hover targets.

@@ -10,6 +10,11 @@ human_verification_completed:
   - test: "Duplicated/repeated N* fragment live hover (CLYR-05)"
     result: "PASS — two benzenes via setMolecule('c1ccccc1.c1ccccc1'), c-layer '2*1-2-4-6-5-3-1'. Hovering a single hyphen highlights the SAME bond in BOTH ring instances simultaneously (2 green bonds at (317,150) and (477,150))."
   - note: "CLYR-01/02/03 previously confirmed live on L-Alanine (c1-2(4)3(5)6). All 6 steps of the 15-02 Task 2 blocking checkpoint now satisfied with captured evidence; gate no longer bypassed."
+clyr_03_semantics_correction:
+  date: "2026-06-22"
+  issue: "First implementation (commit 22b8227) highlighted the WHOLE substituent branch. On live review of ciprofloxacin the first paren lit 10 bonds (most of the molecule) — rejected."
+  resolution: "commit 1d5afdf — paren now highlights bonds INCIDENT TO the branch-point atom (chain-in + branch + chain-out, typically 3). See D-03b in 15-CONTEXT.md."
+  live_evidence: "Playwright/Chromium on Ciprofloxacin preset (c18-13-7-11-14(8-15(13)20-5-3-19-4-6-20)21(10-1-2-10)9-12(16(11)22)17(23)24): ALL 12 paren spans highlight exactly 3 bonds; first paren = {11-14,14-8,14-21}. Full suite 343/343, tsc clean."
 ---
 
 # Phase 15: C-layer hover precision Verification Report
