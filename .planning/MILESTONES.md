@@ -1,5 +1,24 @@
 # Milestones: Explain that InChI
 
+## v1.4 Reset control & c-layer hover precision (Shipped: 2026-06-22)
+
+**Phases completed:** 2 phases, 3 plans, 7 tasks
+
+**Delivered:** A one-click Reset control and pinpoint connectivity-layer hovering — every c-layer atom number, hyphen, and parenthesis maps to a precise, minimal canvas highlight.
+
+**Key accomplishments:**
+
+- **Reset control (RESET-01..05):** "Reset" pill left of "Send feedback" clears the Ketcher canvas and returns all app state (InChI, InChIKey, explanation, mapping, highlights, active preset) to idle — without remounting the canvas or re-initializing WASM (leaf-sibling, no-remount invariant). Safe no-op on an already-empty canvas. Live-verified.
+- **C-layer atom hover (CLYR-01):** highlights only that single canonical atom — incident bonds removed.
+- **C-layer hyphen hover (CLYR-02):** highlights only the single bond joining the two flanking atoms.
+- **C-layer parenthesis hover (CLYR-03):** highlights the bonds incident to the branch-point atom (chain-in + branch + chain-out, typically 3); open/close symmetric. Corrected after live review from an initial whole-substituent reading.
+- **Multi-fragment & N* (CLYR-04/05):** highlights stay within the correct `;`-fragment; a single token in `N*` notation lights up every duplicate instance simultaneously.
+- **Domain-correct foundation:** c-layer bonds derived by atom adjacency (the real InChI encoding), reusing the proven `parseConnectionBonds`; tests rebuilt on real InChI fixtures (alanine, ciprofloxacin) after fabricated fixtures masked a shipped bug.
+
+**Known deferred items at close:** 8 v1.0-era quick-task registry stubs (functionally completed in v1.0/v1.1; see STATE.md Deferred Items).
+
+---
+
 ## v1.3 InChIKey display & explanation (Shipped: 2026-06-19)
 
 **Phases completed:** 3 phases (11–13), 6 plans

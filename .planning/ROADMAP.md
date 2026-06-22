@@ -6,7 +6,7 @@
 - ✅ **v1.1 Post-ship correctness & polish** — patch, no roadmap phases (shipped 2026-06-17)
 - ✅ **v1.2 In-app feedback via prefilled GitHub issues** — Phases 9–10 (shipped 2026-06-18)
 - ✅ **v1.3 InChIKey display & explanation** — Phases 11–13 (shipped 2026-06-19)
-- 🚧 **v1.4 Reset control & c-layer hover precision** — Phases 14–15 (planning)
+- ✅ **v1.4 Reset control & c-layer hover precision** — Phases 14–15 (shipped 2026-06-22)
 
 ## Phases
 
@@ -47,58 +47,15 @@ Full phase details: `.planning/milestones/v1.3-ROADMAP.md`
 
 </details>
 
-### 🚧 v1.4 Reset control & c-layer hover precision (Phases 14–15)
+<details>
+<summary>✅ v1.4 Reset control & c-layer hover precision (Phases 14–15) — SHIPPED 2026-06-22</summary>
 
-- [x] **Phase 14: Reset control** — A Reset control clears the canvas and returns all app state to its empty/idle placeholder, without remounting the canvas/WASM. (completed 2026-06-19)
-- [x] **Phase 15: C-layer hover precision** — C-layer atom numbers, hyphens, and parentheses each highlight the exact atom/bond(s) they denote, correct across multi-fragment and duplicated-fragment molecules. (completed 2026-06-19)
+- [x] Phase 14: Reset control (1/1 plan) — completed 2026-06-19; RESET-01..05
+- [x] Phase 15: C-layer hover precision (2/2 plans) — completed 2026-06-22; CLYR-01..05
 
-## Phase Details
+Full phase details: `.planning/milestones/v1.4-ROADMAP.md`
 
-### Phase 14: Reset control
-
-**Goal**: A user can clear their current exploration and return the entire tool to its fresh, empty starting state in one click.
-**Depends on**: Nothing within v1.4 (builds on the existing v1.3 app shell)
-**Requirements**: RESET-01, RESET-02, RESET-03, RESET-04, RESET-05
-**Success Criteria** (what must be TRUE):
-
-  1. A "Reset" control is visible immediately to the left of the "Send feedback" control.
-  2. Clicking Reset clears the molecule from the Ketcher canvas (equivalent to Ketcher's own clear action).
-  3. After Reset, the InChI strip, InChIKey, explanation card, legend, mapping, and any active hover/highlight all return to the placeholder/idle state shown before any molecule is drawn.
-  4. The Ketcher canvas and WASM are not remounted or re-initialized by Reset (canvas stays alive, no loading flash).
-  5. Clicking Reset on an already-empty canvas is a safe no-op — no error, idle state preserved.
-
-**Plans**: 1 plan
-Plans:
-
-- [x] 14-01-PLAN.md — Store resetAll action + Reset button UI + App.tsx wiring
-
-**Notes**: Reset is a clear-to-empty action only (no undo/redo history, no confirmation dialog, no preset reload — see Out of Scope). Honor the leaf-sibling, no-remount invariant: trigger Ketcher's built-in clear and reset Zustand store fields; never conditionally render `<Editor>` or recreate the StructServiceProvider.
-**UI hint**: yes
-
-### Phase 15: C-layer hover precision
-
-**Goal**: When a user hovers any token of the connectivity (c) layer, the canvas highlights exactly the atom or bond(s) that token denotes — never more — and stays correct for multi-fragment and duplicated-fragment molecules.
-**Depends on**: Nothing within v1.4 (independent of Phase 14; both build on the existing highlight pipeline)
-**Requirements**: CLYR-01, CLYR-02, CLYR-03, CLYR-04, CLYR-05
-**Success Criteria** (what must be TRUE):
-
-  1. Hovering a canonical atom number in the c-layer highlights only that single atom (no bonds).
-  2. Hovering a hyphen (`-`) highlights the single bond connecting the two atoms it joins.
-  3. Hovering an opening or closing parenthesis (`(` / `)`) highlights all bonds involved in that branch.
-  4. For multi-fragment molecules, every c-layer atom/hyphen/parenthesis hover resolves within its own fragment (correct atoms/bonds, no cross-fragment bleed).
-  5. For duplicated/repeated fragments (multiplied component prefixes), c-layer hovers highlight the intended fragment instance(s).
-
-**Plans**: 2 plans
-Plans:
-**Wave 1**
-
-- [x] 15-01-PLAN.md — Wave 0 test scaffolds + SubHover type extension + tokenizeCLayerSeg + buildSubHoverSpecs atom/bond/branch cases
-
-**Wave 2** *(blocked on Wave 1 completion)*
-
-- [x] 15-02-PLAN.md — ConnectionText two-pass refactor (LayerText.tsx) + live canvas human-verify
-
-**Notes**: This is the heavier, riskier area. Changes live in the existing `buildHighlightSpecs` / `buildSubHoverSpecs` → `useKetcherHighlights` pipeline (offset/highlight logic only — never re-render or re-join the verbatim InChI string). Fragment correctness rides on the canonical→Ketcher pool-ID mapping from AuxInfo. Highlight-precision changes only; existing c-layer explanation prose is unchanged unless found inaccurate.
+</details>
 
 ## Progress
 
@@ -125,3 +82,4 @@ Plans:
 *Updated: 2026-06-19 — v1.4 milestone (Reset control & c-layer hover precision) roadmapped; Phases 14–15 added*
 *Updated: 2026-06-19 — Phase 14 planned: 1 plan (14-01)*
 *Updated: 2026-06-19 — Phase 15 planned: 2 plans (15-01, 15-02)*
+*Updated: 2026-06-22 — v1.4 SHIPPED (Phases 14–15); archived to milestones/v1.4-ROADMAP.md*

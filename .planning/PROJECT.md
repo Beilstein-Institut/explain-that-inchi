@@ -12,23 +12,12 @@ Every chunk of an InChI string is hoverable, explained, and linked back to the a
 
 ## Current State
 
-**Version:** v1.3 — SHIPPED 2026-06-19 (live InChIKey display & per-segment explanation), tagged `v1.3`. Next milestone being planned.
+**Version:** v1.4 — SHIPPED 2026-06-22 (Reset control & c-layer hover precision), tagged `v1.4`. Next milestone being planned.
 
-- v1.0: 8 phases, 25 plans; v1.1: 70-commit maintenance/polish patch; v1.2: 2 phases (9–10), 6 plans; v1.3: 3 phases (11–13), 6 plans
+- v1.0: 8 phases, 25 plans; v1.1: 70-commit maintenance/polish patch; v1.2: 2 phases (9–10), 6 plans; v1.3: 3 phases (11–13), 6 plans; v1.4: 2 phases (14–15), 3 plans
 - Tech stack: Vite 8 + React 18 + TypeScript + Ketcher 3.12.0 (WASM) + Zustand 5 + CSS Modules
-- 301 unit/integration tests passing; TypeScript clean; production build clean
+- 343 unit/integration tests passing; TypeScript clean; production build clean
 - Deployed to GitHub Pages via GitHub Actions CD
-
-## Current Milestone: v1.4 Reset control & c-layer hover precision
-
-**Goal:** Add a Reset control and make c-layer (connectivity) hovering pinpoint exactly the right atoms and bonds.
-
-**Target features:**
-- Reset button (left of "Send feedback") that clears Ketcher and resets all app state, without remounting the canvas/WASM
-- C-layer atom-number hover highlights only the single canonical atom
-- C-layer hyphen hover highlights the bond connecting the two flanking atoms
-- C-layer parenthesis hover highlights all bonds involved in that branch
-- All c-layer hover behavior correct for multi-fragment and duplicated-fragment molecules
 
 ## Requirements
 
@@ -75,6 +64,16 @@ Every chunk of an InChI string is hoverable, explained, and linked back to the a
 - ✓ INKEY-10: Explanation includes the collision caveat (improbable but possible; for lookup, not proof of identity) — v1.3
 - ✓ INKEY-11: Skeleton-hash card notes same-connectivity molecules share the first block (basis for lookup) — v1.3
 - ✓ INKEY-12: Flag/version card distinguishes standard (`S`) vs non-standard (`N`) and version char (`A`) — v1.3
+- ✓ RESET-01: "Reset" control immediately left of "Send feedback" — v1.4
+- ✓ RESET-02: Reset clears the molecule from the Ketcher canvas (Ketcher built-in clear) — v1.4
+- ✓ RESET-03: Reset returns all dependent app state (InChI, InChIKey, explanation, legend, mapping, hover/highlight) to idle — v1.4
+- ✓ RESET-04: Reset does not remount the canvas or re-initialize WASM (no-remount invariant) — v1.4 (live-verified: no loading overlay)
+- ✓ RESET-05: Reset on an already-empty canvas is a safe no-op — v1.4
+- ✓ CLYR-01: C-layer atom-number hover highlights only the single canonical atom (no bonds) — v1.4
+- ✓ CLYR-02: C-layer hyphen hover highlights only the bond joining the two flanking atoms — v1.4
+- ✓ CLYR-03: C-layer parenthesis hover highlights the bonds incident to the branch-point atom (chain-in + branch + chain-out, typically 3); open/close symmetric — v1.4
+- ✓ CLYR-04: C-layer hovers resolve within the correct `;`-fragment; no cross-fragment bleed — v1.4
+- ✓ CLYR-05: C-layer hovers in `N*` duplicated-fragment notation highlight every instance — v1.4
 
 ### Active (v2 candidates)
 
@@ -137,6 +136,10 @@ Every chunk of an InChI string is hoverable, explained, and linked back to the a
 | Key hover uses a store field that never reaches useKetcherHighlights | No canvas highlight from key segments — the absence IS the teaching point (INKEY-09) | ✓ Good (v1.3) — verified by grep |
 | InchiKeySection is a leaf sibling after InchiSection | Canvas/WASM must never remount (D-13) | ✓ Good (v1.3) — canvas never remounts |
 | inchiKeyInfo.ts prose module (parallel to layerInfo.ts) | Static copy extracted for testability; SC-1 test pins zone labels + offsets | ✓ Good (v1.3) |
+| Reset = Ketcher built-in clear + Zustand store reset (leaf-sibling control) | Honors no-remount invariant; same pattern as feedback dialog | ✓ Good (v1.4) — live-verified, no WASM remount |
+| C-layer bonds derived by atom ADJACENCY, not hyphen chars (reuse parseConnectionBonds) | Real InChI omits hyphens at branch boundaries (e.g. `(4)`); hyphen-based model left parens dead | ✓ Good (v1.4) — caught only by live canvas, not unit tests |
+| Paren hover = bonds INCIDENT to the branch-point atom (typically 3), not whole substituent | Whole-branch reading lit up most of the molecule on real drugs (ciprofloxacin); user-corrected to the branch junction | ✓ Good (v1.4) — D-03b supersedes D-03 |
+| c-layer test fixtures must be REAL InChI (alanine, ciprofloxacin) | Fabricated `(-2)` fixtures passed 333 tests while the feature was broken; blocking human-verify gate must not be bypassed | ⚠️ Lesson (v1.4) — see RETROSPECTIVE / memory |
 
 ## Constraints
 
@@ -151,4 +154,4 @@ Every chunk of an InChI string is hoverable, explained, and linked back to the a
 This document evolves at phase transitions and milestone boundaries.
 
 ---
-*Last updated: 2026-06-19 — started milestone v1.4 (Reset control & c-layer hover precision)*
+*Last updated: 2026-06-22 — after v1.4 milestone (Reset control & c-layer hover precision) shipped*
