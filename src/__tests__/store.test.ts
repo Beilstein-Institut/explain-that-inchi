@@ -154,5 +154,84 @@ describe('useInchiStore', () => {
 
       expect(useInchiStore.getState().keyHoverKind).toBeNull();
     });
+
+    it('resetAll clears pinned along with other fields', () => {
+      useInchiStore.getState().setPinned({ idx: 1, sub: null });
+      expect(useInchiStore.getState().pinned).not.toBeNull();
+
+      useInchiStore.getState().resetAll();
+
+      expect(useInchiStore.getState().pinned).toBeNull();
+    });
+  });
+
+  describe('pinned state machine', () => {
+    beforeEach(() => {
+      // ensure pinned is null at start of each pin test
+      useInchiStore.setState({ pinned: null, hoverIdx: null, subHover: null });
+    });
+
+    it('setPinned with layer-level payload stores idx and null sub', () => {
+      useInchiStore.getState().setPinned({ idx: 0, sub: null });
+      const state = useInchiStore.getState();
+      expect(state.pinned).not.toBeNull();
+      expect(state.pinned!.idx).toBe(0);
+      expect(state.pinned!.sub).toBeNull();
+    });
+
+    it('setPinned with sub-token payload stores sub verbatim', () => {
+      const hit: SubHover = { kind: 'atom', canonical: 3 };
+      useInchiStore.getState().setPinned({ idx: 2, sub: hit });
+      const state = useInchiStore.getState();
+      expect(state.pinned!.idx).toBe(2);
+      expect(state.pinned!.sub).toEqual(hit);
+    });
+
+    it('while pinned, setHover is a no-op (hoverIdx stays unchanged)', () => {
+      useInchiStore.setState({ hoverIdx: 1 });
+      useInchiStore.getState().setPinned({ idx: 0, sub: null });
+
+      useInchiStore.getState().setHover(2);
+
+      expect(useInchiStore.getState().hoverIdx).toBe(1);
+    });
+
+    it('while pinned, setSubHover is a no-op (subHover stays unchanged)', () => {
+      const originalSub: SubHover = { kind: 'element', el: 'C' };
+      useInchiStore.setState({ subHover: originalSub });
+      useInchiStore.getState().setPinned({ idx: 0, sub: null });
+
+      useInchiStore.getState().setSubHover({ kind: 'atom', canonical: 5 });
+
+      expect(useInchiStore.getState().subHover).toEqual(originalSub);
+    });
+
+    it('clearPinned sets pinned back to null', () => {
+      useInchiStore.getState().setPinned({ idx: 0, sub: null });
+      expect(useInchiStore.getState().pinned).not.toBeNull();
+
+      useInchiStore.getState().clearPinned();
+
+      expect(useInchiStore.getState().pinned).toBeNull();
+    });
+
+    it('after clearPinned, setHover works again', () => {
+      useInchiStore.getState().setPinned({ idx: 0, sub: null });
+      useInchiStore.getState().clearPinned();
+
+      useInchiStore.getState().setHover(3);
+
+      expect(useInchiStore.getState().hoverIdx).toBe(3);
+    });
+
+    it('after clearPinned, setSubHover works again', () => {
+      useInchiStore.getState().setPinned({ idx: 0, sub: null });
+      useInchiStore.getState().clearPinned();
+
+      const hit: SubHover = { kind: 'atom', canonical: 7 };
+      useInchiStore.getState().setSubHover(hit);
+
+      expect(useInchiStore.getState().subHover).toEqual(hit);
+    });
   });
 });

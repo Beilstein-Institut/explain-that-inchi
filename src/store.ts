@@ -7,6 +7,7 @@ import type { Layer, AuxMap, SubHover, LayerType } from './lib/parseInchi';
 // hAtomPoolIds added in Phase 6 (INCHI-05) for explicit H atom highlighting.
 // inchiKey added in Phase 11 (INKEY-01/02, D-03).
 // keyHoverKind added in Phase 12 (INKEY-03/05, D-04) — NOT wired to highlights (Invariant #2).
+// pinned added in Phase 16 (Feature 1, pin-to-freeze) — gating setHover/setSubHover.
 
 /**
  * The 4 hover zones of the InChIKey strip (D-07/D-08).
@@ -36,6 +37,9 @@ interface InchiState {
   inchiKey: string;
   hoverIdx: number | null;
   subHover: SubHover | null;
+  // pinned: frozen highlight target; null = nothing frozen (Phase 16, Feature 1).
+  // While non-null, setHover/setSubHover are no-ops (single enforcement point per spec line 48).
+  pinned: { idx: number; sub: SubHover | null } | null;
   keyHoverKind: KeyHoverZone | null;
   // UAT-13: legend-hover payload. Lets the explanation card show a layer's static
   // info (incl. layers NOT present in the molecule) instead of a floating tooltip.
@@ -45,6 +49,8 @@ interface InchiState {
   setInchiData: (inchi: string, layers: Layer[], auxMap: AuxMap, atomElements: Record<number, string>, hAtomPoolIds?: number[], inchiKey?: string) => void;
   setHover: (idx: number | null) => void;
   setSubHover: (sub: SubHover | null) => void;
+  setPinned: (p: { idx: number; sub: SubHover | null } | null) => void;
+  clearPinned: () => void;
   setKeyHoverKind: (kind: KeyHoverZone | null) => void;
   setLegendHover: (hover: LegendHover | null) => void;
   resetAll: () => void;
@@ -57,7 +63,7 @@ interface InchiState {
 // a dev-only DX issue; no @redux-devtools/extension install is needed.
 export const useInchiStore = create<InchiState>()(
   devtools(
-    (set) => ({
+    (set, get) => ({
       inchi: '',
       layers: [],
       auxMap: {},
@@ -66,14 +72,18 @@ export const useInchiStore = create<InchiState>()(
       inchiKey: '',
       hoverIdx: null,
       subHover: null,
+      pinned: null,
       keyHoverKind: null,
       legendHover: null,
       // CR-01: reset keyHoverKind on every data transition. setInchiData fires only
       // after a debounced structure change; at that point a stale key-hover (from an
       // emptied key or a preset swap) must be dropped so it cannot mask the panel.
       setInchiData: (inchi, layers, auxMap, atomElements, hAtomPoolIds = [], inchiKey = '') => set({ inchi, layers, auxMap, atomElements, hAtomPoolIds, inchiKey, keyHoverKind: null }),
-      setHover: (idx) => set({ hoverIdx: idx }),
-      setSubHover: (sub) => set({ subHover: sub }),
+      // Gate: while pinned is non-null, setHover/setSubHover are no-ops (single enforcement point).
+      setHover: (idx) => { if (get().pinned) return; set({ hoverIdx: idx }); },
+      setSubHover: (sub) => { if (get().pinned) return; set({ subHover: sub }); },
+      setPinned: (p) => set({ pinned: p }),
+      clearPinned: () => set({ pinned: null }),
       setKeyHoverKind: (kind) => set({ keyHoverKind: kind }),
       setLegendHover: (hover) => set({ legendHover: hover }),
       // RESET-02/03: atomically resets ALL fields to idle in a single set() call.
@@ -87,6 +97,7 @@ export const useInchiStore = create<InchiState>()(
         inchiKey: '',
         hoverIdx: null,
         subHover: null,
+        pinned: null,
         keyHoverKind: null,
         legendHover: null,
       }),
