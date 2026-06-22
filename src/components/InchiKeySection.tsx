@@ -60,7 +60,7 @@ export function InchiKeySection() {
   }
 
   return (
-    <section className={styles.inchiKeySection}>
+    <section className={styles.inchiKeySection} data-tour-id="inchikey">
       <div
         className={styles.inchiKeyDisplay}
         data-empty={isEmpty ? 'true' : undefined}

@@ -44,7 +44,7 @@ export function Legend({ activeType }: LegendProps) {
   const layerIndexByType = new Map(layers.map((l, i) => [l.type, i]));
 
   return (
-    <div className={`${expStyles.card} ${expStyles.legendCard}`}>
+    <div className={`${expStyles.card} ${expStyles.legendCard}`} data-tour-id="legend">
       {/* UAT-13: legend header (swatch dot + "Layer legend · hover any row") removed. */}
       {ALL_LAYERS.map(l => {
         const present = presentTypes.has(l.type);
