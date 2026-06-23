@@ -78,7 +78,7 @@ export const useInchiStore = create<InchiState>()(
       // CR-01: reset keyHoverKind on every data transition. setInchiData fires only
       // after a debounced structure change; at that point a stale key-hover (from an
       // emptied key or a preset swap) must be dropped so it cannot mask the panel.
-      setInchiData: (inchi, layers, auxMap, atomElements, hAtomPoolIds = [], inchiKey = '') => set({ inchi, layers, auxMap, atomElements, hAtomPoolIds, inchiKey, keyHoverKind: null }),
+      setInchiData: (inchi, layers, auxMap, atomElements, hAtomPoolIds = [], inchiKey = '') => set({ inchi, layers, auxMap, atomElements, hAtomPoolIds, inchiKey, keyHoverKind: null, pinned: null }),
       // Gate: while pinned is non-null, setHover/setSubHover are no-ops (single enforcement point).
       setHover: (idx) => { if (get().pinned) return; set({ hoverIdx: idx }); },
       setSubHover: (sub) => { if (get().pinned) return; set({ subHover: sub }); },

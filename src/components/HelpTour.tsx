@@ -3,7 +3,7 @@
 // Registers resize/scroll/Esc listeners only while open; removes them on close.
 // Implements spec §Feature 2 — Guided Help Tour (lines 72-118).
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
 import styles from './HelpTour.module.css';
 
 export interface HelpTourProps {
@@ -117,8 +117,11 @@ export function HelpTour({ open, onClose }: HelpTourProps) {
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
 
   // mountedRef: guard against setState after unmount
-  const mountedRef = useRef(true);
-  mountedRef.current = true;
+  const mountedRef = useRef(false);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   const step = STEPS[stepIndex];
 
@@ -158,8 +161,8 @@ export function HelpTour({ open, onClose }: HelpTourProps) {
     };
   }, [open, computeRect, onClose]);
 
-  // Reset step index when tour opens
-  useEffect(() => {
+  // Reset step index when tour opens — useLayoutEffect prevents one-frame flash of stale step
+  useLayoutEffect(() => {
     if (open) {
       setStepIndex(0);
     }

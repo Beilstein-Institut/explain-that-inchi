@@ -12,9 +12,13 @@ describe('useInchiStore', () => {
       layers: [],
       auxMap: {},
       atomElements: {},
+      hAtomPoolIds: [],
       inchiKey: '',
       hoverIdx: null,
       subHover: null,
+      pinned: null,
+      keyHoverKind: null,
+      legendHover: null,
     });
   });
 
