@@ -1,44 +1,42 @@
 {
   "version": "1.0",
-  "timestamp": "2026-06-22T13:33:06.121Z",
+  "timestamp": "2026-06-23T17:29:22.000Z",
   "phase": "16",
   "phase_name": "pin-to-freeze-highlights-and-guided-help-tour",
   "phase_dir": ".planning/phases/16-pin-to-freeze-highlights-and-guided-help-tour",
   "plan": 2,
-  "task": 4,
-  "total_tasks": 7,
+  "task": 2,
+  "total_tasks": 13,
   "status": "paused",
   "completed_tasks": [
-    {"id": "16-01-1", "name": "Pinned state machine + hover gate (store)", "status": "done", "commit": "1b8313b"},
-    {"id": "16-01-2", "name": "Wire layer + sub-token click-to-pin (InchiSection + LayerText)", "status": "done", "commit": "2ccf04c"},
-    {"id": "16-01-3", "name": "Pinned precedence in hook + explanation, locked-state CSS", "status": "done", "commit": "6fcced2"},
-    {"id": "16-01-SUMMARY", "name": "16-01 SUMMARY.md", "status": "done", "commit": "bb6336b"},
-    {"id": "16-02-1", "name": "Help button (.help-trigger) + styling + editor anchor", "status": "done", "commit": "c5288a5"},
-    {"id": "16-02-2", "name": "HelpTour overlay component + module CSS (8 steps)", "status": "done", "commit": "b461008"},
-    {"id": "16-02-3", "name": "Wire tour into App + empty-canvas Caffeine auto-load + tests", "status": "done", "commit": "d1024a2"},
-    {"id": "16-02-SUMMARY", "name": "16-02 SUMMARY.md", "status": "done", "commit": "708f3b0"},
-    {"id": "merge", "name": "Merge both worktrees to master + post-merge build/test gate fix", "status": "done", "commit": "ec242ab"}
+    {"id": "16-01", "name": "16-01 Click-to-pin plan — all 3 tasks + SUMMARY", "status": "done", "commit": "bb6336b"},
+    {"id": "16-02", "name": "16-02 Help tour plan — all 3 tasks + SUMMARY", "status": "done", "commit": "708f3b0"},
+    {"id": "merge", "name": "Merge both worktrees to master + post-merge build fix", "status": "done", "commit": "ec242ab"},
+    {"id": "human-verify", "name": "Human-verify checkpoint: 8-step tour + pin interaction", "status": "done", "notes": "User approved 2026-06-23"},
+    {"id": "regression", "name": "Regression gate: 375/375 green", "status": "done"},
+    {"id": "code-review", "name": "Code review (gsd-code-review 16) — WR-01..WR-04 found", "status": "done", "commit": "48a42a2"},
+    {"id": "code-review-fix", "name": "Apply WR-01..WR-04 fixes + re-run tests 375/375", "status": "done", "commit": "961776f"},
+    {"id": "uat-t1", "name": "UAT Test 1: click-to-pin freezes highlight", "status": "done", "result": "pass"}
   ],
   "remaining_tasks": [
-    {"id": "16-02-4", "name": "Human-verify checkpoint: 8-step tour + pin interaction (blocking gate)", "status": "not_started"},
-    {"id": "code-review", "name": "Code review gate (gsd-code-review 16) — advisory", "status": "not_started"},
-    {"id": "regression-gate", "name": "Regression gate (prior-phase tests)", "status": "not_started"},
+    {"id": "uat-t2", "name": "UAT Test 2: pinned highlight doesn't change on hover elsewhere", "status": "in_progress"},
+    {"id": "uat-t3..t13", "name": "UAT Tests 3–13: Esc/click release, sub-token pin, Help button, tour navigation, close paths, auto-load, re-open", "status": "not_started"},
     {"id": "verify-phase", "name": "verify_phase_goal (gsd-verifier) -> VERIFICATION.md", "status": "not_started"},
     {"id": "complete", "name": "phase.complete — mark phase 16 done, update ROADMAP/STATE/REQUIREMENTS", "status": "not_started"}
   ],
-  "blockers": [
-    {"description": "16-02 Task 4 is a blocking human-verify checkpoint requiring a human to visually test the tour + pin interaction in a browser", "type": "human_action", "workaround": "Restart dev server (npm run dev), open http://localhost:5173/explain-that-inchi/, run the 6-step verification, then approve"}
-  ],
+  "blockers": [],
   "human_actions_pending": [
-    {"action": "Visually verify the 8-step Help tour (all close paths, Caffeine persistence, spotlight positioning) and the click-to-pin interaction (freeze/release/Esc/sub-token, no eaten clicks, verbatim string)", "context": "16-02 Task 4 checkpoint:human-verify gate=blocking; covers visual/interaction quality automated tests cannot reach", "blocking": true}
+    {"action": "Complete UAT Tests 2–13 interactively — reply to each checkpoint (yes/issue/skip)", "context": "UAT is a conversational workflow; each test requires a browser and a human response", "blocking": true}
   ],
   "decisions": [
-    {"decision": "Ran both wave-1 plans (16-01, 16-02) in parallel git worktrees", "rationale": "No files_modified overlap declared; independent build work", "phase": "16"},
-    {"decision": "Deferred 16-02's terminal human-verify checkpoint to the orchestrator post-merge", "rationale": "Its pin-test steps (6-7) exercise 16-01's feature, which does not exist inside 16-02's isolated worktree; plan explicitly gates it to run after both plans merge", "phase": "16"},
-    {"decision": "Orchestrator completed 16-01 Task 3 (verify + commit) inline", "rationale": "Executor Bash permissions were revoked mid-execution after writing Task 3 code; orchestrator ran the plan gates (31/31 hook tests, tsc 0, 358/358 suite) and committed — no logic changed", "phase": "16"},
-    {"decision": "Fixed unused beforeEach import in HelpTour.test.tsx post-merge", "rationale": "Production build tsc -b (noUnusedLocals) flagged it; executor tsc --noEmit did not", "phase": "16"}
+    {"decision": "Applied WR-01: setInchiData now resets pinned to null", "rationale": "Stale pin survived preset molecule load — wrong highlight target after swap", "phase": "16"},
+    {"decision": "Applied WR-02: mountedRef in HelpTour moved to useEffect with cleanup", "rationale": "Was set at render time, never false — guard was non-functional", "phase": "16"},
+    {"decision": "Applied WR-03: step reset uses useLayoutEffect instead of useEffect", "rationale": "Prevents one-frame flash of stale step index on tour re-open", "phase": "16"},
+    {"decision": "Applied WR-04: store.test.ts beforeEach now resets all Phase 16 fields", "rationale": "Zustand is module-level singleton; missing fields could leak between tests", "phase": "16"}
   ],
-  "uncommitted_files": [],
-  "next_action": "Restart dev server (npm run dev), present the 16-02 Task 4 human-verify checkpoint to the user at http://localhost:5173/explain-that-inchi/. On 'approved': update ROADMAP plan-progress for 16-01 and 16-02, then run code_review gate (Skill gsd-code-review 16), regression gate, verify_phase_goal (gsd-verifier, model sonnet), then phase.complete.",
-  "context_notes": "All build work is DONE, merged to master (ec242ab), and green: production build exits 0, full suite 375/375, tsc clean. Working tree is clean. The ONLY thing standing between here and phase completion is the blocking human-verify checkpoint, then the standard post-execution gates (code review, regression, verifier, complete). Dev server was stopped on pause. Branch: master (branching_strategy=none). executor/verifier model = sonnet."
+  "uncommitted_files": [
+    ".planning/phases/16-pin-to-freeze-highlights-and-guided-help-tour/16-UAT.md"
+  ],
+  "next_action": "Resume UAT at Test 2: with a chunk pinned, hover other layer chunks and confirm canvas highlight does NOT change. Then proceed through tests 3–13. After all UAT tests pass, run gsd-verifier for VERIFICATION.md, then phase.complete.",
+  "context_notes": "All code is done, merged, and green. Code review fixes applied. UAT is 1/13 passed (test 1 pin-to-freeze confirmed). Working tree has 16-UAT.md untracked + deleted HANDOFF.json (being recreated now) + modified package-lock.json from npm install earlier. Branch: master."
 }
