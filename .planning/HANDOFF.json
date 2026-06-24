@@ -1,11 +1,11 @@
 {
   "version": "1.0",
-  "timestamp": "2026-06-23T17:29:22.000Z",
+  "timestamp": "2026-06-24T16:41:15.000Z",
   "phase": "16",
   "phase_name": "pin-to-freeze-highlights-and-guided-help-tour",
   "phase_dir": ".planning/phases/16-pin-to-freeze-highlights-and-guided-help-tour",
   "plan": 2,
-  "task": 2,
+  "task": 9,
   "total_tasks": 13,
   "status": "paused",
   "completed_tasks": [
@@ -16,17 +16,27 @@
     {"id": "regression", "name": "Regression gate: 375/375 green", "status": "done"},
     {"id": "code-review", "name": "Code review (gsd-code-review 16) — WR-01..WR-04 found", "status": "done", "commit": "48a42a2"},
     {"id": "code-review-fix", "name": "Apply WR-01..WR-04 fixes + re-run tests 375/375", "status": "done", "commit": "961776f"},
-    {"id": "uat-t1", "name": "UAT Test 1: click-to-pin freezes highlight", "status": "done", "result": "pass"}
+    {"id": "uat-t1", "name": "UAT Test 1: click-to-pin freezes highlight", "status": "done", "result": "pass"},
+    {"id": "uat-t2", "name": "UAT Test 2: pinned highlight doesn't change on hover elsewhere", "status": "done", "result": "pass"},
+    {"id": "uat-t3", "name": "UAT Test 3: Esc key releases the pin", "status": "done", "result": "pass"},
+    {"id": "uat-t4", "name": "UAT Test 4: click pinned chunk again to release", "status": "done", "result": "pass"},
+    {"id": "uat-t5", "name": "UAT Test 5: click outside releases the pin", "status": "done", "result": "pass"},
+    {"id": "uat-t6", "name": "UAT Test 6: sub-token click-to-pin", "status": "done", "result": "pass"},
+    {"id": "uat-t7", "name": "UAT Test 7: Help button visible in toolbar", "status": "done", "result": "pass"},
+    {"id": "uat-t8", "name": "UAT Test 8: click Help opens 8-step tour", "status": "done", "result": "pass"}
   ],
   "remaining_tasks": [
-    {"id": "uat-t2", "name": "UAT Test 2: pinned highlight doesn't change on hover elsewhere", "status": "in_progress"},
-    {"id": "uat-t3..t13", "name": "UAT Tests 3–13: Esc/click release, sub-token pin, Help button, tour navigation, close paths, auto-load, re-open", "status": "not_started"},
+    {"id": "uat-t9", "name": "UAT Test 9: navigate through all 8 tour steps", "status": "in_progress"},
+    {"id": "uat-t10", "name": "UAT Test 10: all 4 close paths dismiss the tour", "status": "not_started"},
+    {"id": "uat-t11", "name": "UAT Test 11: empty canvas auto-loads Caffeine on Help click", "status": "not_started"},
+    {"id": "uat-t12", "name": "UAT Test 12: non-empty canvas — tour opens without replacing the molecule", "status": "not_started"},
+    {"id": "uat-t13", "name": "UAT Test 13: reopening the tour starts from step 1", "status": "not_started"},
     {"id": "verify-phase", "name": "verify_phase_goal (gsd-verifier) -> VERIFICATION.md", "status": "not_started"},
     {"id": "complete", "name": "phase.complete — mark phase 16 done, update ROADMAP/STATE/REQUIREMENTS", "status": "not_started"}
   ],
   "blockers": [],
   "human_actions_pending": [
-    {"action": "Complete UAT Tests 2–13 interactively — reply to each checkpoint (yes/issue/skip)", "context": "UAT is a conversational workflow; each test requires a browser and a human response", "blocking": true}
+    {"action": "Complete UAT Tests 9–13 interactively — reply to each checkpoint (yes/issue/skip)", "context": "UAT is a conversational workflow; each test requires a browser and a human response", "blocking": true}
   ],
   "decisions": [
     {"decision": "Applied WR-01: setInchiData now resets pinned to null", "rationale": "Stale pin survived preset molecule load — wrong highlight target after swap", "phase": "16"},
@@ -37,6 +47,6 @@
   "uncommitted_files": [
     ".planning/phases/16-pin-to-freeze-highlights-and-guided-help-tour/16-UAT.md"
   ],
-  "next_action": "Resume UAT at Test 2: with a chunk pinned, hover other layer chunks and confirm canvas highlight does NOT change. Then proceed through tests 3–13. After all UAT tests pass, run gsd-verifier for VERIFICATION.md, then phase.complete.",
-  "context_notes": "All code is done, merged, and green. Code review fixes applied. UAT is 1/13 passed (test 1 pin-to-freeze confirmed). Working tree has 16-UAT.md untracked + deleted HANDOFF.json (being recreated now) + modified package-lock.json from npm install earlier. Branch: master."
+  "next_action": "Resume UAT at Test 9: open the tour, click Next through all 8 steps, confirm spotlight/callout moves to correct targets and counter reads 1 of 8 … 8 of 8 with Finish on last step. Then proceed through tests 10–13. After all UAT tests pass, run gsd-verifier for VERIFICATION.md, then phase.complete.",
+  "context_notes": "All code is done, merged, and green. Code review fixes applied. UAT is 8/13 passed (tests 1–8 all pass — all pin interaction tests and Help button open confirmed). Test 9 (tour navigation) is the current checkpoint. Branch: master @ c1deaa8."
 }
