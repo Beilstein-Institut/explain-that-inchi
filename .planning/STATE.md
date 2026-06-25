@@ -1,31 +1,31 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.4
-milestone_name: Reset control & c-layer hover precision
+milestone: v1.4+
+milestone_name: Pin-to-freeze highlights and guided Help tour (Phase 16)
 status: completed
-stopped_at: Phase 16 context gathered
-last_updated: "2026-06-22T12:52:25.529Z"
-last_activity: 2026-06-22 — Phase 16 added to roadmap from design spec
+stopped_at: Phase 16 complete — all 13 UAT tests passed, 18/18 verification checks
+last_updated: "2026-06-25T00:00:00.000Z"
+last_activity: 2026-06-25 — Phase 16 complete (click-to-pin + Help tour, 13/13 UAT passed)
 progress:
   total_phases: 3
-  completed_phases: 2
-  total_plans: 3
-  completed_plans: 3
-  percent: 67
+  completed_phases: 3
+  total_plans: 5
+  completed_plans: 5
+  percent: 100
 ---
 
 # Project State
 
 **Project:** Explain that InChI
-**Milestone:** v1.4 — Reset control & c-layer hover precision (roadmap drafted; Phases 14–15)
-**Status:** v1.4 milestone complete
+**Milestone:** v1.4+ — Phase 16 complete (click-to-pin + Help tour)
+**Status:** Phase 16 complete — ready for next milestone
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-06-19)
+See: .planning/PROJECT.md (updated 2026-06-25)
 
 **Core value:** Every chunk of an InChI string is hoverable, explained, and linked back to the atoms in the drawing — demystifying a notation that most chemists treat as opaque.
-**Current focus:** Milestone complete
+**Current focus:** Ready for next milestone
 
 ## Deferred Items
 
@@ -66,6 +66,7 @@ Items acknowledged and deferred at v1.3 milestone close on 2026-06-19 (same v1.0
 ## Roadmap Evolution
 
 - Phase 16 added: Pin-to-freeze highlights and guided Help tour (spec: docs/superpowers/specs/2026-06-22-pin-freeze-and-help-tour-design.md)
+- Phase 16 complete: 2026-06-25 (2/2 plans, 13/13 UAT passed, 18/18 verification checks)
 
 ## Blockers
 
@@ -73,17 +74,17 @@ None
 
 ## Current Position
 
-Phase: 16 — Pin-to-freeze highlights and guided Help tour (added, not planned)
-Plan: —
-Status: Awaiting planning
-Last activity: 2026-06-22 — Phase 16 added to roadmap from design spec
+Phase: 16 — Pin-to-freeze highlights and guided Help tour (complete)
+Plan: 2/2 complete
+Status: Complete
+Last activity: 2026-06-25 — Phase 16 complete (click-to-pin + Help tour)
 
 ## Operator Next Steps
 
-- Plan Phase 16 with /gsd-plan-phase 16
+- Start next milestone with /gsd-new-milestone
 
 ## Session Continuity
 
-Last session: 2026-06-22T12:52:25.516Z
-Stopped at: Phase 16 context gathered
-Resume file: .planning/phases/16-pin-to-freeze-highlights-and-guided-help-tour/16-CONTEXT.md
+Last session: 2026-06-25
+Stopped at: Phase 16 complete, ready to plan next milestone
+Resume file: None

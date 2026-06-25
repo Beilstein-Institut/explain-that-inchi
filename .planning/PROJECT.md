@@ -12,11 +12,11 @@ Every chunk of an InChI string is hoverable, explained, and linked back to the a
 
 ## Current State
 
-**Version:** v1.4 — SHIPPED 2026-06-22 (Reset control & c-layer hover precision), tagged `v1.4`. Next milestone being planned.
+**Version:** v1.4+ — Phase 16 (click-to-pin + guided Help tour) shipped 2026-06-25, no tag yet. Ready for next milestone.
 
-- v1.0: 8 phases, 25 plans; v1.1: 70-commit maintenance/polish patch; v1.2: 2 phases (9–10), 6 plans; v1.3: 3 phases (11–13), 6 plans; v1.4: 2 phases (14–15), 3 plans
+- v1.0: 8 phases, 25 plans; v1.1: 70-commit maintenance/polish patch; v1.2: 2 phases (9–10), 6 plans; v1.3: 3 phases (11–13), 6 plans; v1.4: 2 phases (14–15), 3 plans; Phase 16: 2 plans
 - Tech stack: Vite 8 + React 18 + TypeScript + Ketcher 3.12.0 (WASM) + Zustand 5 + CSS Modules
-- 343 unit/integration tests passing; TypeScript clean; production build clean
+- 375 unit/integration tests passing; TypeScript clean; production build clean
 - Deployed to GitHub Pages via GitHub Actions CD
 
 ## Requirements
@@ -74,6 +74,19 @@ Every chunk of an InChI string is hoverable, explained, and linked back to the a
 - ✓ CLYR-03: C-layer parenthesis hover highlights the bonds incident to the branch-point atom (chain-in + branch + chain-out, typically 3); open/close symmetric — v1.4
 - ✓ CLYR-04: C-layer hovers resolve within the correct `;`-fragment; no cross-fragment bleed — v1.4
 - ✓ CLYR-05: C-layer hovers in `N*` duplicated-fragment notation highlight every instance — v1.4
+- ✓ PIN-01: Clicking an InChI layer chunk freezes its canvas highlight; a ring border + "Pinned — press Esc to release" hint appear — Phase 16
+- ✓ PIN-02: Pinned highlight stays frozen while hovering other chunks; no highlight change until pin is released — Phase 16
+- ✓ PIN-03: Esc, clicking the same pinned chunk, or clicking outside the InChI strip all release the pin — Phase 16
+- ✓ PIN-04: Sub-token click-to-pin works identically (click freezes sub-token highlight) — Phase 16
+- ✓ PIN-05: Loading a new preset/molecule clears any active pin (no stale pin on molecule swap) — Phase 16
+- ✓ HELP-01: Help button in toolbar immediately left of Reset; same pill style — Phase 16
+- ✓ HELP-02: Help click opens 8-step spotlight tour; dimmed overlay + spotlight cutout + callout card — Phase 16
+- ✓ HELP-03: Tour navigates through all 8 steps (editor → presets → InChI hover → InChI pin → InChIKey → legend → toolbar buttons); step counter reads "N of 8"; last step shows Finish — Phase 16
+- ✓ HELP-04: All four close paths dismiss the tour cleanly: × button, click outside spotlight, Esc, Finish — Phase 16
+- ✓ HELP-05: Empty canvas on Help click auto-loads Caffeine so tour demonstrations are live; Caffeine persists after closing — Phase 16
+- ✓ HELP-06: Non-empty canvas on Help click preserves the existing molecule (no replacement) — Phase 16
+- ✓ HELP-07: Reopening the tour always starts from step 1, not where the user left off — Phase 16
+- ✓ HELP-08: Tour has zero new runtime dependencies (pure React + CSS Modules) — Phase 16
 
 ### Active (v2 candidates)
 
@@ -140,6 +153,11 @@ Every chunk of an InChI string is hoverable, explained, and linked back to the a
 | C-layer bonds derived by atom ADJACENCY, not hyphen chars (reuse parseConnectionBonds) | Real InChI omits hyphens at branch boundaries (e.g. `(4)`); hyphen-based model left parens dead | ✓ Good (v1.4) — caught only by live canvas, not unit tests |
 | Paren hover = bonds INCIDENT to the branch-point atom (typically 3), not whole substituent | Whole-branch reading lit up most of the molecule on real drugs (ciprofloxacin); user-corrected to the branch junction | ✓ Good (v1.4) — D-03b supersedes D-03 |
 | c-layer test fixtures must be REAL InChI (alanine, ciprofloxacin) | Fabricated `(-2)` fixtures passed 333 tests while the feature was broken; blocking human-verify gate must not be bypassed | ⚠️ Lesson (v1.4) — see RETROSPECTIVE / memory |
+| Click-to-pin: store `pinned` field gates `setHover`/`setSubHover` with early-return | Single enforcement point in the store; capture-phase document click fires `clearPinned()` before any bubble-phase `onClick`, making same-gesture re-pin structurally impossible | ✓ Good (Phase 16) |
+| `setInchiData` resets `pinned: null` (WR-01) | Stale pin survived preset molecule load and highlighted wrong atoms | ✓ Good (Phase 16) — fixed before UAT |
+| HelpTour: `mountedRef` in `useEffect` with cleanup; step reset via `useLayoutEffect` | `mountedRef` set at render time was non-functional; `useLayoutEffect` prevents one-frame flash of stale step index on tour re-open | ✓ Good (Phase 16) |
+| HelpTour spotlight uses live `getBoundingClientRect()` on each step change, resize, and scroll | Computed anchoring — not hardcoded offsets — so the tour remains correct if layout changes | ✓ Good (Phase 16) |
+| Empty-canvas auto-load calls `handleMolSelect('caffeine')` before opening tour; `onClose` only calls `setTourOpen(false)` | No molecule reset on close; Caffeine persists after tour dismissal as intended | ✓ Good (Phase 16) |
 
 ## Constraints
 
@@ -154,4 +172,4 @@ Every chunk of an InChI string is hoverable, explained, and linked back to the a
 This document evolves at phase transitions and milestone boundaries.
 
 ---
-*Last updated: 2026-06-22 — after v1.4 milestone (Reset control & c-layer hover precision) shipped*
+*Last updated: 2026-06-25 — after Phase 16 (click-to-pin + guided Help tour) complete*

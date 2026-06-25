@@ -76,6 +76,7 @@ Full phase details: `.planning/milestones/v1.4-ROADMAP.md`
 | 13. Content & Explanation | v1.3 | 1/1 | Complete | 2026-06-19 |
 | 14. Reset control | v1.4 | 1/1 | Complete   | 2026-06-19 |
 | 15. C-layer hover precision | v1.4 | 2/2 | Complete    | 2026-06-22 |
+| 16. Pin-to-freeze highlights and guided Help tour | — | 2/2 | Complete | 2026-06-25 |
 
 ### Phase 16: Pin-to-freeze highlights and guided Help tour
 
@@ -86,8 +87,8 @@ Full phase details: `.planning/milestones/v1.4-ROADMAP.md`
 **Plans:** 2 plans
 
 Plans:
-- [ ] 16-01-PLAN.md — Click-to-pin (freeze) highlights: store pin state machine + gate, layer/sub-token click wiring, pinned precedence in highlight hook + explanation, locked-state ring + release hint
-- [ ] 16-02-PLAN.md — Guided Help tour: Help button, custom zero-dep stepped spotlight overlay (8 steps), App tour state with empty-canvas Caffeine auto-load
+- [x] 16-01-PLAN.md — Click-to-pin (freeze) highlights: store pin state machine + gate, layer/sub-token click wiring, pinned precedence in highlight hook + explanation, locked-state ring + release hint
+- [x] 16-02-PLAN.md — Guided Help tour: Help button, custom zero-dep stepped spotlight overlay (8 steps), App tour state with empty-canvas Caffeine auto-load
 
 ---
 *Roadmap created: 2026-05-18*
@@ -96,3 +97,4 @@ Plans:
 *Updated: 2026-06-19 — Phase 15 planned: 2 plans (15-01, 15-02)*
 *Updated: 2026-06-22 — v1.4 SHIPPED (Phases 14–15); archived to milestones/v1.4-ROADMAP.md*
 *Updated: 2026-06-22 — Phase 16 planned: 2 plans (16-01, 16-02)*
+*Updated: 2026-06-25 — Phase 16 complete (2/2 plans, 13/13 UAT passed)*
