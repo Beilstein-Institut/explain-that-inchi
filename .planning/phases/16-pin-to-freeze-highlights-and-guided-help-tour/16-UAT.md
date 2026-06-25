@@ -1,22 +1,16 @@
 ---
-status: testing
+status: complete
 phase: 16-pin-to-freeze-highlights-and-guided-help-tour
 source:
   - .planning/phases/16-pin-to-freeze-highlights-and-guided-help-tour/16-01-SUMMARY.md
   - .planning/phases/16-pin-to-freeze-highlights-and-guided-help-tour/16-02-SUMMARY.md
 started: 2026-06-23T10:00:00.000Z
-updated: 2026-06-23T10:00:00.000Z
+updated: 2026-06-25T00:00:00.000Z
 ---
 
 ## Current Test
 
-number: 9
-name: Navigate through all 8 tour steps
-expected: |
-  Click Next repeatedly. The spotlight and callout move to each of: Presets list, InChI
-  string (×2 steps for hover and pin), InChIKey, Legend, Reset/Help buttons. The counter
-  reads "2 of 8" … "8 of 8". On the last step, "Next" becomes "Finish".
-awaiting: user response
+[testing complete]
 
 ## Tests
 
@@ -54,31 +48,31 @@ result: pass
 
 ### 9. Navigate through all 8 tour steps
 expected: Click Next repeatedly. The spotlight and callout move to each of: Presets list, InChI string (×2 steps for hover and pin), InChIKey, Legend, Reset/Help buttons. The counter reads "2 of 8" … "8 of 8". On the last step, "Next" becomes "Finish".
-result: [pending]
+result: pass
 
 ### 10. All 4 close paths dismiss the tour
 expected: Test each: (a) click the × button on the callout — tour closes; (b) reopen, click outside the spotlight on the dimmed area — tour closes; (c) reopen, press Esc — tour closes; (d) reopen, advance to last step and click Finish — tour closes. In all cases the overlay disappears cleanly.
-result: [pending]
+result: pass
 
 ### 11. Empty canvas auto-loads Caffeine on Help click
 expected: Reset the canvas (or start fresh) so no molecule is loaded. Click Help. Before or as the tour opens, the Caffeine molecule should appear in the editor — so the tour demonstrations are live. The Caffeine molecule persists after closing the tour.
-result: [pending]
+result: pass
 
 ### 12. Non-empty canvas — tour opens without replacing the molecule
 expected: Load any preset (e.g. Alanine). Click Help. The tour opens but the canvas still shows Alanine — the existing molecule is NOT replaced with Caffeine or cleared.
-result: [pending]
+result: pass
 
 ### 13. Reopening the tour starts from step 1
 expected: Open the tour, advance to step 3 or 4, then close. Click Help again. The tour opens at step 1 ("The molecule editor"), not where you left off.
-result: [pending]
+result: pass
 
 ## Summary
 
 total: 13
-passed: 8
+passed: 13
 issues: 0
 skipped: 0
-pending: 5
+pending: 0
 
 ## Gaps
 
