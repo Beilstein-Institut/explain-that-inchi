@@ -4,24 +4,24 @@ milestone: v1.5
 milestone_name: Sub-token-specific explanations
 current_phase: 17
 current_phase_name: sub-token-copy-core-element-table-pure-module-tests
-status: executing
-stopped_at: Phase 17 context gathered
-last_updated: "2026-06-26T12:07:25.908Z"
+status: verifying
+stopped_at: Completed 17-02-PLAN.md
+last_updated: "2026-06-26T13:04:20.853Z"
 last_activity: 2026-06-26
 last_activity_desc: Phase 17 execution started
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 7
-  completed_plans: 6
-  percent: 75
+  completed_plans: 7
+  percent: 100
 ---
 
 # Project State
 
 **Project:** Explain that InChI
 **Milestone:** v1.5 — Sub-token-specific explanations (roadmapped; Phases 17–18)
-**Status:** Ready to execute
+**Status:** Phase complete — ready for verification
 
 ## Project Reference
 
@@ -90,7 +90,7 @@ None
 
 Phase: 17 (sub-token-copy-core-element-table-pure-module-tests) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-06-26 — Phase 17 execution started
 
 ## Operator Next Steps
@@ -99,8 +99,8 @@ Last activity: 2026-06-26 — Phase 17 execution started
 
 ## Session Continuity
 
-Last session: 2026-06-26T12:07:04.998Z
-Stopped at: Phase 17 context gathered
+Last session: 2026-06-26T13:04:20.849Z
+Stopped at: Completed 17-02-PLAN.md
 Resume file: .planning/phases/17-sub-token-copy-core-element-table-pure-module-tests/17-CONTEXT.md
 
 ## Performance Metrics
@@ -108,3 +108,8 @@ Resume file: .planning/phases/17-sub-token-copy-core-element-table-pure-module-t
 | Phase | Plan | Duration | Notes |
 |-------|------|----------|-------|
 | Phase 17 P01 | 2min | 2 tasks | 2 files |
+| Phase 17 P02 | 30 min | 2 tasks | 2 files |
+
+## Decisions
+
+- [Phase 17]: subTokenInfo: bare 'atom N' phrasing (D-08-safest); atomElements param retained but unused for Phase 18

@@ -141,7 +141,7 @@ Plans:
 | 14. Reset control | v1.4 | 1/1 | Complete | 2026-06-19 |
 | 15. C-layer hover precision | v1.4 | 2/2 | Complete | 2026-06-22 |
 | 16. Pin-to-freeze highlights and guided Help tour | — | 2/2 | Complete | 2026-06-25 |
-| 17. Sub-token copy core (element table + pure module + tests) | v1.5 | 1/2 | In Progress|  |
+| 17. Sub-token copy core (element table + pure module + tests) | v1.5 | 2/2 | Complete   | 2026-06-26 |
 | 18. Explanation-card wiring + live chemist gate | v1.5 | 0/? | Not started | - |
 
 ---

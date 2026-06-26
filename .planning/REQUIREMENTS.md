@@ -15,13 +15,13 @@
 
 #### Hydrogen sub-tokens
 
-- [ ] **SUBEX-03**: Hovering an `H` / `H2` / `H3` (and range like `1-6H`) group updates the card to state, in plain language, that the named atom(s) bear that many hydrogens — without claiming a functional group (must not equate `H3` with "methyl").
-- [ ] **SUBEX-04**: Hovering a mobile `(H,X,Y)` group updates the card to explain it as a mobile/tautomeric hydrogen shared across the listed atoms (InChI's one-identifier-per-tautomer device), not a fixed bond or physical delocalisation claim.
+- [x] **SUBEX-03**: Hovering an `H` / `H2` / `H3` (and range like `1-6H`) group updates the card to state, in plain language, that the named atom(s) bear that many hydrogens — without claiming a functional group (must not equate `H3` with "methyl").
+- [x] **SUBEX-04**: Hovering a mobile `(H,X,Y)` group updates the card to explain it as a mobile/tautomeric hydrogen shared across the listed atoms (InChI's one-identifier-per-tautomer device), not a fixed bond or physical delocalisation claim.
 
 #### Tetrahedral stereo (t-layer)
 
-- [ ] **SUBEX-05**: Hovering a t-layer stereocenter updates the card with a plain-language explanation (a fixed 3-D handedness at an sp³ centre) and states that `+`/`-` is a parity of the canonical neighbour order.
-- [ ] **SUBEX-06**: The stereocenter card states explicitly that the `+`/`-` parity is **not** R/S, and briefly notes that the m-layer (and s-layer absolute/relative/racemic) qualify which enantiomer is meant.
+- [x] **SUBEX-05**: Hovering a t-layer stereocenter updates the card with a plain-language explanation (a fixed 3-D handedness at an sp³ centre) and states that `+`/`-` is a parity of the canonical neighbour order.
+- [x] **SUBEX-06**: The stereocenter card states explicitly that the `+`/`-` parity is **not** R/S, and briefly notes that the m-layer (and s-layer absolute/relative/racemic) qualify which enantiomer is meant.
 
 #### Molecular formula elements
 
@@ -31,7 +31,7 @@
 #### Correctness & non-regression
 
 - [ ] **SUBEX-09**: All sub-token copy is derived from already-offset parsed `SubHover` data — it never reconstructs the InChI string (verbatim-passthrough invariant) and never remounts the Ketcher canvas / re-initialises WASM (no-remount invariant).
-- [ ] **SUBEX-10**: Sub-token copy is produced by a pure, unit-tested module; tests use real `getInchi()` InChI fixtures (no fabricated fixtures), pin the mandatory "parity ≠ R/S" caveat, and pass a human chemical-accuracy verify gate before the milestone closes.
+- [x] **SUBEX-10**: Sub-token copy is produced by a pure, unit-tested module; tests use real `getInchi()` InChI fixtures (no fabricated fixtures), pin the mandatory "parity ≠ R/S" caveat, and pass a human chemical-accuracy verify gate before the milestone closes.
 
 ### Future Requirements (deferred)
 
@@ -60,14 +60,14 @@ Carried from prior milestones — not in v1.5 scope:
 |-------------|-------|--------|
 | SUBEX-01 | Phase 18 | Pending |
 | SUBEX-02 | Phase 18 | Pending |
-| SUBEX-03 | Phase 17 | Pending |
-| SUBEX-04 | Phase 17 | Pending |
-| SUBEX-05 | Phase 17 | Pending |
-| SUBEX-06 | Phase 17 | Pending |
+| SUBEX-03 | Phase 17 | Complete |
+| SUBEX-04 | Phase 17 | Complete |
+| SUBEX-05 | Phase 17 | Complete |
+| SUBEX-06 | Phase 17 | Complete |
 | SUBEX-07 | Phase 18 | Pending |
 | SUBEX-08 | Phase 17 | Complete |
 | SUBEX-09 | Phase 18 | Pending |
-| SUBEX-10 | Phase 17 | Pending |
+| SUBEX-10 | Phase 17 | Complete |
 
 **Coverage:** 10/10 v1.5 requirements mapped to exactly one phase. No orphans, no duplicates.
 
