@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.4+
-milestone_name: Pin-to-freeze highlights and guided Help tour (Phase 16)
-status: completed
-stopped_at: Phase 16 complete — all 13 UAT tests passed, 18/18 verification checks
-last_updated: "2026-06-25T00:00:00.000Z"
-last_activity: 2026-06-25 — Phase 16 complete (click-to-pin + Help tour, 13/13 UAT passed)
+milestone: v1.5
+milestone_name: Sub-token-specific explanations
+status: planning
+last_updated: "2026-06-26T07:18:28.586Z"
+last_activity: 2026-06-26
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 5
-  completed_plans: 5
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -74,10 +73,10 @@ None
 
 ## Current Position
 
-Phase: 16 — Pin-to-freeze highlights and guided Help tour (complete)
-Plan: 2/2 complete
-Status: Complete
-Last activity: 2026-06-25 — Phase 16 complete (click-to-pin + Help tour)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-06-26 — Milestone v1.5 started
 
 ## Operator Next Steps
 

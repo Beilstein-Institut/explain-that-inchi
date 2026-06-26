@@ -10,6 +10,17 @@ Shipped as a static build to GitHub Pages (no server, no backend). All InChI com
 
 Every chunk of an InChI string is hoverable, explained, and linked back to the atoms in the drawing — demystifying a notation that most chemists treat as opaque.
 
+## Current Milestone: v1.5 Sub-token-specific explanations
+
+**Goal:** The existing explanation card becomes sub-token-aware — hovering or pinning an individual sub-token updates that same card to explain the specific piece, chemically accurately. No new card or surface.
+
+**Target features:**
+- H sub-tokens — `H`/`H2`/`H3` groups and mobile `(H,X,Y)` groups each update the card with what that specific hydrogen pattern means.
+- Tetrahedral stereo (t-layer) — hovering a stereocenter updates the card with a plain-language explanation (3D handedness at an sp³ atom) plus the explicit caveat that +/- is canonical-ordering parity, not R/S.
+- Molecular formula elements — hovering a specific element updates the card with its name and role, backed by a full periodic-table element-name table.
+
+**Mechanism:** Add a `subHover`/pinned-sub precedence tier inside the existing explanation card (`Explanation.tsx` currently reads only `hoverIdx`/`pinned`). Sub-token hover already highlights the correct atoms via existing infra — this milestone adds the missing card copy. Zero new dependencies.
+
 ## Current State
 
 **Version:** v1.4+ — Phase 16 (click-to-pin + guided Help tour) shipped 2026-06-25, no tag yet. Ready for next milestone.
@@ -172,4 +183,4 @@ Every chunk of an InChI string is hoverable, explained, and linked back to the a
 This document evolves at phase transitions and milestone boundaries.
 
 ---
-*Last updated: 2026-06-25 — after Phase 16 (click-to-pin + guided Help tour) complete*
+*Last updated: 2026-06-26 — milestone v1.5 (sub-token-specific explanations) started*
