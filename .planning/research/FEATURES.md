@@ -1,189 +1,220 @@
-# Feature Research
+# Feature Research — Sub-token explanation content (milestone v1.5)
 
-**Domain:** Inorganic / organometallic / salt explanation in an InChI explainer (v1.5 milestone)
-**Researched:** 2026-06-22
-**Confidence:** HIGH (InChI behavior + Ketcher API verified against primary sources; exact preset InChI strings verified for the two anchor presets)
+**Domain:** Chemistry education / InChI notation explainer copy
+**Researched:** 2026-06-26
+**Confidence:** HIGH (chemistry verified against InChI Technical Manual + JCheminf InChI paper + Hill 1900 convention)
+
+> Supersedes the 2026-06-22 FEATURES.md, which scoped a different v1.5 direction (inorganic/organometallic/salt presets). Current PROJECT.md scope is **sub-token-specific explanations**.
+
+This is a **content/pedagogy** research file, not a tech-stack file. The deliverable is chemically-correct, ready-to-adapt card copy for three sub-token families, classified table-stakes / nice-to-have / anti-feature. Voice target = the existing cards: terse chemist-register, 1–3 sentences, plain but precise (`layerInfo.ts` `LAYER_INFO`, `inchiKeyInfo.ts` `KEY_ZONE_COPY`).
+
+**Audience:** chemistry-literate, InChI-naive. They know what CH₃, a stereocenter, and a molecular formula are. They do NOT know what an InChI parity sign means or what a `(H,...)` group is. Do not re-teach chemistry; teach the *notation*.
 
 ---
 
-## TL;DR for the requirements writer
+## Audience truth (the through-line)
 
-The single most important finding reshapes the milestone:
-
-> **The `/r` reconnected layer is UNREACHABLE with this app's stack and must be treated as an anti-feature, not a feature.**
-
-`/r` is produced only by the InChI **`RecMet`** option, which makes the InChI **non-standard**. Ketcher's only InChI entry point is `getInchi(withAuxInfo?: boolean)` — a single boolean, **no flavor/options parameter** — so the app can only ever obtain **Standard InChI** (`InChI=1S/...`), which by definition never contains `/r`. (HIGH — verified against InChI Technical FAQ, Indigo InChI options page, and the documented Ketcher API signature.)
-
-So the v1.5 teaching story is **not** "explain the reconnected layer." It is:
-
-1. **Explain metal _disconnection_** — why the metal vanished into its own dot-separated component and the bonds you drew are gone from the connectivity layer. This is the real "aha" for inorganic chemists and is fully achievable from the Standard InChI the app already gets.
-2. **Explain `/q` per-component charge + `/p` proton balance for salts/ions** — extend the already-shipped `q`/`p` layers (which already work for multi-fragment salts like CuSO₄, per v1.1) with salt-aware, per-component prose and highlighting.
-3. **Inorganic presets** that make 1 and 2 vivid.
-
-Everything below ties back to the core value: every chunk hoverable, explained, and linked to atoms. Note that for `/q`/`/p` the "linked to atoms" part is partly the lesson — disconnected metals and charge tokens highlight **whole components**, and the metal's bonds are deliberately *absent* from `/c`, which is itself the teaching point (mirrors the v1.3 InChIKey "absence is the lesson" pattern).
+A reader already understands the **chemistry**. What they lack is the mapping from **InChI syntax → chemistry they already know**, plus the places where InChI's bookkeeping is *not* the chemistry concept it superficially resembles (H-count ≠ functional group; parity ≠ R/S). Every card should do one of two jobs: (a) translate a token into something they recognise, or (b) warn them off a false friend. The most valuable cards in this milestone are the false-friend warnings — that is exactly what the domain-expert user flagged.
 
 ---
 
 ## Feature Landscape
 
-### Table Stakes (Users Expect These)
+### Table Stakes (must include to be correct/useful)
 
-A chemist who loads ferrocene or NaCl and sees an unfamiliar dot-separated formula will expect the tool to *explain why*, not just color it. These are the minimum to make v1.5 feel complete.
+| Sub-token | Card must say | Complexity | Notes |
+|-----------|---------------|------------|-------|
+| `H` (1 H on atom N) | "Atom N carries **one** hydrogen." | LOW | Existing `readingFor` already emits "bears 1H". Card just needs the why. |
+| `H2` group | "Each named atom carries **two** hydrogens." | LOW | |
+| `H3` group | "Each named atom carries **three** hydrogens." | LOW | **Anti-feature trap: do NOT say "methyl".** See below. |
+| Range `1-6H` | "Every atom in the range 1–6 carries one H." | LOW | Already handled in `readingFor`. |
+| Mobile `(H,X,Y)` | "A **mobile (tautomeric) hydrogen** shared across atoms X and Y — InChI records the *group*, not a fixed position." | MEDIUM | The single highest-value H card. Most chemists have never seen this notation. |
+| t-layer `atomN+` / `atomN-` | "A tetrahedral (sp³) **stereocenter** at atom N. The sign is a **parity** of the canonical neighbour order — **not** R/S." | MEDIUM | The headline card of the milestone. Caveat is mandatory. |
+| Formula element `C7`, `O`, … | Element **name** + "count of that element's atoms in the molecule" + Hill-order note. | LOW | Needs a **full** element table — current `ELEMENT_NAMES` has only 10. |
 
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| **Metal-disconnection explanation in the formula / `/c` / `/h` layers** — prose telling the user that InChI broke all bonds to the metal and split the species into dot-separated components | A chemist sees `2C5H5.Fe` and `/c2*1-2-4-5-3-1;` (the `;` with nothing after it = the Fe component has no bonds) and is confused unless told disconnection happened | MEDIUM | Per-component prose. The existing `formulaReading` already splits on `.` and renders multipliers (`2×`); extend with a note when a metal element is a standalone single-atom component. No change to the layer data model needed — the data is already there. |
-| **`/q` charge layer: per-component reading** — for `/q;+1` say "component 1 (chloride): neutral; component 2 (sodium): +1" rather than the current flat "net charge: +1" | The current `q` blurb ("overall formal charge of the molecule") is **wrong for salts** — `/q` is per-component, semicolon-separated, and empty slots mean "this component is neutral" | MEDIUM | Verified: NaCl = `InChI=1S/ClH.Na/h1H;/q;+1/p-1`. The `;` before `+1` is the empty (neutral) chloride slot. Parser must split `q.text` on `;` and align to components. The `readingFor` `q` case currently returns a single flat string — needs per-component expansion mirroring the existing multi-fragment pattern in the `c`/`h`/`t` cases. |
-| **`/q` / `/p` hover highlights the correct component's atoms** | Core value: hovering a charge token must light up *which* ions carry the charge | MEDIUM | v1.1 already fixed `/q` and `/p` highlighting for multi-fragment salts (CuSO₄). v1.5 should confirm it still works on the new presets and that hovering a *specific* per-component charge token (e.g. just the `+1`) highlights only that ion — likely needs sub-token hover, paralleling the c-layer CLYR work. |
-| **At least a few inorganic presets** that load and render in Ketcher | Users need one-click examples to see the new behavior; nobody hand-draws ferrocene to test a tool | LOW | Presets are embedded SMILES loaded via `setMolecule`; the format already exists in `molecules.ts`. The only risk is whether a given SMILES round-trips through Ketcher standalone — must be live-checked (flag for STACK/verification). |
-| **Corrected `q` / `p` legend + blurb copy** | The shipped `q` blurb describes whole-molecule charge; inorganic users will trust it and be misled on salts | LOW | One-line copy edit + the per-component expansion. Match the educational tone of `LAYER_INFO` (plain, second-person, one concrete worked example in `egLabel`/`eg`). |
+#### Ready-to-adapt phrasings — Hydrogen layer
 
-### Differentiators (Competitive Advantage)
+These match the `{ label, title, body }` shape used by `KEY_ZONE_COPY` and the card voice.
 
-These make "Explain that InChI" the tool chemists recommend specifically for the confusing inorganic cases. None are required to ship, but each strengthens the core value.
+- **`H` (one hydrogen):**
+  > "Atom N carries **one** hydrogen. The h-layer records *how many* hydrogens sit on each heavy atom — the count InChI factors out of the connection layer, not where any single H is bonded in a drawing."
 
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| **"Why is the metal gone?" callout when disconnection is detected** — a contextual explanation surfaced when the loaded structure triggers metal disconnection (a metal appears as its own formula component) | This is *the* moment of confusion for inorganic InChI. Surfacing it proactively (not only on hover) is genuinely differentiating — no other InChI tool explains the disconnection rule interactively | MEDIUM | Detect: a dot-separated formula component that is a single metal element with an empty `/c` slot. Heuristic only — maintain a small metal-element set. Tie into the existing explanation-card system; reuse the idle/hover precedence machinery. |
-| **Disconnection diff visualization** — when hovering the metal component, dim the (now-absent) metal–ligand bonds on the canvas or annotate "these bonds were cut by InChI" | Makes the abstract disconnection rule physically visible on the drawing the user made — pure core-value payoff | HIGH | The canvas still *shows* the drawn dative/coordinate bonds; InChI dropped them. Highlighting "the bonds InChI ignored" requires mapping drawn bonds NOT present in `/c`. Novel highlight mode; flag as research-heavy. Defer if AuxInfo mapping for disconnected metals proves unreliable. |
-| **Salt component breakdown panel** — for a multi-component salt, a small per-ion summary (formula · charge · proton offset) derived from `/q` + `/p` | Turns the opaque `/q;+1/p-1` into "Na⁺ + Cl⁻" in chemist-readable terms | MEDIUM | Pure derived view over already-parsed layers; no new Ketcher calls. Strong educational value, low risk. |
-| **`/p` proton-balance salt prose** — explain that `/p-1` means one proton removed (e.g. HCl → Cl⁻) relative to the neutral drawn form | The `/p` layer is genuinely arcane; salts are where it actually shows up and where the explanation pays off | LOW-MEDIUM | Extend existing `p` blurb/reading with the salt framing. NaCl's `/p-1` is the canonical teaching example. |
+- **`H2`:**
+  > "Each atom named here carries **two** hydrogens (a –CH₂– / –NH₂-type count, depending on the element). The number after H is the per-atom hydrogen count."
 
-### Anti-Features (Commonly Requested, Often Problematic)
+- **`H3`:**
+  > "Each atom named here carries **three** hydrogens. On carbon that's a CH₃ *count* — but the h-layer states a hydrogen tally, not that the group is a methyl; the connection layer is what makes it terminal."
 
-These will be requested ("why doesn't it show the reconnected form / the real coordination bonds / a 3D complex?") and must be explicitly declined with rationale, to protect scope and the static-build constraint.
+  *(The conditional clause is the correctness guard. See anti-features.)*
 
-| Feature | Why Requested | Why Problematic | Alternative |
-|---------|---------------|-----------------|-------------|
-| **`/r` reconnected-layer parsing & explanation** | The original milestone framing assumed `/r` is what users see for organometallics | **Unreachable with this stack.** `/r` requires the non-standard `RecMet` option; `ketcher.getInchi(withAuxInfo?)` exposes no options parameter and emits Standard InChI only. The app will *never* receive a `/r` layer. (HIGH — verified) | Explain **disconnection** (the thing that actually happens in Standard InChI) instead. If `/r` is ever wanted, it's a STACK-level change (different WASM/InChI invocation) — out of scope for v1.5. Flag explicitly. |
-| **Drawing dative / coordinate bonds, then expecting them in `/c`** | Users want to draw ferrocene "correctly" with η⁵ or dative bonds | Even if Ketcher can draw a dative bond, **Standard InChI disconnects the metal regardless** — the bond will not appear in `/c`. Promising "draw the bond and see it" sets a false expectation | Teach that disconnection is *intentional InChI normalization*, independent of how the bond was drawn. The absent bond IS the lesson. |
-| **3D coordination geometry / octahedral–tetrahedral viewer** | Coordination complexes are inherently 3D; users may expect geometry | Out of scope per PROJECT.md ("3D structure viewer — InChI is a 2D notation; 3D adds scope without illuminating InChI"). InChI carries no coordination geometry at all | None — stays a 2D notation explainer. Reaffirm the existing out-of-scope decision. |
-| **Crystallographic / lattice / unit-cell structure for salts** | NaCl "is" a crystal; users might expect lattice info | InChI represents the discrete molecular/ionic species, not the solid-state lattice. Showing a lattice would misrepresent what InChI encodes | Explain that InChI describes the disconnected ions (Na⁺, Cl⁻), not the crystal — itself a useful clarification. |
-| **Supporting the v1.07 "keep metal bonds" decision-tree behavior** | Recent InChI (v1.07, 2025) preserves some metal–ligand bonds | Ketcher 3.12.0 bundles an older InChI library; the new behavior is not available. Building UI assuming preserved bonds would be wrong for what the app actually emits | Build for what Ketcher emits today (full disconnection). Note the v1.07 development as a "the standard is evolving" footnote at most. (MEDIUM — exact bundled InChI version to confirm at STACK level.) |
-| **Auto-charge-balancing / valence "correction" of drawn ions** | Users may draw `[Cl]` without a charge and expect the tool to fix it | The tool explains what InChI made of *their* drawing; silently editing the structure breaks the "verbatim passthrough" principle the project holds (see MEMORY: never reconstruct, always show library output) | Show the InChI of exactly what they drew; if it's odd, that's informative. Presets carry correct charges in SMILES. |
+- **Mobile / tautomeric `(H,4,5)` or `(H,X,Y)`:**
+  > "A **mobile hydrogen**: InChI can't pin this H to one atom because the molecule tautomerises, so it records the H as **shared across the listed atoms** (here 4 and 5). A leading number gives the count — `(2H,...)` means two mobile H. This is how InChI gives every tautomer one identifier."
+
+  Correctness anchors (InChI Technical Manual; EPAM "InChI tautomers"; JCheminf 2015):
+  - Mobile-H groups are the mechanism by which **tautomers collapse to one standard InChI** — say this, it is the "aha".
+  - Format is `(nH, atom, atom, …)` where leading `n` (omitted when 1) is the **count of mobile H**, followed by the **skeletal atoms** that share them.
+  - InChI perceives 1,3- (and limited 1,4-/1,5-) H transfer; for v1.5 it is correct and sufficient to explain it as "mobile hydrogen(s) shared by these atoms." Do not over-specify the migration paths or charge cases.
+
+#### Ready-to-adapt phrasings — Tetrahedral stereo (t-layer)
+
+This is the card the user singled out ("most people don't understand what the tetrahedral stereo layer means"). Decision already made: plain-language 3D handedness + explicit parity≠R/S caveat.
+
+- **`atomN+` / `atomN-` (per stereocenter):**
+  > "A tetrahedral **stereocenter** at atom N — an sp³ atom whose four different substituents have a fixed 3-D handedness (a left- vs right-handed arrangement in space). The **+ / −** is a **parity**: whether the canonical atom numbers of the neighbours run clockwise (+) or anticlockwise (−) when viewed from the lowest-numbered neighbour. It's InChI's own bookkeeping sign — **not R/S.** A '+' does not mean R, and the same centre can flip sign purely because the canonical numbering changed."
+
+  Correctness anchors (verified):
+  - Parity is **+** when neighbour canonical numbers **increase clockwise** viewed from the H or the lowest-canonical-numbered neighbour (InChI Technical Manual; confirmed). Phrase as "viewed from the lowest-numbered neighbour" — accurate and accessible.
+  - "These marks have **no relation to R,S** … InChI does not use CIP rules and deduces parities from its own canonical numbers" (JCheminf 2015, direct). The caveat is not hedging — it is the documented fact.
+  - **m-layer / s-layer (mention, do not deep-dive):** add one sentence only when the centre also implicates them, e.g.:
+    > "Enantiomers share the same t-layer parities and differ only in the **/m** flag (0 vs 1 = take the mirror image); the **/s** flag says whether the configuration is absolute, relative, or racemic."
+  This is already correctly stated in `LAYER_INFO.m` / `LAYER_INFO.s` and `readingFor` — reuse, don't re-author.
+
+#### Ready-to-adapt phrasings — Formula elements
+
+- **Per element on hover (e.g. `C7`):**
+  > "**Carbon** — there are **7** carbon atoms in the molecule. The formula lists *what* and *how many* of each heavy-atom element (plus the total hydrogen count) in **Hill order**: carbon first, hydrogen next, then every other element alphabetically by symbol."
+
+- **Element with implicit count of 1 (e.g. `O`):**
+  > "**Oxygen** — **one** oxygen atom (no number means a count of one)."
+
+- **The `H` total in the formula (distinct from the h-layer!):**
+  > "**Hydrogen** — the **total** hydrogen count for the whole molecule. (Where each H sits is in the separate h-layer.)"
+
+  *This distinction is a correctness must: the formula-H is a sum; the h-layer is per-atom. A reader hovering "H10" in the formula and "1H3" in the h-layer must not think they contradict.*
+
+### Differentiators / nice-to-have enrichment
+
+| Enrichment | Value | Complexity | Verdict |
+|------------|-------|------------|---------|
+| Full periodic-table symbol→name table (all 118) | Lets *any* drawn molecule's formula explain every element, not just the 10 organic-chem staples | LOW (static map) | **Recommended** — the milestone explicitly asks for it. See table below. |
+| Hill-order note on formula hover | Explains *why* C and H come first then alphabetical — the "what's in it before structure" framing already in `LAYER_INFO.formula` | LOW | **Recommended**, reuse existing blurb wording. |
+| "no-carbon ⇒ all alphabetical" Hill nuance | Correct for inorganic/no-C fragments | LOW | Nice-to-have; only surfaces on carbon-free fragments. One clause. |
+| H-group: relate H2/H3 to familiar CH₂/CH₃ *counts* | Anchors notation to known chemistry | LOW | Nice-to-have, **only with the "count not group" guard**. |
+| Mobile-H: name a concrete example (carboxylate, imidazole, amide) | Makes tautomer abstraction concrete | LOW | Nice-to-have; risky to hardcode per-molecule, keep generic. |
+| t-layer: "viewed from lowest-numbered neighbour" geometric detail | Precise; some chemists want the exact rule | LOW | Nice-to-have; include since it's short and correct. |
+| Element trivia (atomic number, group, mass) | — | LOW | **Skip.** Not about the InChI. See anti-features. |
+
+#### Full element symbol→name table (for the formula layer)
+
+The current `ELEMENT_NAMES` in `layerInfo.ts` has 10 entries. A drawn molecule can legitimately contain any element Ketcher supports. Recommend extending to the full table (IUPAC standard names):
+
+```
+H hydrogen   He helium    Li lithium    Be beryllium  B boron      C carbon
+N nitrogen   O oxygen     F fluorine    Ne neon       Na sodium    Mg magnesium
+Al aluminium Si silicon   P phosphorus  S sulfur      Cl chlorine  Ar argon
+K potassium  Ca calcium   Sc scandium   Ti titanium   V vanadium   Cr chromium
+Mn manganese Fe iron      Co cobalt     Ni nickel     Cu copper    Zn zinc
+Ga gallium   Ge germanium As arsenic    Se selenium   Br bromine   Kr krypton
+Rb rubidium  Sr strontium Y yttrium     Zr zirconium  Nb niobium   Mo molybdenum
+Tc technetium Ru ruthenium Rh rhodium   Pd palladium  Ag silver    Cd cadmium
+In indium    Sn tin       Sb antimony   Te tellurium  I iodine     Xe xenon
+Cs caesium   Ba barium    La lanthanum  Ce cerium     Pr praseodymium Nd neodymium
+Pm promethium Sm samarium Eu europium   Gd gadolinium Tb terbium   Dy dysprosium
+Ho holmium   Er erbium    Tm thulium    Yb ytterbium  Lu lutetium  Hf hafnium
+Ta tantalum  W tungsten   Re rhenium    Os osmium     Ir iridium   Pt platinum
+Au gold      Hg mercury   Tl thallium   Pb lead       Bi bismuth   Po polonium
+At astatine  Rn radon     Fr francium   Ra radium     Ac actinium  Th thorium
+Pa protactinium U uranium  Np neptunium  Pu plutonium  Am americium Cm curium
+Bk berkelium Cf californium Es einsteinium Fm fermium  Md mendelevium No nobelium
+Lr lawrencium Rf rutherfordium Db dubnium Sg seaborgium Bh bohrium  Hs hassium
+Mt meitnerium Ds darmstadtium Rg roentgenium Cn copernicium Nh nihonium Fl flerovium
+Mc moscovium Lv livermorium Ts tennessine Og oganesson
+```
+
+**Spelling note:** the existing table uses "sulfur" (IUPAC-accepted). Keep "sulfur" and "aluminium" and stay consistent with one English variant. The fallback in `formulaSegmentReading` already degrades to the bare symbol when a name is missing, so an incomplete table is *safe* — extending it is strictly enrichment, not a correctness blocker.
+
+### Anti-Features (WRONG or over-claiming — do NOT include)
+
+| Anti-feature | Why it's tempting | Why it's wrong | Do instead |
+|--------------|-------------------|----------------|------------|
+| **H3 → "this is a methyl group"** | CH₃ looks like methyl | The h-layer states a **hydrogen count**, not a functional group. Whether atom-with-3H is methyl depends on the **connection layer** (it must also be terminal). N with 3H is not methyl. | Say "carries three hydrogens"; mention CH₃ only as a *count* with the "the c-layer makes it terminal" guard. |
+| **Parity + → "R", − → "S"** (any fixed mapping) | + / − and R / S both label chirality | **Explicitly false.** InChI parity is from canonical numbering, not CIP. There is *no* consistent +↔R mapping; the same centre's sign can flip with renumbering (JCheminf 2015, verbatim). | State the caveat as a fact, in the headline card. |
+| **"This stereocenter is (R)" / naming CIP descriptors** | Chemists want R/S | InChI does not compute CIP. Asserting R/S would fabricate data the tool does not have. | Stop at "handedness fixed; sign is parity, not R/S." |
+| **Mobile-H → "this proton moves / is delocalised right now"** | Tautomer intuition | InChI's mobile-H is a **normalisation bookkeeping device** for one identifier across tautomers — not a claim about physical delocalisation in a given drawn form. | "InChI records the H as shared across these atoms so all tautomers get one identifier." |
+| **Formula H-count = h-layer claim** | Both mention H | Formula H is the **molecular total**; h-layer is **per heavy atom**. Conflating them is a factual error. | Distinguish explicitly on the formula-`H` card (see phrasing above). |
+| **Element trivia: atomic number, group, mass, electron config** | "More is better" | None of it is about reading the InChI; it's encyclopaedia bloat that dilutes the tool's job and the terse card voice. | Name + count + Hill-order. Stop. |
+| **Re-deriving / re-rendering the H or stereo from parsed parts** | — | Violates the project's #1 invariant (verbatim Ketcher output; never reconstruct — memory `feedback_inchi_passthrough`). | Card explains the *verbatim* token; never rebuilds the string. |
+| **Per-stereocenter "left/right-handed" as if absolute** | Plain-language goal | "Handedness" is fine as intuition, but don't imply the sign alone tells you *which* hand — that needs the m-layer. | "a fixed 3-D handedness" + one-line m-layer mention. |
 
 ---
 
 ## Feature Dependencies
 
 ```
-Inorganic presets (load via setMolecule)
-    └──enable demonstration of──> Metal-disconnection explanation
-                                       └──requires──> per-component formula/c/h reading (mostly EXISTS)
+Sub-token card content (this milestone)
+    └──requires──> subHover / pinned-sub precedence tier in Explanation.tsx
+                       (PROJECT.md: card currently reads only hoverIdx/pinned)
 
-/q per-component reading
-    └──requires──> split q.text on ';' + align to components (NEW)
-    └──enhances──> Salt component breakdown panel
-    └──pairs with──> /p proton-balance salt prose
+Formula-element card
+    └──requires──> full ELEMENT_NAMES table (extend existing 10-entry map)
 
-/q / /p per-component HOVER highlight
-    └──requires──> per-component charge sub-token hover (parallels shipped CLYR sub-hover work)
-    └──depends on──> v1.1 multi-fragment q/p highlight fix (EXISTS — verify on new presets)
-
-"Why is the metal gone?" callout
-    └──requires──> disconnection detection heuristic (metal element as standalone component w/ empty /c slot)
-    └──enhances──> Metal-disconnection explanation
-
-Disconnection diff visualization (absent bonds)
-    └──requires──> mapping drawn bonds NOT in /c  ──RISKY──> reliable AuxInfo mapping for disconnected metals
-
-/r reconnected layer  ──CONFLICTS WITH──> ketcher.getInchi() (no options param)  [ANTI-FEATURE]
+H-group cards ──reuse──> readingFor() h-branch (already emits "bears kH")
+Mobile-H card ──reuse──> parseMobileHydrogens() (already parses the group)
+t-layer card  ──reuse──> parseStereoParities() (already emits {atom: sign})
+                ──mentions──> LAYER_INFO.m / LAYER_INFO.s (already authored, reuse verbatim)
 ```
 
-### Dependency Notes
+### Dependency notes
 
-- **Per-component `/q` reading requires a parser change, but a small one:** `q.text` is already captured as a layer; it just needs `.split(';')` and alignment to the formula's dot-separated components. The multi-fragment expansion machinery already exists in `readingFor` for `c`/`h`/`t` — follow that exact pattern. (HIGH)
-- **`/q`/`/p` highlighting partly exists:** v1.1 fixed multi-fragment `q`/`p` highlighting (CuSO₄). v1.5's new work is *per-token* precision (hovering one component's `+1`), analogous to the CLYR-01..05 sub-token refinement shipped in v1.4. (HIGH)
-- **Disconnection diff visualization conflicts with mapping reliability:** AuxInfo (`/rC:` coordinate matching, per v1.1) maps canonical→Ketcher atoms; whether it reliably maps a disconnected metal's drawn-but-dropped bonds is unverified. Gate this differentiator behind a live AuxInfo check on ferrocene/permanganate. (LOW confidence on feasibility — flag for STACK.)
-- **All presets depend on Ketcher round-tripping the SMILES:** embedded SMILES → `setMolecule` → live InChI. Some inorganic SMILES (especially with explicit charges or unusual valences) may not parse cleanly in Ketcher standalone. Each proposed preset's SMILES must be live-verified before commit. (MEDIUM — flag for verification.)
-
----
-
-## Inorganic Preset Shortlist (concrete, Ketcher-drawable, demonstrates the new layers)
-
-Ordered simplest → most complex. SMILES are written for in-browser `setMolecule` loading. **Verify each round-trips in Ketcher standalone before shipping** (the ones marked ⚠ are most likely to need a fallback). Exact InChI shown where verified against a primary source; others are predicted from the documented disconnection rules (MEDIUM).
-
-| # | Molecule | SMILES | Demonstrates | Expected Standard-InChI feature | Confidence |
-|---|----------|--------|--------------|----------------------------------|-----------|
-| 1 | **Sodium chloride** (NaCl) | `[Na+].[Cl-]` | Simplest salt; `/q` per-component + `/p` | `InChI=1S/ClH.Na/h1H;/q;+1/p-1` — empty `;` slot = neutral chloride, `+1` = sodium, `/p-1` = deprotonated | **HIGH (verified)** |
-| 2 | **Potassium chloride** (KCl) | `[K+].[Cl-]` | Second simple salt; reinforces `/q;+1/p-1` with a different metal | `InChI=1S/ClH.K/h1H;/q;+1/p-1` (predicted, parallel to NaCl) | MEDIUM |
-| 3 | **Sodium acetate** | `CC(=O)[O-].[Na+]` | Organic anion + metal cation; `/q` with a *carbon-containing* charged component | Acetate (−1) + Na (+1); `/q-1;+1` style | MEDIUM |
-| 4 | **Ammonium chloride** | `[NH4+].[Cl-]` | Salt with **no metal at all** — shows `/q`/`/p` are about charge, not metals | Two-component `/q`; teaches disconnection ≠ metals-only | MEDIUM |
-| 5 | **Sodium bicarbonate** | `OC([O-])=O.[Na+]` | Real-world salt; bicarbonate anion charge localization | Multi-component `/q`; `/p` proton balance | MEDIUM |
-| 6 | **Magnesium chloride** (MgCl₂) | `[Mg+2].[Cl-].[Cl-]` | **Multi-charge + duplicated anion** → `N*` duplication in layers (ties into shipped CLYR-05) | `2Cl.Mg` style; `/q` with `+2` and duplicated chloride | MEDIUM |
-| 7 | **Copper(II) sulfate** (CuSO₄) | `[Cu+2].[O-]S(=O)(=O)[O-]` | Already exercised in v1.1; confirms multi-fragment `/q` highlighting on a classic inorganic salt | Cu²⁺ + sulfate²⁻; `/q` per component | MEDIUM (v1.1 used it) |
-| 8 | **Potassium permanganate** (KMnO₄) | `[K+].[O-][Mn](=O)(=O)=O` | High-charge metal-oxo; disconnects into K⁺ and permanganate; vivid `/q` | Permanganate anion + K⁺; metal-oxo disconnection | MEDIUM ⚠ (Mn valence/charge may need live check) |
-| 9 | **Ferrocene** | `[cH-]1cccc1.[cH-]1cccc1.[Fe+2]` (fallback: `C1=CC=C[CH]1.C1=CC=C[CH]1.[Fe]`) | **The anchor organometallic** — metal fully disconnected; `2C5H5.Fe`; empty `/c...;` slot for Fe; `N*` duplication of the two rings | `InChI=1S/2C5H5.Fe/c2*1-2-4-5-3-1;/h2*1-5H;` — note **no `/q`** (rings written neutral) and the trailing `;` = Fe has no connectivity | **HIGH (verified)** ⚠ (SMILES must round-trip; iron sandwich is the hardest to draw) |
-| 10 | **Hexaamminecobalt(III) chloride** | `[Co+3].N.N.N.N.N.N.[Cl-].[Cl-].[Cl-]` | Classic coordination complex; massive disconnection into Co³⁺ + 6 NH₃ + 3 Cl⁻; extreme multi-component `/q` | Many components; `/q` with `+3` and duplicated neutrals/anions | LOW ⚠ (large component count; likely needs Ketcher live check / may be too complex — keep as stretch) |
-| 11 | **Silver nitrate** (AgNO₃) | `[Ag+].[O-][N+](=O)[O-]` | Metal cation + polyatomic oxo-anion; nitrate's internal `+/−` charges plus the component net charge — good `/q` vs internal-charge teaching | Ag⁺ + nitrate; `/q` per component | MEDIUM |
-| 12 | **Calcium carbonate** (CaCO₃) | `[Ca+2].[O-]C([O-])=O` | Common, recognizable; divalent cation + divalent anion | Ca²⁺ + carbonate²⁻; `/q` two-component | MEDIUM |
-
-**Recommended shipping core (start here, all high-value, lower-risk):** #1 NaCl, #2 KCl, #6 MgCl₂, #7 CuSO₄, #9 ferrocene, #11 AgNO₃, #4 NH₄Cl. These cover: simplest salt, multi-charge + duplication, classic inorganic salt, the organometallic anchor, polyatomic oxo-anion, and the "charge isn't only about metals" case. Add #8 KMnO₄ and #10 hexaamminecobalt only after confirming they round-trip in Ketcher standalone.
-
-**Rationale anchors:**
-- **Ferrocene (#9)** is the headline demo: it shows disconnection + `N*` ring duplication + the empty connectivity slot for Fe, all in one verified string, and it is the molecule chemists most associate with "weird InChI."
-- **NaCl (#1)** is the headline `/q`+`/p` demo: the verified `/q;+1/p-1` is the cleanest possible illustration of "empty slot = neutral component" and "proton offset."
-- **MgCl₂ (#6)** connects v1.5 to the already-shipped `N*` duplicate-fragment highlighting (CLYR-05) — a duplicated chloride.
-- **NH₄Cl (#4)** prevents the misconception that disconnection/`/q` is a metals-only phenomenon.
+- **All three families already have working parsers and highlight infra** (PROJECT.md INCHI-04/05/08, CLYR-*). This milestone is *copy*, not new parsing. The risk is chemical correctness, not code.
+- **The card-precedence tier is the only structural change** and is already scoped in PROJECT.md. Content slots into it.
+- **m/s-layer content already exists** in `layerInfo.ts` — the t-layer card should *reference* it, not duplicate it.
 
 ---
 
 ## MVP Definition
 
-### Launch With (v1.5 core)
+### Launch with (v1.5)
 
-- [ ] **Corrected `/q` semantics: per-component charge reading + corrected blurb** — the shipped blurb is wrong for salts; smallest, highest-value fix. (table stakes)
-- [ ] **Metal-disconnection explanation prose** in the formula/connectivity reading — explain the dot-separated metal component and the empty `/c` slot. (table stakes)
-- [ ] **`/q` / `/p` per-component hover highlighting verified + made token-precise** on the new presets. (table stakes)
-- [ ] **Inorganic preset core set** (NaCl, KCl, MgCl₂, CuSO₄, ferrocene, AgNO₃, NH₄Cl) — each live-verified to round-trip. (table stakes)
-- [ ] **`/p` salt prose** (proton offset framed via HCl→Cl⁻). (low cost, pairs with `/q`)
+- [ ] H sub-token cards: `H` / `H2` / `H3` / range — **count semantics, no functional-group claim**
+- [ ] Mobile-H `(H,X,Y)` card — shared/tautomeric explanation + "one identifier for all tautomers" hook
+- [ ] t-layer per-stereocenter card — handedness + **parity≠R/S caveat (mandatory)**
+- [ ] Formula per-element card — name + count + Hill-order note; formula-H ≠ h-layer guard
+- [ ] Full element name table
 
-### Add After Validation (v1.5.x / fast-follow)
+### Add after validation (later)
 
-- [ ] **"Why is the metal gone?" proactive callout** on detected disconnection. (differentiator)
-- [ ] **Salt component breakdown panel** (per-ion formula · charge · proton offset). (differentiator)
-- [ ] **KMnO₄ and hexaamminecobalt presets** once Ketcher round-trip confirmed. (preset depth)
+- [ ] Mobile-H concrete example naming (carboxylate / amide / imidazole) — only if users ask
+- [ ] No-carbon Hill nuance clause — only surfaces on inorganic fragments
+- [ ] b-layer (double-bond E/Z) sub-token cards — same parity-≠-E/Z pattern as t-layer; natural next milestone, out of scope here
 
-### Future Consideration (v2+)
+### Future / defer
 
-- [ ] **Disconnection diff visualization** (highlight bonds InChI dropped) — gated on AuxInfo reliability for disconnected metals; research-heavy. (differentiator)
-- [ ] **`/r` reconnected layer** — only if the stack ever moves off `getInchi()` to an options-capable InChI invocation. Currently an anti-feature. (blocked)
-
----
+- [ ] Interactive "why did this sign flip when I renumbered" demo — illustrates parity≠R/S but is a whole feature, not copy
 
 ## Feature Prioritization Matrix
 
-| Feature | User Value | Implementation Cost | Priority |
-|---------|------------|---------------------|----------|
-| Corrected `/q` per-component reading + blurb | HIGH | LOW–MEDIUM | P1 |
-| Metal-disconnection explanation prose | HIGH | MEDIUM | P1 |
-| `/q`/`/p` per-component hover highlight (verify + token-precise) | HIGH | MEDIUM | P1 |
-| Inorganic preset core set | HIGH | LOW (data) + verify | P1 |
-| `/p` salt proton-balance prose | MEDIUM | LOW | P1 |
-| "Why is the metal gone?" callout | HIGH | MEDIUM | P2 |
-| Salt component breakdown panel | MEDIUM | MEDIUM | P2 |
-| KMnO₄ / hexaamminecobalt presets | MEDIUM | LOW + verify | P2 |
-| Disconnection diff visualization | HIGH | HIGH | P3 |
-| `/r` reconnected layer | (would be HIGH) | BLOCKED | — (anti-feature) |
+| Content piece | User value | Authoring cost | Priority |
+|---------------|------------|----------------|----------|
+| t-layer parity≠R/S caveat | HIGH (user-requested headline) | LOW | P1 |
+| Mobile-H explanation | HIGH (notation nobody knows) | LOW | P1 |
+| H/H2/H3 count cards | HIGH | LOW | P1 |
+| Per-element name + count | HIGH | LOW | P1 |
+| Full element table | MEDIUM | LOW | P1 |
+| Hill-order note | MEDIUM | LOW | P2 |
+| m/s one-line mention on t-card | MEDIUM | LOW (reuse) | P2 |
+| Mobile-H concrete examples | LOW | LOW | P3 |
 
----
+## Competitor / prior-art reference
 
-## Competitor / prior-art note
+| Aspect | PubChem / typical viewer | This tool's approach |
+|--------|--------------------------|----------------------|
+| Stereo display | Shows InChI raw, or CIP R/S separately — never explains the parity sign | Explain the *parity itself* and that it isn't R/S — the gap nobody fills |
+| Mobile-H | Shown raw in the string; unexplained | Plain-language tautomer-normalisation card |
+| Formula | Static formula | Per-element hover with Hill rationale |
 
-The relevant "competitor" is the official InChI documentation and PubChem's own InChI display — neither explains disconnection *interactively* or links charge tokens to atoms on a canvas. The differentiator for this tool is exactly the core value: making the disconnection rule and per-component charge **hoverable, explained, and tied to the drawing**. No competitor analysis changes the recommendations above.
-
----
+The differentiator is consistent with PROJECT.md Core Value: *every chunk is hoverable and explained*. No competing tool explains the **sub-token semantics**; that is the whole product.
 
 ## Sources
 
-- InChI Technical FAQ — metal disconnection, reconnected `/r` layer, RecMet/FixedH being non-standard, per-component `;` semantics: <https://www.inchi-trust.org/technical-faq/>
-- InChI, the IUPAC International Chemical Identifier (J. Cheminformatics) — disconnection of metal bonds, reconnected layer definition: <https://jcheminf.biomedcentral.com/articles/10.1186/s13321-015-0068-4>
-- Indigo InChI options (RecMet listed; default = standard): <https://lifescience.opensource.epam.com/indigo/options/inchi.html>
-- Ketcher README / API (`getInchi(withAuxInfo?: boolean)` — single boolean, no options param): <https://github.com/epam/ketcher/blob/master/README.md>
-- Ferrocene Standard InChI (`InChI=1S/2C5H5.Fe/c2*1-2-4-5-3-1;/h2*1-5H;`) — PubChem CID 10219726 / NIST WebBook: <https://pubchem.ncbi.nlm.nih.gov/compound/Ferrocene>
-- Sodium chloride Standard InChI (`InChI=1S/ClH.Na/h1H;/q;+1/p-1`) — NIST WebBook: <https://webbook.nist.gov/cgi/cbook.cgi?ID=C7647145>
-- "Making InChI FAIR and Sustainable for Inorganic Chemistry" (v1.07 decision-tree behavior; FeCl₂ disconnection example): <https://hunterheidenreich.com/notes/chemistry/molecular-representations/notations/inchi-2025/>
+- [InChI Technical Manual (InChI Trust PDF)](https://www.inchi-trust.org/download/104/InChI_TechMan.pdf) — parity definition, mobile-H group format — HIGH
+- [InChI, the IUPAC International Chemical Identifier — J. Cheminformatics 2015](https://jcheminf.biomedcentral.com/articles/10.1186/s13321-015-0068-4) — "no relation to R,S … InChI does not use CIP rules"; mobile-H normalisation; m-layer enantiomer role — HIGH
+- [EPAM "InChI tautomers" PDF](https://lifescience.opensource.epam.com/_downloads/52fcb4ab88eb6e0c6fd6f7cda2a7187d/Inchi%20tautomers.pdf) — mobile-H / tautomer perception (1,3/1,4/1,5-H transfer) — HIGH
+- [InChI Technical FAQ](https://www.inchi-trust.org/technical-faq/) — parity sign and canonical-number basis — HIGH
+- [Hill system — Chemical formula, Wikipedia (Hill 1900)](https://en.wikipedia.org/wiki/Chemical_formula) — C first, H next, rest alphabetical; no-C ⇒ all alphabetical — HIGH
+- IUPAC standard element names (periodic table) — symbol→name table — HIGH
+- Existing project code: `src/lib/layerInfo.ts`, `src/lib/inchiKeyInfo.ts` — voice/shape model — HIGH
 
 ---
-*Feature research for: inorganic/organometallic/salt capabilities in an InChI explainer*
-*Researched: 2026-06-22*
+*Feature research for: InChI sub-token explanation copy (v1.5)*
+*Researched: 2026-06-26*

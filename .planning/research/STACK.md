@@ -1,154 +1,135 @@
-# Stack Research — v1.5 Inorganic / Organometallic Capability
+# Technology Stack — Milestone v1.5 "Sub-token-specific explanations"
 
-**Domain:** In-browser InChI explainer — extending an existing app to handle inorganic & organometallic species
-**Researched:** 2026-06-22
-**Confidence:** HIGH on the make-or-break facts (InChI string anatomy, no `/r` from ketcher 3.12.0, AuxInfo behavior); MEDIUM on Ketcher's practical drawing fidelity for coordination compounds (verified API exists; live-draw quality not exhaustively tested).
+**Project:** Explain that InChI
+**Researched:** 2026-06-26
+**Verdict:** ZERO new dependencies. Pure TS data + one React rendering branch + existing CSS Modules.
+**Overall confidence:** HIGH (verified against repo source, not assumed)
 
----
+> NOTE: This file replaces an earlier STACK.md authored 2026-06-22 for an abandoned
+> v1.5 direction ("inorganic / organometallic capability"). The active v1.5 per
+> `.planning/PROJECT.md` (line 13) is **Sub-token-specific explanations**. That prior
+> research is superseded and not relevant to this milestone.
 
-## TL;DR for the Roadmap
+## Recommended Stack
 
-**Zero new dependencies are needed.** Everything is achievable with the existing ketcher 3.12.0 API + pure-TS parsing extensions to `parseInchi.ts` / `highlightUtils.ts`.
+### Core (unchanged — DO NOT touch)
 
-**The single most important finding:** ketcher-react 3.12.0's `getInchi(withAuxInfo?: boolean)` has **no parameter to request the reconnected `/RecMet` layer**. The app therefore receives the **Standard InChI (`InChI=1S/…`) with metal–ligand bonds DISCONNECTED and NO `/r` layer**. The original question's premise — "Standard InChI emits a reconnected `/r` layer by default" — is **false**. Standard InChI never contains `/r`; `/r` is a *non-standard* extension that requires the `/RecMet` switch, which ketcher does not expose. This reframes the whole milestone (see "What This Actually Means" below).
+The validated stack is already in place and working. No version bumps, no additions.
 
----
+| Layer | Choice | Version | Status |
+|-------|--------|---------|--------|
+| Build tool | Vite | ^8.0.0 | In place |
+| UI framework | React | ^18.3.1 | In place |
+| Language | TypeScript | ~5.7.2 | In place |
+| Molecule editor | ketcher-react / -standalone / -core | 3.12.0 | In place |
+| State | Zustand | 5.0.13 | In place |
+| Styling | CSS Modules + oklch custom properties | built-in | In place |
+| Test | vitest | ^3.0.0 | In place |
 
-## What the InChI Library Actually Emits — Verified
+### New dependencies required for v1.5
 
-### Version: Standard InChI v1.06 (`1S`)
-ketcher-standalone 3.12.0 bundles the Indigo WASM toolkit, whose InChI plugin emits `InChI=1S/…` (the `S` = Standard). The Indigo test suite confirms the default `indigo.convert(mol, "inchi", …)` produces `InChI=1S/…` with no special flags (benzene → `InChI=1S/C6H6/c1-2-4-6-5-3-1/h1-6H`). The app already handles `1S` strings throughout. **Confidence: HIGH** (Indigo source + ketcher README).
+**NONE.** Confirmed below against the three sub-questions.
 
-### Metal disconnection is automatic and unavoidable in Standard InChI
-Standard InChI **always disconnects all metal atoms** from their ligands in the connection layer. Charges on disconnected halogens / O, S, Se, Te, N, P, As, B are adjusted by transferring charge to the metal where possible. The metal becomes its own dot-separated component. This is fixed behavior of the Standard InChI algorithm — not a toggle. **Confidence: HIGH** (InChI Trust technical FAQ + InChI Technical Manual).
+## Why zero new dependencies — the three questions answered
 
-### The `/r` reconnected layer requires `/RecMet` — NOT available via ketcher 3.12.0
-- `/r` only appears when the InChI is generated with the `/RecMet` option.
-- Turning on `/RecMet` produces a **non-standard** InChI: the prefix changes from `1S/` to `1/`, and a `/r…` block is appended containing a *complete second InChI* of the reconnected structure.
-- Indigo *does* support `/RecMet` at the low level (`indigo.setOption("inchi-options", "/RecMet")`), but **ketcher-react's public `getInchi(withAuxInfo?)` and `getInChIKey()` accept no options string** — there is no plumbed path from the React component to set `inchi-options`. **Confidence: HIGH** (ketcher README API signature is `getInchi(withAuxInfo?: boolean): Promise<string>`, single boolean param only).
+### (1) Does a ~118-entry periodic-table element-name lookup warrant a dependency?
 
-### Worked example strings (verified against a real source)
+**No.** A hand-authored `Record<string, string>` is the correct tool.
 
-Standard InChI is what the app WILL see:
+- The data is ~118 `Symbol: 'name'` pairs — a single static literal, ~2-3 KB, tree-shaken into the bundle with zero runtime cost.
+- Every npm periodic-table package (`periodic-table`, `chemical-elements`, `mendeleev`, etc.) bundles atomic weights, electron configurations, group/period/category metadata, CAS numbers, discovery dates — **none of which this feature uses.** The card needs `symbol → English name` plus (optionally) a one-clause role. That is it.
+- Adding a dep for a flat string map fails ladder rung 5 (already-installed / few lines) and rung 1 (does the extra payload need to exist — no).
+- The repo already establishes this exact pattern: `ELEMENT_NAMES` in `src/lib/layerInfo.ts:180-183` is a hand-authored 10-element Record. v1.5 extends it; it does not change the approach.
+- Verbatim/hand-authored static data is a load-bearing project convention (parsers ported verbatim from `molecules.js`; `LAYER_INFO`, `KEY_ZONE_COPY` are hand-authored prose modules). A dependency would break that consistency and add an external source of chemical-name truth that can drift from the rest of the hand-authored copy.
 
-| Species | Standard InChI (what ketcher emits) |
-|---------|--------------------------------------|
-| Ferrocene | `InChI=1S/2C5H5.Fe/c2*1-2-4-5-3-1;/h2*1-5H;` |
-| Ferrocyanide [Fe(CN)₆]⁴⁻ | `InChI=1S/6CN.Fe/c6*1-2;/q;;;;;;-4` |
-| Prussian blue | `InChI=1S/18CN.7Fe/c18*1-2;;;;;;;/q;;;;;;;;;;;;;;;;;;3*-4;4*+3` |
+**Recommendation:** Extend `ELEMENT_NAMES` to the full periodic table in place. Names sourced from IUPAC's official element list when authoring — this is COPY work owned by the roadmap's content phase, not a code dependency.
 
-The corresponding `/r` forms (which the app will **not** receive — shown only to define the anatomy):
+### (2) Existing utility to extend rather than replace?
 
+**Yes — extend, do not replace.** Named integration points:
+
+| Existing artifact | File:line | What v1.5 does to it |
+|-------------------|-----------|----------------------|
+| `ELEMENT_NAMES: Record<string,string>` (10 elements) | `src/lib/layerInfo.ts:180-183` | Extend to ~118 entries. Already consumed by `formulaSegmentReading` (`layerInfo.ts:150`) — extending it improves existing formula readings for free. |
+| `LAYER_INFO` / `DEFAULT_INFO` (hand-authored prose) | `src/lib/layerInfo.ts:21-110` | Pattern to mirror for the new sub-token copy table. |
+| `KEY_ZONE_COPY` (parallel prose module) | `src/lib/inchiKeyInfo.ts` | Direct template for the new sub-token copy module — title/body shape, pinned via an offset/label test (v1.3 SC-1 pattern). |
+| `SubHover` union (kinds: element / hAtoms / mobileH / stereo / atom / bond / branch) | `src/lib/parseInchi.ts` (type) | Read-only. The discriminated union is the key the new copy lookup switches on. Already emitted by `LayerText.tsx`. |
+| `LayerText.tsx` sub-token emission | `src/components/LayerText.tsx:25-39` (`subHoverProps`) + per-renderer `hit` constructions | No change needed. Already emits the right `SubHover` on `onMouseEnter → setSubHover` and pins via `setPinned({ idx, sub })`. Data already flows. |
+| `Explanation.tsx` precedence chain | `src/components/Explanation.tsx:46,71-136` | Add ONE branch: read `subHover`/`pinned.sub`, render sub-token copy ABOVE the existing `layer` branch. The cascade (`keyHoverKind → layer → legendHover → idle`) is the established pattern; v1.5 inserts a `subHover` tier. |
+| Store `subHover` / `pinned.sub` | `src/store.ts` (set by `LayerText`, read by `Explanation`) | Already exists and populated. `Explanation.tsx` simply does not READ `subHover` yet — that is the entire gap. |
+
+The store already carries the sub-token data; `LayerText` already sets it; only `Explanation.tsx` fails to read it. The feature is "wire the existing signal into the existing card + author the copy."
+
+### (3) Confirm no new dep is justified
+
+**Confirmed.** Climbing the ladder against the zero-dep project value:
+
+- Rung 1 (need to exist?): the rendering branch and copy must exist — but no NEW capability (no markdown renderer, no i18n lib, no data lib) is implied.
+- Rung 2 (already in codebase?): `subHover`/`pinned.sub` plumbing, the precedence-cascade pattern, the prose-module pattern, `ELEMENT_NAMES`, the `<b>`-only `dangerouslySetInnerHTML` reading path — all present.
+- Rung 5 (installed dep solves it?): React renders the branch; CSS Modules style it; TS holds the data. Nothing missing.
+- Project precedent: v1.2 (feedback), v1.3 (InChIKey), v1.4 (reset/c-layer), Phase 16 (8-step guided tour — explicitly "zero new runtime dependencies, pure React + CSS Modules", HELP-08) all shipped zero-dep. v1.5 is strictly smaller in scope than the Phase 16 tour.
+
+## Suggested data shape for the new sub-token copy module
+
+A new prose module `src/lib/subTokenInfo.ts`, parallel to `inchiKeyInfo.ts`. Pure data + a pure lookup keyed on the `SubHover` discriminant. No DOM, unit-testable in isolation (the v1.2 `buildFeedbackUrl` / v1.3 `parseInchiKey` seam pattern).
+
+```ts
+// src/lib/subTokenInfo.ts
+import type { SubHover } from './parseInchi';
+import { ELEMENT_NAMES } from './layerInfo';
+
+export interface SubTokenCard { title: string; body: string; } // body may contain <b> only
+
+// Full periodic table — extends the existing 10-entry ELEMENT_NAMES.
+// Option A (preferred): grow ELEMENT_NAMES in layerInfo.ts in place — one source of
+//   truth; formulaSegmentReading already consumes it, so formula readings improve for free.
+// Option B: a separate ELEMENT_NAMES_FULL here. Prefer A.
+
+// Optional: one-clause role per element family (covers "name and role" without a
+// per-element essay). ponytail: family map, expand per-element only if a reviewer asks.
+export function subTokenCard(sub: SubHover): SubTokenCard | null {
+  switch (sub.kind) {
+    case 'element': /* ELEMENT_NAMES[sub.el] + role clause */ return /* ... */;
+    case 'hAtoms':  /* "<b>N</b>H — these atoms each carry N hydrogen(s)" */ return /* ... */;
+    case 'mobileH': /* mobile / tautomeric proton copy */ return /* ... */;
+    case 'stereo':  /* sp3 handedness + caveat: +/- is canonical-ordering parity, NOT R/S */ return /* ... */;
+    default: return null; // atom/bond/branch: fall through to the existing layer card
+  }
+}
 ```
-Ferrocene  /r:  …/rC10H10Fe/c1-2-4-5-3(1)11(1,2,4,5)6-7(11)9(11)10(11)8(6)11/h1-10H
-Ferrocyanide /r: …/rC6FeN6/c8-1-7(2-9,3-10,4-11,5-12)6-13/q-4
+
+`Explanation.tsx` integration (one new branch, top of the cascade):
+
+```ts
+const subHover = useInchiStore(s => s.subHover);
+const effSub = pinned?.sub ?? subHover;       // pinned sub wins, mirrors effIdx logic (line 46)
+const subCard = effSub ? subTokenCard(effSub) : null;
+// order: subCard ? <sub card> : keyHoverKind ? ... : layer ? ... : legendHover ? ... : idle
 ```
 
-**Anatomy of `/r`:** it is literally a whole second InChI (formula `/c…/q…/h…` sub-layers) describing the metal-reconnected single entity, glued onto the end after the standard layers. Prefix is `1/` (non-standard). **Confidence: HIGH** (metallome.blogspot.com worked examples, cross-checked with the InChI Technical Manual description).
-
----
-
-## What This Actually Means for the Existing Stack
-
-The existing parser and highlighter already cover **most** of what inorganic Standard InChI throws at them, because inorganic Standard InChI is *just an aggressively multi-fragment, charged molecule* — and multi-fragment + `/q` + `/p` are already shipped (v1.0/v1.1).
-
-### Question-by-question feasibility
-
-**1. Metal disconnection & `/r` layer — REFRAME, don't build a reconnect feature.**
-The app cannot get `/r` from ketcher 3.12.0. So there is nothing to *parse* for `/r` in practice. What the app *does* get is the disconnected form: the metal is a separate `.Fe` (etc.) component and the ligands are their own components. The teaching opportunity flips: the milestone's real value is **explaining to the user WHY the metal looks disconnected** — i.e., a dedicated explanation that Standard InChI deliberately severs metal–ligand bonds, with the `/r` form mentioned as the non-standard alternative the tool can't show. This is a *content/explanation* feature, not a parsing feature. **No `/r` parsing code required.**
-
-**2. `/q` charge & `/p` proton layers — already handled; verify edge cases only.**
-The `/q` handler (`highlightUtils.ts`) already splits per-component on `;` and maps charged fragments. Critically, the ferrocyanide example `/q;;;;;;-4` (7 slots) lines up exactly with `formulaFragmentCounts("6CN.Fe")` → `[2,2,2,2,2,2,1]` (7 components). The existing per-fragment cumulative-offset machinery resolves this correctly today. `/p` (mobile proton) is identical to existing salt handling. **Gap:** the *explanation copy* for `/q`/`/p` is written for organic ions; it should be extended to describe net-charge-per-component and metal charge transfer. **Highlighting: no new code. Explanation: copy edits in `layerInfo.ts`.**
-
-**3. Multi-component salts — fully covered by existing machinery.**
-Dot-separated components, the `N*` multiplier in formula (`6CN`), c-layer (`c6*1-2`), h-layer (`h2*1-5H`), and `/q` are all handled by `formulaFragmentCounts`, `expandLayerText`, and the cumulative-offset loops in `enrichLayers` / `buildHighlightSpecs`. The `c6*1-2;` form (multiplied component followed by an empty `;` for the bondless metal) parses fine — `expandLayerText` expands the `6*` and the trailing empty segment yields no bonds. **No new code; add inorganic test fixtures.**
-
-**4. Ketcher drawing fidelity — usable but with honest limits.**
-- ketcher-react 3.12.0 has a full periodic table (metals included), charge +/- tools, and a **dative/coordinate bond** type in the bond palette. So a user *can* draw a metal with coordinate bonds.
-- **Limitation 1 (the big one):** regardless of how the user draws the metal–ligand bonds (covalent, dative, or none), Standard InChI **disconnects them anyway**. The canvas will show bonds the InChI string does not represent — inherent to Standard InChI, not a Ketcher bug, and must be explained in-app.
-- **Limitation 2:** implicit-H perception on atoms bonded to a metal is unreliable (a known organometallic modeling issue); drawn structures may need explicit H or explicit charges to yield a sensible InChI.
-- **Limitation 3 — AuxInfo mapping (make-or-break for highlighting):** `getInchi(true)` AuxInfo describes the **disconnected** structure (the same structure the InChI describes), because both come from the same normalization pass. The existing coordinate-matching remap (`remapAuxToPoolIds`, added in v1.1 for CuSO₄-style multi-component cases) already handles interleaved pool IDs across components by matching molfile `/rC:` coordinates to live-editor atom positions. **The metal atom, as its own single-atom component, is just another component the coordinate matcher will place.** The residual risk: a lone metal atom with no bonds is still an atom with coordinates, so it should map — but this needs one live verification (see gate below). **Confidence: MEDIUM — API path is sound, needs one live check.**
-
-**5. New libraries — NONE.**
-Confirmed: no RDKit, no OpenBabel, no server, no second WASM module. The whole milestone is (a) explanation-copy additions in `layerInfo.ts`, (b) a small amount of parser hardening + inorganic test fixtures in `parseInchi.ts`/`highlightUtils.ts`, and (c) optionally inorganic preset molecules in `molecules.ts`. **Zero-new-deps feasibility: CONFIRMED.**
-
----
-
-## Recommended Stack (unchanged — this is the point)
-
-### Core Technologies
-
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| ketcher-react / -standalone / -core | 3.12.0 (pinned) | Editor + WASM Standard InChI v1.06 | Already shipped; emits `1S` with automatic metal disconnection. No change. |
-| Indigo WASM (transitive) | bundled in ketcher-standalone 3.12.0 | InChI/InChIKey generation | Standard InChI only via the exposed API. Do not import directly. |
-| Pure-TS parsers (`parseInchi.ts`, `parseAuxMapping.ts`, `highlightUtils.ts`) | in-repo | Layer parsing, AuxInfo→pool-ID mapping, highlight specs | Already multi-fragment & `/q`/`/p` aware; extend for inorganic explanation + fixtures. |
-
-### Supporting Libraries
-
-**None added.** All new behavior lands in existing in-repo modules.
-
-### Development Tools
-
-| Tool | Purpose | Notes |
-|------|---------|-------|
-| Vitest | unit-test new inorganic fixtures | Add ferrocene / ferrocyanide / Prussian blue as `1S` fixtures; assert per-component `/q` highlighting and that `.Fe` maps to a single atom. |
+`ponytail:` not every `SubHover` kind needs copy — `atom`/`bond`/`branch` (c-layer) return `null` and fall through to the existing connection-layer card, which is already correct. Author copy only for the kinds the milestone names (element, hAtoms, mobileH, stereo); add the rest when a reviewer asks.
 
 ## Installation
 
 ```bash
-# No new packages. v1.5 adds zero dependencies.
+# none
 ```
 
 ## Alternatives Considered
 
-| Recommended | Alternative | When to Use Alternative |
-|-------------|-------------|-------------------------|
-| Explain the disconnected Standard InChI (no `/r`) | Plumb `/RecMet` through to expose `/r` | Would require forking/patching ketcher-react to pass `inchi-options` to the structService, producing a *non-standard* (`1/`) InChI. Off-brand (tool teaches *Standard* InChI), high-risk, and breaks InChIKey parity. **Reject for v1.5.** |
-| Pure-TS parser extensions | RDKit-JS / OpenBabel-WASM second engine | Only if the product pivots to reconnect rendering. Adds a heavy WASM dep and a second source of truth that can disagree with ketcher — violates the verbatim-passthrough invariant. **Reject.** |
+| Category | Recommended | Alternative | Why Not |
+|----------|-------------|-------------|---------|
+| Element names | Extend `ELEMENT_NAMES` Record in TS | npm periodic-table package | Pulls in unused atomic weights/configs/categories; breaks verbatim-data convention; ~2KB hand map vs a dep |
+| Sub-token copy | New `subTokenInfo.ts` prose module | Inline strings in `Explanation.tsx` | Mirrors tested `inchiKeyInfo.ts` seam; keeps copy unit-testable and the component thin |
+| Rendering | One new branch in existing card | New sub-token card / surface | Milestone goal is explicitly "same card, no new surface" (PROJECT.md line 15) |
+| Copy markup | `<b>`-only via existing `dangerouslySetInnerHTML` path, or plain React children | markdown renderer dep | `readingFor` already emits `<b>`/`<span>` only; key-segment card uses plain React children. No markdown needed |
 
-## What NOT to Use / NOT to Build
+## Open Questions
 
-| Avoid | Why | Use Instead |
-|-------|-----|-------------|
-| `/r` reconnected-layer parser | ketcher 3.12.0 never emits `/r`; building a parser for output you can't produce is dead code | Explanation copy describing *why* the metal is disconnected + that `/r` is the non-standard alternative |
-| Patching ketcher to send `/RecMet` | Produces non-standard `1/` InChI, breaks the "we explain Standard InChI" identity and InChIKey alignment | Keep `getInchi(true)` as-is |
-| Importing `indigo-ketcher` directly to set `inchi-options` | Transitive dep; bypasses the public API; version-skew risk; CLAUDE.md explicitly forbids it | Only the ketcher public API |
-| Reconstructing the reconnected structure in JS | Re-deriving connectivity = exactly the "never reconstruct InChI" anti-pattern in MEMORY.md | Display verbatim disconnected `1S` output |
-| New charge/`/q` highlight logic | Already shipped and per-component correct (CuSO₄ verified v1.1) | Extend explanation copy only |
-| 3D / coordination-geometry viewer | Out of scope (PROJECT.md); InChI is 2D notation | n/a |
-
-## Version Compatibility
-
-| Package A | Compatible With | Notes |
-|-----------|-----------------|-------|
-| ketcher-react 3.12.0 | ketcher-standalone 3.12.0, ketcher-core 3.12.0 | Keep pinned in lockstep (existing decision). No bump needed for v1.5. |
-| Standard InChI 1S | existing `parseInchi` layer split | `1S` already the only version handled; inorganic strings are still `1S`. |
-
----
-
-## Concrete Roadmap Inputs
-
-**API methods (exact, verified):**
-- `ketcher.getInchi(true)` → `"InChI=1S/…\nAuxInfo=1/0/N:…/rC:…"` — unchanged; AuxInfo describes the disconnected structure.
-- `ketcher.getInChIKey()` → 27-char key — unchanged; inorganic species hash fine.
-- **No `inchi-options` / `/RecMet` parameter exists** on the React-level API. Do not design around `/r`.
-
-**Worked anatomy to teach (ferrocyanide):** `InChI=1S/6CN.Fe/c6*1-2;/q;;;;;;-4`
-- `6CN.Fe` — six cyanide components + one disconnected iron (the `.Fe` with no c-bonds).
-- `c6*1-2;` — each CN is the bond `1-2`; the trailing `;` is iron's empty (bondless) connection slot.
-- `/q;;;;;;-4` — six empty charge slots (neutral CN entries) then `-4` net charge on the final component slot.
-- The metal–C dative bonds the user drew are **absent** — the headline teaching point.
-
-**The one live verification gate (do this FIRST in the milestone):** draw or load ferrocene, call `getInchi(true)`, and confirm: (a) string is `1S` with the expected `2C5H5.Fe` form, (b) `remapAuxToPoolIds` resolves the Fe atom's pool ID, (c) hovering the `.Fe` formula component highlights the iron atom on canvas. If (b)/(c) hold, the highlighting feature is green; if not, the metal-as-lone-component is the only new mapping edge case to fix.
+None affecting the stack. All open v1.5 questions are CONTENT questions (exact element-name list, exact wording of the stereo +/- vs R/S caveat, element "role" granularity) — owned by the roadmap's authoring phase, not by tooling.
 
 ## Sources
 
-- ketcher README — `getInchi(withAuxInfo?: boolean)` / `getInChIKey()` signatures (HIGH): https://github.com/epam/ketcher/blob/master/README.md
-- Indigo InChI options list — `/RecMet`, `/FixedH`, etc. (HIGH): https://lifescience.opensource.epam.com/indigo/options/inchi.html
-- Indigo WASM test suite — default `convert(…, "inchi")` emits `InChI=1S/…` (HIGH): https://github.com/epam/Indigo (api/wasm/indigo-ketcher tests)
-- InChI Trust Technical FAQ — metal disconnection is automatic in Standard InChI; `/r` is non-standard (HIGH): https://www.inchi-trust.org/technical-faq/
-- InChI Technical Manual — reconnected layer description (HIGH): https://www.ch.ic.ac.uk/rzepa/inchi/INChI_TechMan_beta11.pdf
-- Metallome blog — verbatim ferrocene / ferrocyanide / Prussian blue `1S` and `/r` strings (HIGH for example strings): http://metallome.blogspot.com/2025/05/inchi-metal-reconnected-layer.html
-- Ketcher help.md — bond palette includes dative/coordinate bonds; periodic table; charge tools (MEDIUM): https://github.com/epam/ketcher/blob/master/documentation/help.md
-- ChemAxon "how to draw coordination compounds" — context on dative-bond modeling caveats (MEDIUM): https://docs.chemaxon.com/display/lts-europium/how-to-draw-coordination-compounds.md
+- Repo source (HIGH — direct read): `src/lib/layerInfo.ts` (`ELEMENT_NAMES` :180, `formulaSegmentReading` :150), `src/components/Explanation.tsx` (precedence cascade :46/:71-136), `src/components/LayerText.tsx` (`subHover` emission :25-39 + `SubHover` constructions), `src/lib/inchiKeyInfo.ts` (`KEY_ZONE_COPY` parallel module), `package.json` (current deps)
+- `.planning/PROJECT.md` (HIGH): milestone goal/mechanism (lines 13-22), zero-dep precedent across v1.2/v1.3/v1.4/Phase 16 (Key Decisions table; HELP-08 line 100)
+- IUPAC periodic table / element names — authoring source for the extended `ELEMENT_NAMES` (content task, not a dependency)
