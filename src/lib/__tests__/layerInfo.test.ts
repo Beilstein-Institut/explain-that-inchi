@@ -8,6 +8,7 @@ import {
   parityColor,
   LAYER_INFO,
   DEFAULT_INFO,
+  ELEMENT_NAMES,
 } from '../layerInfo';
 import { parseInchi, formulaFragmentCounts, parseStereoAtoms } from '../parseInchi';
 import { buildAtomElements } from '../parseAuxMapping';
@@ -197,4 +198,20 @@ describe('LAYER_INFO', () => {
 describe('DEFAULT_INFO', () => {
   it('has title "Hover any layer"', () => expect(DEFAULT_INFO.title).toBe('Hover any layer'));
   it('has non-empty blurb', () => expect(DEFAULT_INFO.blurb.length).toBeGreaterThan(10));
+});
+
+describe('ELEMENT_NAMES — D-19 full periodic table', () => {
+  it('has exactly 120 entries (118 IUPAC H–Og + D + T)', () =>
+    expect(Object.keys(ELEMENT_NAMES).length).toBe(120));
+  it('is case-exact: Co is cobalt, not C+O', () => {
+    expect(ELEMENT_NAMES['Co']).toBe('cobalt');
+    expect(ELEMENT_NAMES['C']).toBe('carbon');
+    expect(ELEMENT_NAMES['O']).toBe('oxygen');
+  });
+  it('resolves a non-organic symbol (K → potassium)', () =>
+    expect(ELEMENT_NAMES['K']).toBe('potassium'));
+  it('includes both hydrogen-isotope pseudo-symbols', () => {
+    expect(ELEMENT_NAMES['D']).toBeDefined();
+    expect(ELEMENT_NAMES['T']).toBeDefined();
+  });
 });
