@@ -7,6 +7,7 @@
 - ✅ **v1.2 In-app feedback via prefilled GitHub issues** — Phases 9–10 (shipped 2026-06-18)
 - ✅ **v1.3 InChIKey display & explanation** — Phases 11–13 (shipped 2026-06-19)
 - ✅ **v1.4 Reset control & c-layer hover precision** — Phases 14–15 (shipped 2026-06-22)
+- 🔵 **v1.5 Sub-token-specific explanations** — Phases 17–18 (in progress)
 
 ## Phases
 
@@ -57,6 +58,62 @@ Full phase details: `.planning/milestones/v1.4-ROADMAP.md`
 
 </details>
 
+<details open>
+<summary>🔵 v1.5 Sub-token-specific explanations (Phases 17–18) — IN PROGRESS</summary>
+
+- [ ] **Phase 17: Sub-token copy core (element table + pure module + tests)** - Full periodic-table element names and the chemically-verified, unit-tested pure module that turns a hovered/pinned sub-token into card copy
+- [ ] **Phase 18: Explanation-card wiring + live chemist gate** - Wire one precedence branch into the existing card so hover/pin updates it, honoring all invariants, then verify the live card strings against real molecules
+
+</details>
+
+## Phase Details
+
+> Phase 16 (Pin-to-freeze highlights + Help tour) shipped between the v1.4 milestone and v1.5; its detail block is retained below for reference. v1.5 continues phase numbering from there, starting at Phase 17.
+
+### Phase 17: Sub-token copy core (element table + pure module + tests)
+**Goal**: A pure, DOM-free `subTokenInfo()` module turns any hovered/pinned sub-token (element / H-count / mobile-H / tetrahedral stereo) into chemically-accurate card copy, backed by a full periodic-table element-name table — fully unit-tested against real `getInchi()` fixtures, with the mandatory "+/− parity is NOT R/S" caveat pinned by test, before any React is touched.
+**Depends on**: Nothing new (builds on shipped v1.0–Phase 16 infra; the `SubHover` union, store fields, and canvas highlighting already exist)
+**Requirements**: SUBEX-03, SUBEX-04, SUBEX-05, SUBEX-06, SUBEX-08, SUBEX-10
+**Success Criteria** (what must be TRUE):
+  1. `ELEMENT_NAMES` in `src/lib/layerInfo.ts` is extended in place to the full periodic table; a non-organic symbol (e.g. `K` → "potassium") resolves to a name, and lookup stays case-exact (`Co` → "cobalt", never confused with `C`+`O`) — existing `layerInfo` tests stay green.
+  2. A new pure module `src/lib/subTokenInfo.ts` returns `{title, body, reading?}` for an `element` / `hAtoms` / `mobileH` / `stereo` sub-token and returns `null` for c-layer kinds (atom/bond/branch) so the caller can fall through gracefully.
+  3. The H-count card states "atom N bears n hydrogen(s)" and never names a functional group (no "methyl"); the mobile-H card says the proton is "shared / mobile / tautomeric" across the listed atoms and never says "bond between" or "each".
+  4. The tetrahedral-stereo card explains fixed 3-D handedness at an sp³ centre AND explicitly states the `+`/`−` sign is a parity of the canonical neighbour order, **not** R/S — a unit test asserts the copy contains "parity" and matches `/not.*R\/S/i`.
+  5. All test fixtures are real `getInchi()` output (a stereocenter molecule with /t/m/s, a heteroatom-H amine, a tautomer, a multi-element/multi-fragment formula); copy for a fragment-2+ element/atom is derived from the already-offset `SubHover` fields, never by re-parsing `layer.text`.
+**Plans**: TBD
+**UI hint**: no
+
+### Phase 18: Explanation-card wiring + live chemist gate
+**Goal**: The existing explanation card becomes sub-token-aware: hovering or pinning a sub-token updates that same card with the Phase-17 copy, reverting to the whole-layer explanation when only the layer is hovered — all via one new precedence branch and zero store changes, then verified on the live canvas against real molecules by a human chemist before the milestone closes.
+**Depends on**: Phase 17
+**Requirements**: SUBEX-01, SUBEX-02, SUBEX-07, SUBEX-09
+**Success Criteria** (what must be TRUE):
+  1. Hovering a sub-token in the InChI string updates the *existing* explanation card (no new card/surface) with that sub-token's specific copy, and the card reverts to the whole-layer explanation when only the layer — not a sub-token — is hovered.
+  2. A pinned sub-token shows its sub-token-specific card (via `effSub = pinned ? pinned.sub : subHover`); precedence is keyHoverKind → sub-token → layer → legend → idle, and an InChIKey-segment hover still wins over a sub-token.
+  3. Hovering a specific element in the formula updates the card with the element's name and "this is the count of that element's atoms," scoped to the hovered fragment in multi-component formulas (the named element matches the highlighted atoms), with a brief Hill-order note.
+  4. The displayed/copied InChI string is byte-identical with a sub-token card open vs. closed (verbatim-passthrough holds), and no loading overlay/WASM re-init occurs on sub-token hover or pin (no-remount holds) — the diff touches no canvas/provider files.
+  5. A human chemist reviews the live card strings for the tetrahedral-stereo, mobile-H, H-count, and multi-fragment-element cases on real molecules and confirms chemical accuracy — this gate is not bypassed before the phase is marked verified.
+**Plans**: TBD
+**UI hint**: yes
+
+---
+
+<details>
+<summary>Phase 16: Pin-to-freeze highlights and guided Help tour — SHIPPED 2026-06-25 (between v1.4 and v1.5)</summary>
+
+- [x] Phase 16: Pin-to-freeze highlights and guided Help tour (2/2 plans) — completed 2026-06-25
+
+**Goal:** Let users click an InChI chunk (layer or sub-token) to freeze its highlight + explanation for inspection, and add a Help button (next to Reset) that launches a stepped, spotlight-style guided tour of the app.
+**Spec:** docs/superpowers/specs/2026-06-22-pin-freeze-and-help-tour-design.md
+**Requirements**: Feature 1 — Click-to-Pin (Freeze) Highlights; Feature 2 — Guided Help Tour (spec-defined; no ROADMAP requirement IDs mapped)
+**Depends on:** Phase 15
+
+Plans:
+- [x] 16-01-PLAN.md — Click-to-pin (freeze) highlights: store pin state machine + gate, layer/sub-token click wiring, pinned precedence in highlight hook + explanation, locked-state ring + release hint
+- [x] 16-02-PLAN.md — Guided Help tour: Help button, custom zero-dep stepped spotlight overlay (8 steps), App tour state with empty-canvas Caffeine auto-load
+
+</details>
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -74,27 +131,16 @@ Full phase details: `.planning/milestones/v1.4-ROADMAP.md`
 | 11. Source & Wiring | v1.3 | 3/3 | Complete | 2026-06-18 |
 | 12. Render & Layout | v1.3 | 2/2 | Complete | 2026-06-18 |
 | 13. Content & Explanation | v1.3 | 1/1 | Complete | 2026-06-19 |
-| 14. Reset control | v1.4 | 1/1 | Complete   | 2026-06-19 |
-| 15. C-layer hover precision | v1.4 | 2/2 | Complete    | 2026-06-22 |
+| 14. Reset control | v1.4 | 1/1 | Complete | 2026-06-19 |
+| 15. C-layer hover precision | v1.4 | 2/2 | Complete | 2026-06-22 |
 | 16. Pin-to-freeze highlights and guided Help tour | — | 2/2 | Complete | 2026-06-25 |
-
-### Phase 16: Pin-to-freeze highlights and guided Help tour
-
-**Goal:** Let users click an InChI chunk (layer or sub-token) to freeze its highlight + explanation for inspection, and add a Help button (next to Reset) that launches a stepped, spotlight-style guided tour of the app.
-**Spec:** docs/superpowers/specs/2026-06-22-pin-freeze-and-help-tour-design.md
-**Requirements**: Feature 1 — Click-to-Pin (Freeze) Highlights; Feature 2 — Guided Help Tour (spec-defined; no ROADMAP requirement IDs mapped)
-**Depends on:** Phase 15
-**Plans:** 2 plans
-
-Plans:
-- [x] 16-01-PLAN.md — Click-to-pin (freeze) highlights: store pin state machine + gate, layer/sub-token click wiring, pinned precedence in highlight hook + explanation, locked-state ring + release hint
-- [x] 16-02-PLAN.md — Guided Help tour: Help button, custom zero-dep stepped spotlight overlay (8 steps), App tour state with empty-canvas Caffeine auto-load
+| 17. Sub-token copy core (element table + pure module + tests) | v1.5 | 0/? | Not started | - |
+| 18. Explanation-card wiring + live chemist gate | v1.5 | 0/? | Not started | - |
 
 ---
 *Roadmap created: 2026-05-18*
-*Updated: 2026-06-19 — v1.4 milestone (Reset control & c-layer hover precision) roadmapped; Phases 14–15 added*
-*Updated: 2026-06-19 — Phase 14 planned: 1 plan (14-01)*
-*Updated: 2026-06-19 — Phase 15 planned: 2 plans (15-01, 15-02)*
+*Updated: 2026-06-19 — v1.4 milestone roadmapped; Phases 14–15 added*
 *Updated: 2026-06-22 — v1.4 SHIPPED (Phases 14–15); archived to milestones/v1.4-ROADMAP.md*
 *Updated: 2026-06-22 — Phase 16 planned: 2 plans (16-01, 16-02)*
 *Updated: 2026-06-25 — Phase 16 complete (2/2 plans, 13/13 UAT passed)*
+*Updated: 2026-06-26 — v1.5 milestone (Sub-token-specific explanations) roadmapped; Phases 17–18 added, SUBEX-01..10 mapped 100%*

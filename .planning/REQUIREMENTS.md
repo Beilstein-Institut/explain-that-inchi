@@ -58,4 +58,17 @@ Carried from prior milestones — not in v1.5 scope:
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SUBEX-01..10 | TBD (roadmap) | Pending |
+| SUBEX-01 | Phase 18 | Pending |
+| SUBEX-02 | Phase 18 | Pending |
+| SUBEX-03 | Phase 17 | Pending |
+| SUBEX-04 | Phase 17 | Pending |
+| SUBEX-05 | Phase 17 | Pending |
+| SUBEX-06 | Phase 17 | Pending |
+| SUBEX-07 | Phase 18 | Pending |
+| SUBEX-08 | Phase 17 | Pending |
+| SUBEX-09 | Phase 18 | Pending |
+| SUBEX-10 | Phase 17 | Pending |
+
+**Coverage:** 10/10 v1.5 requirements mapped to exactly one phase. No orphans, no duplicates.
+
+> Note: the element-card *copy* (incl. per-fragment scoping for SUBEX-07) is authored in the Phase 17 pure module alongside SUBEX-08's table, but SUBEX-07's observable behaviour — the live card updating on element hover with correct fragment scoping — is only verifiable once wired in Phase 18, so the requirement is mapped to the phase where it becomes observable.
