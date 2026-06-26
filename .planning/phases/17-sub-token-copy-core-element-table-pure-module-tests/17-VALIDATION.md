@@ -1,9 +1,9 @@
 ---
 phase: 17
 slug: sub-token-copy-core-element-table-pure-module-tests
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: approved
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-06-26
 ---
 
@@ -38,9 +38,12 @@ created: 2026-06-26
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| _populated by gsd-planner_ | | | | — | N/A (pure client-side string formatting) | unit | `npx vitest run …` | ❌ W0 | ⬜ pending |
+| 17-01-01 | 01 | 1 | SUBEX-08 | T-17-01 | N/A (static lookup data) | unit | `npx vitest run src/lib/__tests__/layerInfo.test.ts` | ✅ exists | ⬜ pending |
+| 17-01-02 | 01 | 1 | SUBEX-08 | T-17-01 | N/A (static lookup data) | unit | `npx vitest run src/lib/__tests__/layerInfo.test.ts` | ✅ exists | ⬜ pending |
+| 17-02-01 | 02 | 2 | SUBEX-03/04/05/06/10 | T-17-05 | anti-fabrication: every fixture `/^InChI=1S\//` (RED step) | unit | `npx vitest run src/lib/__tests__/subTokenInfo.test.ts` (expect RED) | created in-task | ⬜ pending |
+| 17-02-02 | 02 | 2 | SUBEX-03/04/05/06 | T-17-04 | chemical-correctness pins: parity≠R/S, no functional-group, mobileH shared/no-count, null fall-through (GREEN step) | unit | `npx vitest run src/lib/__tests__/subTokenInfo.test.ts src/lib/__tests__/layerInfo.test.ts` | created in-task | ⬜ pending |
 
-*Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
+*Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky. File Exists: layerInfo.test.ts pre-exists; subTokenInfo.test.ts is a phase deliverable (created in 17-02-01), not Wave 0 setup.*
 
 *The planner maps each task to a vitest assertion. Mandatory pins for this phase (from RESEARCH § Validation Architecture):*
 - *`ELEMENT_NAMES` entry count `=== 120`; case-exact lookup (`Co`→cobalt, never `C`+`O`); `K`→potassium; `D` and `T` present.*
@@ -72,11 +75,11 @@ Existing infrastructure covers all phase requirements — vitest + `vitest.confi
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags (use `vitest run`, never bare `vitest`)
-- [ ] Feedback latency < 10s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies (4/4 tasks mapped above)
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify (every task has an `<automated>` command)
+- [x] Wave 0 covers all MISSING references (no Wave 0 work — existing vitest infra)
+- [x] No watch-mode flags (use `vitest run`, never bare `vitest`)
+- [x] Feedback latency < 10s (~5s pure-logic suite)
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-06-26
