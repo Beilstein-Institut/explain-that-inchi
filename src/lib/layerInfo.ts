@@ -178,8 +178,44 @@ export function formulaReading(s: string): string {
 // ---------------------------------------------------------------------------
 
 export const ELEMENT_NAMES: Record<string, string> = {
-  H: 'hydrogen', C: 'carbon', N: 'nitrogen', O: 'oxygen', S: 'sulfur',
-  P: 'phosphorus', F: 'fluorine', Cl: 'chlorine', Br: 'bromine', I: 'iodine',
+  // 1–10
+  H: 'hydrogen', He: 'helium', Li: 'lithium', Be: 'beryllium', B: 'boron',
+  C: 'carbon', N: 'nitrogen', O: 'oxygen', F: 'fluorine', Ne: 'neon',
+  // 11–20
+  Na: 'sodium', Mg: 'magnesium', Al: 'aluminium', Si: 'silicon', P: 'phosphorus',
+  S: 'sulfur', Cl: 'chlorine', Ar: 'argon', K: 'potassium', Ca: 'calcium',
+  // 21–30
+  Sc: 'scandium', Ti: 'titanium', V: 'vanadium', Cr: 'chromium', Mn: 'manganese',
+  Fe: 'iron', Co: 'cobalt', Ni: 'nickel', Cu: 'copper', Zn: 'zinc',
+  // 31–40
+  Ga: 'gallium', Ge: 'germanium', As: 'arsenic', Se: 'selenium', Br: 'bromine',
+  Kr: 'krypton', Rb: 'rubidium', Sr: 'strontium', Y: 'yttrium', Zr: 'zirconium',
+  // 41–50
+  Nb: 'niobium', Mo: 'molybdenum', Tc: 'technetium', Ru: 'ruthenium', Rh: 'rhodium',
+  Pd: 'palladium', Ag: 'silver', Cd: 'cadmium', In: 'indium', Sn: 'tin',
+  // 51–60
+  Sb: 'antimony', Te: 'tellurium', I: 'iodine', Xe: 'xenon', Cs: 'caesium',
+  Ba: 'barium', La: 'lanthanum', Ce: 'cerium', Pr: 'praseodymium', Nd: 'neodymium',
+  // 61–70
+  Pm: 'promethium', Sm: 'samarium', Eu: 'europium', Gd: 'gadolinium', Tb: 'terbium',
+  Dy: 'dysprosium', Ho: 'holmium', Er: 'erbium', Tm: 'thulium', Yb: 'ytterbium',
+  // 71–80
+  Lu: 'lutetium', Hf: 'hafnium', Ta: 'tantalum', W: 'tungsten', Re: 'rhenium',
+  Os: 'osmium', Ir: 'iridium', Pt: 'platinum', Au: 'gold', Hg: 'mercury',
+  // 81–90
+  Tl: 'thallium', Pb: 'lead', Bi: 'bismuth', Po: 'polonium', At: 'astatine',
+  Rn: 'radon', Fr: 'francium', Ra: 'radium', Ac: 'actinium', Th: 'thorium',
+  // 91–100
+  Pa: 'protactinium', U: 'uranium', Np: 'neptunium', Pu: 'plutonium', Am: 'americium',
+  Cm: 'curium', Bk: 'berkelium', Cf: 'californium', Es: 'einsteinium', Fm: 'fermium',
+  // 101–110
+  Md: 'mendelevium', No: 'nobelium', Lr: 'lawrencium', Rf: 'rutherfordium', Db: 'dubnium',
+  Sg: 'seaborgium', Bh: 'bohrium', Hs: 'hassium', Mt: 'meitnerium', Ds: 'darmstadtium',
+  // 111–118
+  Rg: 'roentgenium', Cn: 'copernicium', Nh: 'nihonium', Fl: 'flerovium', Mc: 'moscovium',
+  Lv: 'livermorium', Ts: 'tennessine', Og: 'oganesson',
+  // pseudo-symbols (hydrogen isotopes carried by the i-layer/formula)
+  D: 'deuterium', T: 'tritium',
 };
 
 // ---------------------------------------------------------------------------
