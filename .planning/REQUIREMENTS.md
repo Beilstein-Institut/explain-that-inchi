@@ -26,7 +26,7 @@
 #### Molecular formula elements
 
 - [ ] **SUBEX-07**: Hovering a specific element in the formula updates the card with the element's name and that the count is the number of that element's atoms (scoped correctly to the molecule or the hovered fragment in multi-component formulas), with a brief Hill-order note.
-- [ ] **SUBEX-08**: Element naming is backed by a full periodic-table symbol→name table (extended in place from the existing 10-entry `ELEMENT_NAMES`), so no element shows only a bare symbol; lookup stays case-exact (`Co` ≠ `CO`).
+- [x] **SUBEX-08**: Element naming is backed by a full periodic-table symbol→name table (extended in place from the existing 10-entry `ELEMENT_NAMES`), so no element shows only a bare symbol; lookup stays case-exact (`Co` ≠ `CO`).
 
 #### Correctness & non-regression
 
@@ -65,7 +65,7 @@ Carried from prior milestones — not in v1.5 scope:
 | SUBEX-05 | Phase 17 | Pending |
 | SUBEX-06 | Phase 17 | Pending |
 | SUBEX-07 | Phase 18 | Pending |
-| SUBEX-08 | Phase 17 | Pending |
+| SUBEX-08 | Phase 17 | Complete |
 | SUBEX-09 | Phase 18 | Pending |
 | SUBEX-10 | Phase 17 | Pending |
 

@@ -71,28 +71,34 @@ Full phase details: `.planning/milestones/v1.4-ROADMAP.md`
 > Phase 16 (Pin-to-freeze highlights + Help tour) shipped between the v1.4 milestone and v1.5; its detail block is retained below for reference. v1.5 continues phase numbering from there, starting at Phase 17.
 
 ### Phase 17: Sub-token copy core (element table + pure module + tests)
+
 **Goal**: A pure, DOM-free `subTokenInfo()` module turns any hovered/pinned sub-token (element / H-count / mobile-H / tetrahedral stereo) into chemically-accurate card copy, backed by a full periodic-table element-name table — fully unit-tested against real `getInchi()` fixtures, with the mandatory "+/− parity is NOT R/S" caveat pinned by test, before any React is touched.
 **Depends on**: Nothing new (builds on shipped v1.0–Phase 16 infra; the `SubHover` union, store fields, and canvas highlighting already exist)
 **Requirements**: SUBEX-03, SUBEX-04, SUBEX-05, SUBEX-06, SUBEX-08, SUBEX-10
 **Success Criteria** (what must be TRUE):
+
   1. `ELEMENT_NAMES` in `src/lib/layerInfo.ts` is extended in place to the full periodic table; a non-organic symbol (e.g. `K` → "potassium") resolves to a name, and lookup stays case-exact (`Co` → "cobalt", never confused with `C`+`O`) — existing `layerInfo` tests stay green.
   2. A new pure module `src/lib/subTokenInfo.ts` returns `{title, body, reading?}` for an `element` / `hAtoms` / `mobileH` / `stereo` sub-token and returns `null` for c-layer kinds (atom/bond/branch) so the caller can fall through gracefully.
   3. The H-count card states "atom N bears n hydrogen(s)" and never names a functional group (no "methyl"); the mobile-H card says the proton is "shared / mobile / tautomeric" across the listed atoms and never says "bond between" or "each".
   4. The tetrahedral-stereo card explains fixed 3-D handedness at an sp³ centre AND explicitly states the `+`/`−` sign is a parity of the canonical neighbour order, **not** R/S — a unit test asserts the copy contains "parity" and matches `/not.*R\/S/i`.
   5. All test fixtures are real `getInchi()` output (a stereocenter molecule with /t/m/s, a heteroatom-H amine, a tautomer, a multi-element/multi-fragment formula); copy for a fragment-2+ element/atom is derived from the already-offset `SubHover` fields, never by re-parsing `layer.text`.
+
 **Plans**: TBD
 **UI hint**: no
 
 ### Phase 18: Explanation-card wiring + live chemist gate
+
 **Goal**: The existing explanation card becomes sub-token-aware: hovering or pinning a sub-token updates that same card with the Phase-17 copy, reverting to the whole-layer explanation when only the layer is hovered — all via one new precedence branch and zero store changes, then verified on the live canvas against real molecules by a human chemist before the milestone closes.
 **Depends on**: Phase 17
 **Requirements**: SUBEX-01, SUBEX-02, SUBEX-07, SUBEX-09
 **Success Criteria** (what must be TRUE):
+
   1. Hovering a sub-token in the InChI string updates the *existing* explanation card (no new card/surface) with that sub-token's specific copy, and the card reverts to the whole-layer explanation when only the layer — not a sub-token — is hovered.
   2. A pinned sub-token shows its sub-token-specific card (via `effSub = pinned ? pinned.sub : subHover`); precedence is keyHoverKind → sub-token → layer → legend → idle, and an InChIKey-segment hover still wins over a sub-token.
   3. Hovering a specific element in the formula updates the card with the element's name and "this is the count of that element's atoms," scoped to the hovered fragment in multi-component formulas (the named element matches the highlighted atoms), with a brief Hill-order note.
   4. The displayed/copied InChI string is byte-identical with a sub-token card open vs. closed (verbatim-passthrough holds), and no loading overlay/WASM re-init occurs on sub-token hover or pin (no-remount holds) — the diff touches no canvas/provider files.
   5. A human chemist reviews the live card strings for the tetrahedral-stereo, mobile-H, H-count, and multi-fragment-element cases on real molecules and confirms chemical accuracy — this gate is not bypassed before the phase is marked verified.
+
 **Plans**: TBD
 **UI hint**: yes
 
@@ -109,6 +115,7 @@ Full phase details: `.planning/milestones/v1.4-ROADMAP.md`
 **Depends on:** Phase 15
 
 Plans:
+
 - [x] 16-01-PLAN.md — Click-to-pin (freeze) highlights: store pin state machine + gate, layer/sub-token click wiring, pinned precedence in highlight hook + explanation, locked-state ring + release hint
 - [x] 16-02-PLAN.md — Guided Help tour: Help button, custom zero-dep stepped spotlight overlay (8 steps), App tour state with empty-canvas Caffeine auto-load
 
@@ -134,7 +141,7 @@ Plans:
 | 14. Reset control | v1.4 | 1/1 | Complete | 2026-06-19 |
 | 15. C-layer hover precision | v1.4 | 2/2 | Complete | 2026-06-22 |
 | 16. Pin-to-freeze highlights and guided Help tour | — | 2/2 | Complete | 2026-06-25 |
-| 17. Sub-token copy core (element table + pure module + tests) | v1.5 | 0/? | Not started | - |
+| 17. Sub-token copy core (element table + pure module + tests) | v1.5 | 1/2 | In Progress|  |
 | 18. Explanation-card wiring + live chemist gate | v1.5 | 0/? | Not started | - |
 
 ---

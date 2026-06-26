@@ -3,31 +3,32 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Sub-token-specific explanations
 current_phase: 17
-status: planning
+current_phase_name: sub-token-copy-core-element-table-pure-module-tests
+status: executing
 stopped_at: Phase 17 context gathered
-last_updated: "2026-06-26T08:34:52.001Z"
+last_updated: "2026-06-26T12:07:25.908Z"
 last_activity: 2026-06-26
-last_activity_desc: v1.5 roadmap created (Phases 17–18)
+last_activity_desc: Phase 17 execution started
 progress:
-  total_phases: 1
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_phases: 4
+  completed_phases: 3
+  total_plans: 7
+  completed_plans: 6
+  percent: 75
 ---
 
 # Project State
 
 **Project:** Explain that InChI
 **Milestone:** v1.5 — Sub-token-specific explanations (roadmapped; Phases 17–18)
-**Status:** Roadmap created — ready to plan Phase 17
+**Status:** Ready to execute
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-06-26)
 
 **Core value:** Every chunk of an InChI string is hoverable, explained, and linked back to the atoms in the drawing — demystifying a notation that most chemists treat as opaque.
-**Current focus:** v1.5 — make the existing explanation card read `subHover`/`pinned.sub` and render chemically-accurate sub-token copy. Copy + one render branch; zero new dependencies.
+**Current focus:** Phase 17 — sub-token-copy-core-element-table-pure-module-tests
 
 ## v1.5 Roadmap (Phases 17–18)
 
@@ -87,10 +88,10 @@ None
 
 ## Current Position
 
-Phase: 17 (not started)
-Plan: —
-Status: Roadmap created — ready to plan Phase 17
-Last activity: 2026-06-26 — v1.5 roadmap created (Phases 17–18)
+Phase: 17 (sub-token-copy-core-element-table-pure-module-tests) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
+Last activity: 2026-06-26 — Phase 17 execution started
 
 ## Operator Next Steps
 
@@ -98,6 +99,12 @@ Last activity: 2026-06-26 — v1.5 roadmap created (Phases 17–18)
 
 ## Session Continuity
 
-Last session: 2026-06-26T08:34:51.992Z
+Last session: 2026-06-26T12:07:04.998Z
 Stopped at: Phase 17 context gathered
 Resume file: .planning/phases/17-sub-token-copy-core-element-table-pure-module-tests/17-CONTEXT.md
+
+## Performance Metrics
+
+| Phase | Plan | Duration | Notes |
+|-------|------|----------|-------|
+| Phase 17 P01 | 2min | 2 tasks | 2 files |
