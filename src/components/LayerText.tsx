@@ -373,7 +373,9 @@ function HLayerText({ text, fragCounts, layerIdx, pinnedSub }: { text: string; f
     return out;
   };
 
-  const renderSegment = (seg: string, offset: number) => {
+  // componentIdx: 0-based index of the component this segment opens at (display-only
+  // context for the H-count card; see SubHover.fragmentOffset/componentIndex).
+  const renderSegment = (seg: string, offset: number, componentIdx: number) => {
     let buf = '', i = 0;
     const flush = () => { if (buf) { parts.push(<span key={key++}>{buf}</span>); buf = ''; } };
     while (i < seg.length) {
@@ -385,7 +387,7 @@ function HLayerText({ text, fragCounts, layerIdx, pinnedSub }: { text: string; f
         const inside = seg.slice(i, end + 1);
         const match = inside.match(/\(H\d*,([^)]+)\)/);
         const atoms = match ? expandAtoms(match[1], offset) : [];
-        const hit: SubHover = { kind: 'mobileH', atoms };
+        const hit: SubHover = { kind: 'mobileH', atoms, fragmentOffset: offset, componentIndex: componentIdx };
         parts.push(
           <span key={key++} className={[styles.hydroMobile, styles.inchiSubtoken, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')}
             {...subHoverProps(hit, layerIdx)}
@@ -399,7 +401,7 @@ function HLayerText({ text, fragCounts, layerIdx, pinnedSub }: { text: string; f
         const count = j > i + 1 ? parseInt(seg.slice(i + 1, j), 10) : 1;
         const atoms = expandAtoms(buf.replace(/^,/, ''), offset);
         const hydroClass = [(styles as Record<string, string>)[`hydro${Math.min(count, 4)}`], styles.inchiSubtoken].join(' ');
-        const hit: SubHover = { kind: 'hAtoms', atoms, count };
+        const hit: SubHover = { kind: 'hAtoms', atoms, count, fragmentOffset: offset, componentIndex: componentIdx };
         parts.push(
           <span key={key++} className={[hydroClass, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')} {...subHoverProps(hit, layerIdx)}>
             {buf + seg.slice(i, j)}
@@ -436,7 +438,8 @@ function HLayerText({ text, fragCounts, layerIdx, pinnedSub }: { text: string; f
         const atoms = match
           ? Array.from({ length: n }, (_, fi) => expandAtoms(match[1], fi * atomsPerFrag)).flat()
           : [];
-        const hit: SubHover = { kind: 'mobileH', atoms };
+        // Pure-N* copies share local numbering (base 0): card shows component-local numbers, component 0.
+        const hit: SubHover = { kind: 'mobileH', atoms, fragmentOffset: 0, componentIndex: 0 };
         parts.push(
           <span key={key++} className={[styles.hydroMobile, styles.inchiSubtoken, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')}
             {...subHoverProps(hit, layerIdx)}
@@ -450,7 +453,7 @@ function HLayerText({ text, fragCounts, layerIdx, pinnedSub }: { text: string; f
         const count = j > i + 1 ? parseInt(pattern.slice(i + 1, j), 10) : 1;
         const atoms = Array.from({ length: n }, (_, fi) => expandAtoms(buf.replace(/^,/, ''), fi * atomsPerFrag)).flat();
         const hydroClass = [(styles as Record<string, string>)[`hydro${Math.min(count, 4)}`], styles.inchiSubtoken].join(' ');
-        const hit: SubHover = { kind: 'hAtoms', atoms, count };
+        const hit: SubHover = { kind: 'hAtoms', atoms, count, fragmentOffset: 0, componentIndex: 0 };
         parts.push(
           <span key={key++} className={[hydroClass, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')} {...subHoverProps(hit, layerIdx)}>
             {buf + pattern.slice(i, j)}
@@ -492,7 +495,7 @@ function HLayerText({ text, fragCounts, layerIdx, pinnedSub }: { text: string; f
           const atoms = match
             ? Array.from({ length: n }, (_, fi) => expandAtoms(match[1], baseOffset + fi * atomsPerFrag)).flat()
             : [];
-          const hit: SubHover = { kind: 'mobileH', atoms };
+          const hit: SubHover = { kind: 'mobileH', atoms, fragmentOffset: baseOffset, componentIndex: fragIdx };
           parts.push(
             <span key={key++} className={[styles.hydroMobile, styles.inchiSubtoken, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')}
               {...subHoverProps(hit, layerIdx)}
@@ -506,7 +509,7 @@ function HLayerText({ text, fragCounts, layerIdx, pinnedSub }: { text: string; f
           const count = j > i + 1 ? parseInt(pattern.slice(i + 1, j), 10) : 1;
           const atoms = Array.from({ length: n }, (_, fi) => expandAtoms(buf.replace(/^,/, ''), baseOffset + fi * atomsPerFrag)).flat();
           const hydroClass = [(styles as Record<string, string>)[`hydro${Math.min(count, 4)}`], styles.inchiSubtoken].join(' ');
-          const hit: SubHover = { kind: 'hAtoms', atoms, count };
+          const hit: SubHover = { kind: 'hAtoms', atoms, count, fragmentOffset: baseOffset, componentIndex: fragIdx };
           parts.push(
             <span key={key++} className={[hydroClass, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')} {...subHoverProps(hit, layerIdx)}>
               {buf + pattern.slice(i, j)}
@@ -520,7 +523,7 @@ function HLayerText({ text, fragCounts, layerIdx, pinnedSub }: { text: string; f
       cumOffset += n * atomsPerFrag;
       fragIdx += n;
     } else {
-      renderSegment(seg, cumOffset);
+      renderSegment(seg, cumOffset, fragIdx);
       cumOffset += fragCounts[fragIdx] ?? 0;
       fragIdx += 1;
     }

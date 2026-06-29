@@ -107,6 +107,38 @@ describe('subTokenInfo — hAtoms discrete-set enumeration (GAP-1, D-04 chemist 
   });
 });
 
+describe('subTokenInfo — multi-component de-offset (GAP-2, per-component numbering)', () => {
+  // MELATONIN_TOLUENE component 2 (toluene, C7H8) h-token `2-6H`: per-component atoms {2..6}.
+  // Globally offset by +17 (component 1 = 17 heavy atoms) → {19,20,21,22,23}. The card must
+  // print the per-component numbers the chemist reads in the string, with a component marker.
+  it('hAtoms with fragmentOffset reads per-component numbers + "(component N)"', () => {
+    const card = subTokenInfo(
+      { kind: 'hAtoms', atoms: [19, 20, 21, 22, 23], count: 1, fragmentOffset: 17, componentIndex: 1 },
+      {},
+    )!;
+    expect(card.body).toContain('2, 3, 4, 5 and 6');
+    expect(card.body).toContain('(component 2)');
+    expect(card.body).not.toContain('19');
+    expect(card.body).not.toContain('23');
+  });
+
+  it('mobileH with fragmentOffset de-offsets for display too', () => {
+    // A multi-component mobile-H group: global {19,20} with offset 17 → local {2,3}.
+    const card = subTokenInfo(
+      { kind: 'mobileH', atoms: [19, 20], fragmentOffset: 17, componentIndex: 1 },
+      {},
+    )!;
+    expect(card.body).toContain('2 and 3');
+    expect(card.body).not.toContain('19');
+  });
+
+  it('single-fragment hAtoms (no fragmentOffset) reads literal numbers, no marker', () => {
+    const card = subTokenInfo({ kind: 'hAtoms', atoms: [3, 4, 7, 8, 15], count: 1 }, {})!;
+    expect(card.body).toContain('3, 4, 7, 8 and 15');
+    expect(card.body).not.toMatch(/component/i);
+  });
+});
+
 describe('subTokenInfo — mobileH (SUBEX-04, D-10)', () => {
   // Alanine (H,5,6) carboxyl mobile proton: atoms only, no count.
   const card = subTokenInfo({ kind: 'mobileH', atoms: [5, 6] }, {})!;

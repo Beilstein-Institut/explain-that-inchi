@@ -28,10 +28,16 @@ function elementTitle(el: string): string {
 // chemist gate). An h-layer H-count set is frequently discontiguous (e.g. {3,4,7,8,15}),
 // so a min–max range would falsely name the intervening atoms as bearing H. We list the
 // exact atoms: "atom 1", "atoms 1 and 2", "atoms 3, 4, 7, 8 and 15".
-function atomList(atoms: number[]): string {
-  if (atoms.length === 1) return `atom ${atoms[0]}`;
-  const head = atoms.slice(0, -1).join(', ');
-  return `atoms ${head} and ${atoms[atoms.length - 1]}`;
+//
+// fragmentOffset (GAP-2) is subtracted for DISPLAY only: the incoming atoms[] are GLOBAL
+// canonicals (the auxMap highlight key), but a chemist reads per-component numbers that reset
+// after each ';' in the InChI string. Subtracting the offset makes the card match the string.
+// 0 for single-fragment — unchanged.
+function atomList(atoms: number[], fragmentOffset = 0): string {
+  const local = fragmentOffset ? atoms.map((a) => a - fragmentOffset) : atoms;
+  if (local.length === 1) return `atom ${local[0]}`;
+  const head = local.slice(0, -1).join(', ');
+  return `atoms ${head} and ${local[local.length - 1]}`;
 }
 
 export function subTokenInfo(
@@ -63,17 +69,20 @@ export function subTokenInfo(
       const h = count === 1 ? 'one hydrogen' : `${count} hydrogens`;
       const verb = atoms.length === 1 ? 'bears' : 'each bear';
       // Plain "atom N" — never infer a functional group from an H-count (D-08).
-      const body = `${capitalise(atomList(atoms))} ${verb} ${h}. This is a count of attached hydrogens, nothing about what kind of group the atom is part of.`;
+      const body = `${capitalise(atomList(atoms, sub.fragmentOffset ?? 0))}${componentMarker(sub)} ${verb} ${h}. This is a count of attached hydrogens, nothing about what kind of group the atom is part of.`;
       return { title: 'Hydrogen count', body };
     }
 
     case 'mobileH': {
       // Reads sub.atoms ONLY — mobileH carries no count (Pitfall 3 / D-10).
+      // De-offset for display (GAP-2) so multi-component mobile-H groups show per-component numbers.
       const atoms = sub.atoms ?? [];
+      const off = sub.fragmentOffset ?? 0;
+      const local = off ? atoms.map((a) => a - off) : atoms;
       const where =
-        atoms.length === 1 ? `atom ${atoms[0]}` : `atoms ${atoms.join(' and ')}`;
+        local.length === 1 ? `atom ${local[0]}` : `atoms ${local.join(' and ')}`;
       const body =
-        `A mobile, tautomeric proton is shared across ${where} rather than fixed to one of them. ` +
+        `A mobile, tautomeric proton is shared across ${where}${componentMarker(sub)} rather than fixed to one of them. ` +
         `InChI records one identifier per tautomer, so this proton is written as shared between these positions instead of drawn as a single fixed bond.`;
       return { title: 'Mobile hydrogen', body };
     }
@@ -96,4 +105,12 @@ export function subTokenInfo(
 
 function capitalise(s: string): string {
   return s.length ? s[0].toUpperCase() + s.slice(1) : s;
+}
+
+// " (component N)" marker for multi-component cards (GAP-2) — tells the chemist which
+// component the per-component-numbered atoms belong to. Empty for single-fragment
+// (componentIndex absent or 0). N is 1-based for display.
+function componentMarker(sub: SubHover): string {
+  const idx = sub.componentIndex ?? 0;
+  return idx > 0 ? ` (component ${idx + 1})` : '';
 }

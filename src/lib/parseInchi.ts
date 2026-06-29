@@ -45,6 +45,14 @@ export interface SubHover {
   atoms?: number[];
   count?: number;
 
+  /** DISPLAY-ONLY fragment context for multi-component h-layer cards.
+   *  fragmentOffset is the cumulative heavy-atom offset of preceding components; atoms[]
+   *  stay GLOBAL (they key the global auxMap for canvas highlights — subtract fragmentOffset
+   *  for per-component DISPLAY only, NEVER for the auxMap lookup). componentIndex is 0-based.
+   *  Both absent/0 for single-fragment molecules. */
+  fragmentOffset?: number;
+  componentIndex?: number;
+
   /** 'bond' kind: each pair is [leftCanonical, rightCanonical] with fragment offset applied.
    *  Single fragment: one pair. N* multi-fragment: one pair per fragment instance. */
   endpointPairs?: [number, number][];
