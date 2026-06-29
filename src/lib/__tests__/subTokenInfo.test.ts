@@ -11,11 +11,20 @@ import { ELEMENT_NAMES } from '../layerInfo';
 // ---------------------------------------------------------------------------
 const ALANINE = 'InChI=1S/C3H7NO2/c1-2(4)3(5)6/h2H,4H2,1H3,(H,5,6)/t2-/m0/s1';
 const SALT = 'InChI=1S/CH5N.ClH/c1-2;/h2H2,1H3;1H';
+// MELATONIN_TOLUENE: melatonin (C13H16N2O2) + toluene (C7H8), real getInchi() output
+// generated verbatim from the live indigo WASM engine (the same engine behind
+// ketcher-standalone's getInchi). Provenance-confirmed. Exercises BOTH gap fixes:
+//  - GAP-1: component-1 h-layer carries the discontiguous token `3-4,7-8,15H` → set {3,4,7,8,15}.
+//  - GAP-2: component-2 h-token `2-6H` is per-component-numbered; globally it offsets by +17
+//    (component 1 = 17 heavy atoms: C13 N2 O2) to {19,20,21,22,23}.
+const MELATONIN_TOLUENE =
+  'InChI=1S/C13H16N2O2.C7H8/c1-9(16)14-6-5-10-8-15-13-4-3-11(17-2)7-12(10)13;1-7-5-3-2-4-6-7/h3-4,7-8,15H,5-6H2,1-2H3,(H,14,16);2-6H,1H3';
 
 describe('subTokenInfo — anti-fabrication fixture sanity (D-18)', () => {
   it('every fixture const is real getInchi() output (starts with InChI=1S/)', () => {
     expect(ALANINE).toMatch(/^InChI=1S\//);
     expect(SALT).toMatch(/^InChI=1S\//);
+    expect(MELATONIN_TOLUENE).toMatch(/^InChI=1S\//);
   });
 });
 
@@ -73,6 +82,28 @@ describe('subTokenInfo — hAtoms (SUBEX-03, D-08/D-09)', () => {
 
   it('NEVER names a functional group — the methyl trap (D-08)', () => {
     expect(card.body).not.toMatch(/methyl|amine|carboxyl|functional group/i);
+  });
+});
+
+describe('subTokenInfo — hAtoms discrete-set enumeration (GAP-1, D-04 chemist gate)', () => {
+  // MELATONIN_TOLUENE component-1 h-token `3-4,7-8,15H` parses to the DISCRETE heavy-atom
+  // set {3,4,7,8,15} (count 1). The SubHover literal below is the parsed projection of that
+  // real fixture's h-layer — subTokenInfo consumes SubHover numeric fields, not the string
+  // (same precedent as the SALT-derived literals above; legitimate, not fabrication).
+  const card = subTokenInfo({ kind: 'hAtoms', atoms: [3, 4, 7, 8, 15], count: 1 }, {})!;
+
+  it('enumerates the exact atom set "3, 4, 7, 8 and 15"', () => {
+    expect(card.body).toContain('3, 4, 7, 8 and 15');
+  });
+
+  it('does NOT collapse the set to a two-number range (no min–max en-dash)', () => {
+    // The bug rendered "atoms 3–15". Assert no two-number en-dash range appears anywhere.
+    expect(card.body).not.toMatch(/\d+\s*[–-]\s*\d+/);
+  });
+
+  it('does NOT name the intervening false-positive atoms as a span', () => {
+    expect(card.body).not.toContain('3–15');
+    expect(card.body).not.toContain('3-15');
   });
 });
 

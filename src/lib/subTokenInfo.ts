@@ -24,12 +24,14 @@ function elementTitle(el: string): string {
   return `${name[0].toUpperCase()}${name.slice(1)} (${el})`;
 }
 
-// "atom 1" or "atoms 1–3" — collective, never per-atom listed (D-09).
-function atomPhrase(atoms: number[]): string {
+// Enumerate the discrete atom set, per-atom — accuracy over brevity (D-05, GAP-1
+// chemist gate). An h-layer H-count set is frequently discontiguous (e.g. {3,4,7,8,15}),
+// so a min–max range would falsely name the intervening atoms as bearing H. We list the
+// exact atoms: "atom 1", "atoms 1 and 2", "atoms 3, 4, 7, 8 and 15".
+function atomList(atoms: number[]): string {
   if (atoms.length === 1) return `atom ${atoms[0]}`;
-  const lo = Math.min(...atoms);
-  const hi = Math.max(...atoms);
-  return `atoms ${lo}–${hi}`;
+  const head = atoms.slice(0, -1).join(', ');
+  return `atoms ${head} and ${atoms[atoms.length - 1]}`;
 }
 
 export function subTokenInfo(
@@ -61,7 +63,7 @@ export function subTokenInfo(
       const h = count === 1 ? 'one hydrogen' : `${count} hydrogens`;
       const verb = atoms.length === 1 ? 'bears' : 'each bear';
       // Plain "atom N" — never infer a functional group from an H-count (D-08).
-      const body = `${capitalise(atomPhrase(atoms))} ${verb} ${h}. This is a count of attached hydrogens, nothing about what kind of group the atom is part of.`;
+      const body = `${capitalise(atomList(atoms))} ${verb} ${h}. This is a count of attached hydrogens, nothing about what kind of group the atom is part of.`;
       return { title: 'Hydrogen count', body };
     }
 
