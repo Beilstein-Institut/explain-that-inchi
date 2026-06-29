@@ -75,12 +75,9 @@ export function subTokenInfo(
 
     case 'mobileH': {
       // Reads sub.atoms ONLY — mobileH carries no count (Pitfall 3 / D-10).
-      // De-offset for display (GAP-2) so multi-component mobile-H groups show per-component numbers.
-      const atoms = sub.atoms ?? [];
-      const off = sub.fragmentOffset ?? 0;
-      const local = off ? atoms.map((a) => a - off) : atoms;
-      const where =
-        local.length === 1 ? `atom ${local[0]}` : `atoms ${local.join(' and ')}`;
+      // Route through atomList so a 3+-atom group reads "atoms 21, 22, 23, 26 and 27",
+      // not a chain of "and" (WR-03); atomList also de-offsets for display (GAP-2).
+      const where = atomList(sub.atoms ?? [], sub.fragmentOffset ?? 0);
       const body =
         `A mobile, tautomeric proton is shared across ${where}${componentMarker(sub)} rather than fixed to one of them. ` +
         `InChI records one identifier per tautomer, so this proton is written as shared between these positions instead of drawn as a single fixed bond.`;

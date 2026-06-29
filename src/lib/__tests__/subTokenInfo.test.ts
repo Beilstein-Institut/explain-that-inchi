@@ -153,6 +153,16 @@ describe('subTokenInfo — mobileH (SUBEX-04, D-10)', () => {
   it('body carries NO count and no fixed-bond / per-atom claim (D-10)', () => {
     expect(card.body).not.toMatch(/bond between|each|\bcount\b/i);
   });
+
+  it('a 3+-atom mobile-H group reads a comma list, not a chain of "and" (WR-03)', () => {
+    // Real molecule C20H22N2O5, token (H4,21,22,23,26,27).
+    const multi = subTokenInfo(
+      { kind: 'mobileH', atoms: [21, 22, 23, 26, 27] },
+      {},
+    )!;
+    expect(multi.body).toContain('atoms 21, 22, 23, 26 and 27');
+    expect(multi.body).not.toContain('21 and 22 and 23');
+  });
 });
 
 describe('subTokenInfo — stereo (SUBEX-05/06, D-11/D-12/D-13)', () => {
