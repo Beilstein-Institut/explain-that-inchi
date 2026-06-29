@@ -70,7 +70,7 @@ export function subTokenInfo(
       const verb = atoms.length === 1 ? 'bears' : 'each bear';
       // Plain "atom N" — never infer a functional group from an H-count (D-08).
       const body = `${capitalise(atomList(atoms, sub.fragmentOffset ?? 0))}${componentMarker(sub)} ${verb} ${h}. This is a count of attached hydrogens, nothing about what kind of group the atom is part of.`;
-      return { title: 'Hydrogen count', body };
+      return { title: `Hydrogen count: ${count}`, body };
     }
 
     case 'mobileH': {

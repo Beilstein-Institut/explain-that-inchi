@@ -71,8 +71,8 @@ describe('subTokenInfo — hAtoms (SUBEX-03, D-08/D-09)', () => {
   // Alanine 1H3 token: atom 1 bears three hydrogens. The methyl trap.
   const card = subTokenInfo({ kind: 'hAtoms', atoms: [1], count: 3 }, {})!;
 
-  it('returns a non-null card with title "Hydrogen count" (D-16)', () => {
-    expect(card.title).toBe('Hydrogen count');
+  it('returns a non-null card with title "Hydrogen count: N" carrying the count (D-16)', () => {
+    expect(card.title).toBe('Hydrogen count: 3');
   });
 
   it('body states the atom bears its hydrogens', () => {
