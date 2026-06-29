@@ -99,11 +99,12 @@ Full phase details: `.planning/milestones/v1.4-ROADMAP.md`
   4. The displayed/copied InChI string is byte-identical with a sub-token card open vs. closed (verbatim-passthrough holds), and no loading overlay/WASM re-init occurs on sub-token hover or pin (no-remount holds) — the diff touches no canvas/provider files.
   5. A human chemist reviews the live card strings for the tetrahedral-stereo, mobile-H, H-count, and multi-fragment-element cases on real molecules and confirms chemical accuracy — this gate is not bypassed before the phase is marked verified.
 
-**Plans**: 1 plan
+**Plans**: 2 plans (1 + 1 gap-closure)
 
 Plans:
 
 - [x] 18-01-PLAN.md — Wire the sub-token precedence branch (effSub/subCopy) into Explanation.tsx with parent-layer accent; new component test; capture the live chemist accuracy gate (SC#5) for verify-work
+- [ ] 18-02-PLAN.md — Gap closure (chemist gate): atomPhrase enumerates the discrete H-count atom set (GAP-1) and de-offsets multi-component h-tokens to per-component numbering via a display-only fragmentOffset on SubHover (GAP-2); highlight keeps global canonicals
 
 **UI hint**: yes
 
