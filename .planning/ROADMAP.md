@@ -8,6 +8,7 @@
 - ✅ **v1.3 InChIKey display & explanation** — Phases 11–13 (shipped 2026-06-19)
 - ✅ **v1.4 Reset control & c-layer hover precision** — Phases 14–15 (shipped 2026-06-22)
 - 🟢 **v1.5 Sub-token-specific explanations** — Phases 17–18 (complete — ready to ship)
+- 🔵 **v1.6 Connection-layer cards** — Phase 19 (planned)
 
 ## Phases
 
@@ -63,6 +64,13 @@ Full phase details: `.planning/milestones/v1.4-ROADMAP.md`
 
 - [x] **Phase 17: Sub-token copy core (element table + pure module + tests)** - Full periodic-table element names and the chemically-verified, unit-tested pure module that turns a hovered/pinned sub-token into card copy (completed 2026-06-26)
 - [x] **Phase 18: Explanation-card wiring + live chemist gate** - Wire one precedence branch into the existing card so hover/pin updates it, honoring all invariants, then verify the live card strings against real molecules (completed 2026-06-29)
+
+</details>
+
+<details open>
+<summary>🔵 v1.6 Connection-layer cards (Phase 19) — PLANNED</summary>
+
+- [ ] **Phase 19: c-layer connection cards** - Sub-token cards for the connection layer: a single atom lists its bonded neighbours, a hyphen names the two atoms it joins, a parenthesis describes the branch and its bonds — per-component canonical indices, highlight unchanged
 
 </details>
 
@@ -149,6 +157,24 @@ Plans:
 | 16. Pin-to-freeze highlights and guided Help tour | — | 2/2 | Complete | 2026-06-25 |
 | 17. Sub-token copy core (element table + pure module + tests) | v1.5 | 2/2 | Complete   | 2026-06-26 |
 | 18. Explanation-card wiring + live chemist gate | v1.5 | 2/2 | Complete    | 2026-06-29 |
+| 19. c-layer connection cards | v1.6 | 0/0 | Planned | — |
+
+### Phase 19: c-layer connection cards
+
+**Goal**: Hovering or pinning a connection-layer sub-token updates the existing card with its connectivity, in canonical atom indices: a single atom number lists the atoms it is bonded to, a hyphen names the two atoms it joins, and a parenthesis describes the branch and the bonds it encodes. Numbers are shown per-component to match the printed string (like the GAP-2 h-layer fix), while `SubHover` payloads keep global canonicals so the existing Phase-15 highlight is unchanged. Cards make no bond-order / hydrogen / geometry claim.
+**Design spec**: `docs/superpowers/specs/2026-06-29-c-layer-connection-cards-design.md`
+**Depends on**: Phase 18 (sub-token card wiring + `subTokenInfo` precedence branch)
+**Requirements**: CONN-01, CONN-02, CONN-03, CONN-04
+**Success Criteria** (what must be TRUE):
+
+  1. Hovering/pinning a single atom number in the c-layer shows a card listing every canonical atom it is bonded to ("atom 28 is bonded to atoms 1, 9 and 27"), enumerating the full neighbour set (no min–max range, no truncation); an atom with no recorded bond says so.
+  2. Hovering/pinning a hyphen shows a card naming the two canonical atoms it joins as bonded; hovering a parenthesis shows a card describing the branch off its branch-point atom and listing the canonical bond pairs it encodes.
+  3. In a multi-component molecule the card numbers match the per-component numbering printed in the string (resetting after each `;`, with a `(component N)` marker), while the canvas highlight still resolves the correct atoms via global canonicals — proven by a `buildSubHoverSpecs` guard test.
+  4. No card claims bond order, hydrogen count, or geometry; `subTokenInfo` produces the copy in the pure module (no string reconstruction, no remount); tests use real `getInchi()` fixtures (one single-component, one salt/co-crystal) and an empty-atom-list guard (closes WR-04 for this surface).
+
+**Plans**: TBD — run `/gsd-plan-phase 19`
+
+**UI hint**: yes
 
 ---
 *Roadmap created: 2026-05-18*
@@ -158,3 +184,4 @@ Plans:
 *Updated: 2026-06-25 — Phase 16 complete (2/2 plans, 13/13 UAT passed)*
 *Updated: 2026-06-26 — v1.5 milestone (Sub-token-specific explanations) roadmapped; Phases 17–18 added, SUBEX-01..10 mapped 100%*
 *Updated: 2026-06-29 — Phase 18 complete (2/2 plans + gap closure; 4/4 live-chemist UAT passed; SECURITY threats_open 0). v1.5 phases all complete — ready to ship via /gsd-complete-milestone. 422 tests green.*
+*Updated: 2026-06-29 — v1.6 (Connection-layer cards) opened; Phase 19 added from design spec, CONN-01..04 mapped. v1.5 still pending ship.*

@@ -72,3 +72,29 @@ Carried from prior milestones — not in v1.5 scope:
 **Coverage:** 10/10 v1.5 requirements mapped to exactly one phase. No orphans, no duplicates.
 
 > Note: the element-card *copy* (incl. per-fragment scoping for SUBEX-07) is authored in the Phase 17 pure module alongside SUBEX-08's table, but SUBEX-07's observable behaviour — the live card updating on element hover with correct fragment scoping — is only verifiable once wired in Phase 18, so the requirement is mapped to the phase where it becomes observable.
+
+---
+
+## Milestone: v1.6 Connection-layer cards
+
+**Goal:** Give the connection (c-) layer's hover targets their own explanation cards. The Phase-15 highlighting already pinpoints the atom/bond/branch on the canvas; this milestone adds the per-sub-token *copy* that v1.5 explicitly deferred (`subTokenInfo` returns `null` for c-layer kinds today).
+
+**Source:** Design spec `docs/superpowers/specs/2026-06-29-c-layer-connection-cards-design.md` (brainstormed 2026-06-29); the v1.5 "Out of Scope" entry for c-layer sub-token cards.
+
+### v1.6 Requirements
+
+- [ ] **CONN-01**: Hovering/pinning a single atom number in the c-layer updates the card to list every canonical atom it is bonded to (the full adjacency neighbour set, enumerated — no min–max range, no truncation), or states it has no recorded bond.
+- [ ] **CONN-02**: Hovering/pinning a hyphen updates the card to name the two canonical atoms it joins as bonded; hovering/pinning a parenthesis updates the card to describe the branch off its branch-point atom and list the canonical bond pairs it encodes.
+- [ ] **CONN-03**: In multi-component molecules the card's atom numbers match the per-component numbering printed in the InChI string (resetting after each `;`, with a `(component N)` marker), while `SubHover` payloads keep global canonicals so the existing highlight is unchanged — verified by a `buildSubHoverSpecs` guard.
+- [ ] **CONN-04**: No connection card claims bond order, hydrogen count, or geometry; copy is produced by the pure `subTokenInfo` module (no string reconstruction, no remount); tests use real `getInchi()` fixtures (one single-component, one salt/co-crystal) and guard the empty atom-list case.
+
+### Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| CONN-01 | Phase 19 | Planned |
+| CONN-02 | Phase 19 | Planned |
+| CONN-03 | Phase 19 | Planned |
+| CONN-04 | Phase 19 | Planned |
+
+**Coverage:** 4/4 v1.6 requirements mapped to Phase 19.
