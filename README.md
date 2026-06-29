@@ -13,6 +13,7 @@
 Draw or load a molecule in the embedded Ketcher editor. The InChI is computed live — entirely in-browser via WebAssembly, no server involved. Each layer of the string is colour-coded and interactive:
 
 - **Hover a layer chunk** → the corresponding atoms or bonds light up in the canvas, and an explanation card appears in plain English.
+- **Hover a specific sub-token** (an element in the formula, an H-count, a mobile-H group, a stereo descriptor) → the same card narrows to that exact piece — e.g. *"Hydrogen count: 2 — atoms 6, 7 and 9 each bear 2 hydrogens"* — with per-component atom numbering matching the string.
 - **Click a chunk to pin it** → the highlight freezes so you can read the explanation without holding the mouse still. Press Esc or click elsewhere to release.
 - **InChIKey** is displayed below the InChI string, with per-segment explanations (skeleton hash, remaining-layers hash, flag+version, protonation).
 - **Guided tour** — click **Help** in the toolbar for an 8-step walkthrough of the whole interface.

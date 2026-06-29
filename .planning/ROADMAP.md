@@ -7,7 +7,7 @@
 - ✅ **v1.2 In-app feedback via prefilled GitHub issues** — Phases 9–10 (shipped 2026-06-18)
 - ✅ **v1.3 InChIKey display & explanation** — Phases 11–13 (shipped 2026-06-19)
 - ✅ **v1.4 Reset control & c-layer hover precision** — Phases 14–15 (shipped 2026-06-22)
-- 🔵 **v1.5 Sub-token-specific explanations** — Phases 17–18 (in progress)
+- 🟢 **v1.5 Sub-token-specific explanations** — Phases 17–18 (complete — ready to ship)
 
 ## Phases
 
@@ -59,9 +59,9 @@ Full phase details: `.planning/milestones/v1.4-ROADMAP.md`
 </details>
 
 <details open>
-<summary>🔵 v1.5 Sub-token-specific explanations (Phases 17–18) — IN PROGRESS</summary>
+<summary>🟢 v1.5 Sub-token-specific explanations (Phases 17–18) — COMPLETE (ready to ship)</summary>
 
-- [ ] **Phase 17: Sub-token copy core (element table + pure module + tests)** - Full periodic-table element names and the chemically-verified, unit-tested pure module that turns a hovered/pinned sub-token into card copy
+- [x] **Phase 17: Sub-token copy core (element table + pure module + tests)** - Full periodic-table element names and the chemically-verified, unit-tested pure module that turns a hovered/pinned sub-token into card copy (completed 2026-06-26)
 - [x] **Phase 18: Explanation-card wiring + live chemist gate** - Wire one precedence branch into the existing card so hover/pin updates it, honoring all invariants, then verify the live card strings against real molecules (completed 2026-06-29)
 
 </details>
@@ -157,3 +157,4 @@ Plans:
 *Updated: 2026-06-22 — Phase 16 planned: 2 plans (16-01, 16-02)*
 *Updated: 2026-06-25 — Phase 16 complete (2/2 plans, 13/13 UAT passed)*
 *Updated: 2026-06-26 — v1.5 milestone (Sub-token-specific explanations) roadmapped; Phases 17–18 added, SUBEX-01..10 mapped 100%*
+*Updated: 2026-06-29 — Phase 18 complete (2/2 plans + gap closure; 4/4 live-chemist UAT passed; SECURITY threats_open 0). v1.5 phases all complete — ready to ship via /gsd-complete-milestone. 422 tests green.*

@@ -23,11 +23,11 @@ Every chunk of an InChI string is hoverable, explained, and linked back to the a
 
 ## Current State
 
-**Version:** v1.4+ — Phase 16 (click-to-pin + guided Help tour) shipped 2026-06-25, no tag yet. Ready for next milestone.
+**Version:** v1.5 — Phases 17–18 (sub-token-specific explanations) complete 2026-06-29, ready to ship (not yet tagged). Hovering/pinning a sub-token now updates the existing card with chemically-verified, per-sub-token copy (element, H-count, mobile-H, stereo), validated on real molecules by a human chemist.
 
-- v1.0: 8 phases, 25 plans; v1.1: 70-commit maintenance/polish patch; v1.2: 2 phases (9–10), 6 plans; v1.3: 3 phases (11–13), 6 plans; v1.4: 2 phases (14–15), 3 plans; Phase 16: 2 plans
+- v1.0: 8 phases, 25 plans; v1.1: 70-commit maintenance/polish patch; v1.2: 2 phases (9–10), 6 plans; v1.3: 3 phases (11–13), 6 plans; v1.4: 2 phases (14–15), 3 plans; Phase 16: 2 plans; v1.5: 2 phases (17–18), 4 plans (incl. 1 gap closure)
 - Tech stack: Vite 8 + React 18 + TypeScript + Ketcher 3.12.0 (WASM) + Zustand 5 + CSS Modules
-- 375 unit/integration tests passing; TypeScript clean; production build clean
+- 422 unit/integration tests passing; TypeScript clean; production build clean
 - Deployed to GitHub Pages via GitHub Actions CD
 
 ## Requirements
@@ -183,4 +183,4 @@ Every chunk of an InChI string is hoverable, explained, and linked back to the a
 This document evolves at phase transitions and milestone boundaries.
 
 ---
-*Last updated: 2026-06-26 — milestone v1.5 (sub-token-specific explanations) started*
+*Last updated: 2026-06-29 — milestone v1.5 (sub-token-specific explanations) complete; Phases 17–18 done, ready to ship*
