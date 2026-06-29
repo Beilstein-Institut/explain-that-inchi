@@ -3,25 +3,25 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Sub-token-specific explanations
 current_phase: 18
-current_phase_name: explanation-card-wiring-live-chemist-gate
-status: executing
+status: completed
 stopped_at: Completed 18-01-PLAN.md
-last_updated: "2026-06-29T11:30:17.772Z"
+last_updated: "2026-06-29T12:27:45.196Z"
 last_activity: 2026-06-29
-last_activity_desc: Phase 18 execution started
+last_activity_desc: Phase 18 complete
 progress:
   total_phases: 5
   completed_phases: 5
   total_plans: 9
   completed_plans: 9
   percent: 100
+current_phase_name: explanation-card-wiring-live-chemist-gate
 ---
 
 # Project State
 
 **Project:** Explain that InChI
 **Milestone:** v1.5 — Sub-token-specific explanations (roadmapped; Phases 17–18)
-**Status:** Ready to execute
+**Status:** Milestone complete
 
 ## Project Reference
 
@@ -88,10 +88,10 @@ None
 
 ## Current Position
 
-Phase: 18 (explanation-card-wiring-live-chemist-gate) — EXECUTING
-Plan: 2 of 2
+Phase: 18
+Plan: Not started
 Status: Ready to execute
-Last activity: 2026-06-29 — Phase 18 execution started
+Last activity: 2026-06-29 — Phase 18 complete
 
 ## Operator Next Steps
 

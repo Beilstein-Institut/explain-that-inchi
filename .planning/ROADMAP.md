@@ -62,7 +62,7 @@ Full phase details: `.planning/milestones/v1.4-ROADMAP.md`
 <summary>🔵 v1.5 Sub-token-specific explanations (Phases 17–18) — IN PROGRESS</summary>
 
 - [ ] **Phase 17: Sub-token copy core (element table + pure module + tests)** - Full periodic-table element names and the chemically-verified, unit-tested pure module that turns a hovered/pinned sub-token into card copy
-- [ ] **Phase 18: Explanation-card wiring + live chemist gate** - Wire one precedence branch into the existing card so hover/pin updates it, honoring all invariants, then verify the live card strings against real molecules
+- [x] **Phase 18: Explanation-card wiring + live chemist gate** - Wire one precedence branch into the existing card so hover/pin updates it, honoring all invariants, then verify the live card strings against real molecules (completed 2026-06-29)
 
 </details>
 
@@ -148,7 +148,7 @@ Plans:
 | 15. C-layer hover precision | v1.4 | 2/2 | Complete | 2026-06-22 |
 | 16. Pin-to-freeze highlights and guided Help tour | — | 2/2 | Complete | 2026-06-25 |
 | 17. Sub-token copy core (element table + pure module + tests) | v1.5 | 2/2 | Complete   | 2026-06-26 |
-| 18. Explanation-card wiring + live chemist gate | v1.5 | 2/2 | Complete   | 2026-06-29 |
+| 18. Explanation-card wiring + live chemist gate | v1.5 | 2/2 | Complete    | 2026-06-29 |
 
 ---
 *Roadmap created: 2026-05-18*

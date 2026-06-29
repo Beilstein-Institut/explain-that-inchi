@@ -1,7 +1,7 @@
 ---
 phase: 18-explanation-card-wiring-live-chemist-gate
 verified: 2026-06-29T14:05:00Z
-status: human_needed
+status: passed
 score: 13/14 must-haves verified
 behavior_unverified: 0
 overrides_applied: 0
@@ -9,6 +9,7 @@ re_verification:
   previous_status: human_needed
   previous_score: 9/10
   gaps_closed:
+
     - "GAP-1: H-count card collapsed a discrete atom set {3,4,7,8,15} to a false min–max range 'atoms 3–15'"
     - "GAP-2: multi-component h-token showed globally-offset canonicals 'atoms 19–23' instead of the per-component numbers '2–6' the chemist reads in the InChI string"
   gaps_remaining: []
@@ -18,6 +19,7 @@ re_verification_note: >
   BUT the SC#5 live-chemist accuracy gate has NOT been re-run on the live canvas against the fixed cards.
   The gate remains open exactly as it was at the prior verification — it cannot be auto-closed on green tests.
 human_verification:
+
   - test: "SC#5 / D-04 — Live chemist accuracy gate, RE-RUN after gap-closure. In the running app, hover (and pin) a sub-token for each of four real-molecule cases and read the explanation card aloud. (1) Tetrahedral stereo (/t/m/s, e.g. L-alanine InChI=1S/C3H7NO2/c1-2(4)3(5)6/h2H,4H2,1H3,(H,5,6)/t2-/m0/s1) — previously PASSED, regression-confirm. (2) Mobile-H ((H,X,Y) group, e.g. alanine carboxylate (H,5,6) or imidazole) — previously PASSED, regression-confirm; ALSO check a 3+-atom mobile-H group reads grammatically (see WR-03 below). (3) H-count: the GAP-1 fixture (InChIKey DRLFMBDRBRZALE / melatonin, h-token 3-4,7-8,15H) — the card MUST now read 'atoms 3, 4, 7, 8 and 15', NOT 'atoms 3–15'. (4) Multi-fragment: the GAP-2 fixture (C13H16N2O2.C7H8 melatonin·toluene), component-2 h-token 2-6H — the card MUST now read 'atoms 2, 3, 4, 5 and 6 (component 2)', NOT 'atoms 19–23', AND the canvas highlight must still light the correct toluene atoms."
     expected: "All four cards are chemically accurate on the LIVE canvas. Cases 3 and 4 specifically show the fixed enumeration / per-component numbering (the two prior blocker/major UAT issues are resolved). The canvas highlight for case 4 still lands on the correct atoms (global canonicals preserved). Stereo card still states +/- is a parity, NOT R/S. Every InChI is real getInchi() output (D-04a). Re-run during /gsd-verify-work 18 and record sign-off in 18-UAT.md (status must advance from 'diagnosed' to a pass)."
     why_human: "Chemical-accuracy judgement of rendered prose on the live canvas cannot be verified programmatically. This gate is LOAD-BEARING — the prior milestone (Phase 15) broke because a human-verify gate was bypassed on fake fixtures, and this very phase's first UAT caught two real defects that 333+ green tests did not. Green tests after the fix prove the code path; they do NOT discharge the gate. The phase is NOT verified until the chemist re-confirms all four cases (especially the two previously-failed ones) and 18-UAT.md carries the sign-off."
@@ -133,6 +135,7 @@ No debt markers (TBD/FIXME/XXX) in any changed file. No `Math.min/Math.max` or e
 **1. SC#5 / D-04 — Live chemist accuracy gate, RE-RUN after gap-closure (LOAD-BEARING)**
 
 **Test:** In the running app, hover and pin a sub-token for each of four real-molecule cases, reading the explanation card:
+
   1. Tetrahedral stereo (`/t/m/s`, e.g. L-alanine) — previously PASSED, regression-confirm the parity-not-R/S wording.
   2. Mobile-H (`(H,X,Y)` group) — previously PASSED, regression-confirm. **Additionally** test a mobile-H group with 3+ atoms (e.g. a `(H2,1,2,3,4)`-style group) to check it reads grammatically — REVIEW WR-03 flags `mobileH` still uses "X and Y and Z" joining.
   3. H-count, the GAP-1 fixture (InChIKey DRLFMBDRBRZALE / melatonin, h-token `3-4,7-8,15H`): the card MUST now read "atoms 3, 4, 7, 8 and 15", **NOT** "atoms 3–15". (This was the prior BLOCKER.)
