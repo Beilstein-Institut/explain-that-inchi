@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { subTokenInfo } from '../subTokenInfo';
-import { ELEMENT_NAMES } from '../layerInfo';
 
 // ---------------------------------------------------------------------------
 // Real getInchi() fixtures only (D-18 / SUBEX-10). No fabricated InChI.
