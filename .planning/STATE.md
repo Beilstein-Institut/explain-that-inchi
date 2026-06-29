@@ -2,33 +2,33 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Sub-token-specific explanations
-current_phase: 17
-current_phase_name: sub-token-copy-core-element-table-pure-module-tests
-status: executing
-stopped_at: Phase 18 context gathered
-last_updated: "2026-06-29T05:46:44.531Z"
-last_activity: 2026-06-26
-last_activity_desc: Phase 17 execution started
+current_phase: 18
+current_phase_name: explanation-card-wiring-live-chemist-gate
+status: verifying
+stopped_at: Completed 18-01-PLAN.md
+last_updated: "2026-06-29T06:11:27.084Z"
+last_activity: 2026-06-29
+last_activity_desc: Phase 18 execution started
 progress:
   total_phases: 5
-  completed_phases: 4
-  total_plans: 7
-  completed_plans: 7
-  percent: 80
+  completed_phases: 5
+  total_plans: 8
+  completed_plans: 8
+  percent: 100
 ---
 
 # Project State
 
 **Project:** Explain that InChI
 **Milestone:** v1.5 — Sub-token-specific explanations (roadmapped; Phases 17–18)
-**Status:** Ready to execute
+**Status:** Phase complete — ready for verification
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-06-26)
 
 **Core value:** Every chunk of an InChI string is hoverable, explained, and linked back to the atoms in the drawing — demystifying a notation that most chemists treat as opaque.
-**Current focus:** Phase 17 — sub-token-copy-core-element-table-pure-module-tests
+**Current focus:** Phase 18 — explanation-card-wiring-live-chemist-gate
 
 ## v1.5 Roadmap (Phases 17–18)
 
@@ -88,10 +88,10 @@ None
 
 ## Current Position
 
-Phase: 17 (sub-token-copy-core-element-table-pure-module-tests) — EXECUTING
-Plan: 2 of 2
-Status: Ready to execute
-Last activity: 2026-06-26 — Phase 17 execution started
+Phase: 18 (explanation-card-wiring-live-chemist-gate) — EXECUTING
+Plan: 1 of 1
+Status: Phase complete — ready for verification
+Last activity: 2026-06-29 — Phase 18 execution started
 
 ## Operator Next Steps
 
@@ -99,9 +99,9 @@ Last activity: 2026-06-26 — Phase 17 execution started
 
 ## Session Continuity
 
-Last session: 2026-06-29T05:32:04.660Z
-Stopped at: Phase 18 context gathered
-Resume file: .planning/phases/18-explanation-card-wiring-live-chemist-gate/18-CONTEXT.md
+Last session: 2026-06-29T06:11:23.179Z
+Stopped at: Completed 18-01-PLAN.md
+Resume file: None
 
 ## Performance Metrics
 
@@ -109,7 +109,9 @@ Resume file: .planning/phases/18-explanation-card-wiring-live-chemist-gate/18-CO
 |-------|------|----------|-------|
 | Phase 17 P01 | 2min | 2 tasks | 2 files |
 | Phase 17 P02 | 30 min | 2 tasks | 2 files |
+| Phase 18 P01 | ~4 min | 3 tasks | 2 files |
 
 ## Decisions
 
 - [Phase 17]: subTokenInfo: bare 'atom N' phrasing (D-08-safest); atomElements param retained but unused for Phase 18
+- [Phase ?]: Phase 18: sub-token card branch is read-only, guarded on subCopy (c-layer falls through); effSub/subAccent locals, no new store field.

@@ -10,8 +10,8 @@
 
 #### Card framework (sub-token tier)
 
-- [ ] **SUBEX-01**: Hovering a sub-token in the InChI string updates the *existing* explanation card (no new card or surface) with content specific to that sub-token, and reverts to the whole-layer explanation when only the layer — not a sub-token — is hovered.
-- [ ] **SUBEX-02**: A pinned sub-token (`pinned.sub`) shows its sub-token-specific card; precedence is keyHoverKind → sub-token → layer → legend → idle.
+- [x] **SUBEX-01**: Hovering a sub-token in the InChI string updates the *existing* explanation card (no new card or surface) with content specific to that sub-token, and reverts to the whole-layer explanation when only the layer — not a sub-token — is hovered.
+- [x] **SUBEX-02**: A pinned sub-token (`pinned.sub`) shows its sub-token-specific card; precedence is keyHoverKind → sub-token → layer → legend → idle.
 
 #### Hydrogen sub-tokens
 
@@ -25,12 +25,12 @@
 
 #### Molecular formula elements
 
-- [ ] **SUBEX-07**: Hovering a specific element in the formula updates the card with the element's name and that the count is the number of that element's atoms (scoped correctly to the molecule or the hovered fragment in multi-component formulas), with a brief Hill-order note.
+- [x] **SUBEX-07**: Hovering a specific element in the formula updates the card with the element's name and that the count is the number of that element's atoms (scoped correctly to the molecule or the hovered fragment in multi-component formulas), with a brief Hill-order note.
 - [x] **SUBEX-08**: Element naming is backed by a full periodic-table symbol→name table (extended in place from the existing 10-entry `ELEMENT_NAMES`), so no element shows only a bare symbol; lookup stays case-exact (`Co` ≠ `CO`).
 
 #### Correctness & non-regression
 
-- [ ] **SUBEX-09**: All sub-token copy is derived from already-offset parsed `SubHover` data — it never reconstructs the InChI string (verbatim-passthrough invariant) and never remounts the Ketcher canvas / re-initialises WASM (no-remount invariant).
+- [x] **SUBEX-09**: All sub-token copy is derived from already-offset parsed `SubHover` data — it never reconstructs the InChI string (verbatim-passthrough invariant) and never remounts the Ketcher canvas / re-initialises WASM (no-remount invariant).
 - [x] **SUBEX-10**: Sub-token copy is produced by a pure, unit-tested module; tests use real `getInchi()` InChI fixtures (no fabricated fixtures), pin the mandatory "parity ≠ R/S" caveat, and pass a human chemical-accuracy verify gate before the milestone closes.
 
 ### Future Requirements (deferred)
@@ -58,15 +58,15 @@ Carried from prior milestones — not in v1.5 scope:
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SUBEX-01 | Phase 18 | Pending |
-| SUBEX-02 | Phase 18 | Pending |
+| SUBEX-01 | Phase 18 | Complete |
+| SUBEX-02 | Phase 18 | Complete |
 | SUBEX-03 | Phase 17 | Complete |
 | SUBEX-04 | Phase 17 | Complete |
 | SUBEX-05 | Phase 17 | Complete |
 | SUBEX-06 | Phase 17 | Complete |
-| SUBEX-07 | Phase 18 | Pending |
+| SUBEX-07 | Phase 18 | Complete |
 | SUBEX-08 | Phase 17 | Complete |
-| SUBEX-09 | Phase 18 | Pending |
+| SUBEX-09 | Phase 18 | Complete |
 | SUBEX-10 | Phase 17 | Complete |
 
 **Coverage:** 10/10 v1.5 requirements mapped to exactly one phase. No orphans, no duplicates.

@@ -102,7 +102,8 @@ Full phase details: `.planning/milestones/v1.4-ROADMAP.md`
 **Plans**: 1 plan
 
 Plans:
-- [ ] 18-01-PLAN.md — Wire the sub-token precedence branch (effSub/subCopy) into Explanation.tsx with parent-layer accent; new component test; capture the live chemist accuracy gate (SC#5) for verify-work
+
+- [x] 18-01-PLAN.md — Wire the sub-token precedence branch (effSub/subCopy) into Explanation.tsx with parent-layer accent; new component test; capture the live chemist accuracy gate (SC#5) for verify-work
 
 **UI hint**: yes
 
@@ -146,7 +147,7 @@ Plans:
 | 15. C-layer hover precision | v1.4 | 2/2 | Complete | 2026-06-22 |
 | 16. Pin-to-freeze highlights and guided Help tour | — | 2/2 | Complete | 2026-06-25 |
 | 17. Sub-token copy core (element table + pure module + tests) | v1.5 | 2/2 | Complete   | 2026-06-26 |
-| 18. Explanation-card wiring + live chemist gate | v1.5 | 0/? | Not started | - |
+| 18. Explanation-card wiring + live chemist gate | v1.5 | 1/1 | Complete   | 2026-06-29 |
 
 ---
 *Roadmap created: 2026-05-18*
