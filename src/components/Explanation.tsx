@@ -11,6 +11,8 @@ import { useInchiStore } from '../store';
 import type { KeyHoverZone } from '../store';
 import { formulaFragmentCounts } from '../lib/parseInchi';
 import { LAYER_INFO, DEFAULT_INFO, readingFor, swatchVar } from '../lib/layerInfo';
+import { subTokenInfo } from '../lib/subTokenInfo';
+import type { SubHover, LayerType } from '../lib/parseInchi';
 import { KEY_ZONE_COPY } from '../lib/inchiKeyInfo';
 import { Legend } from './Legend';
 import styles from './Explanation.module.css';
@@ -39,6 +41,9 @@ export function Explanation() {
   // UAT-13: legend-hover payload — drives a static info card for layers not on the
   // canvas (the floating tooltip was removed). Lower precedence than a live layer.
   const legendHover = useInchiStore(state => state.legendHover);
+  // Phase 18 (SUBEX-01/02): the hovered/pinned sub-token. Read-only — the card never
+  // writes it back (mirrors the pinned/hoverIdx read pattern).
+  const subHover = useInchiStore(state => state.subHover);
 
   // Phase 16: pinned wins over live hover (spec line 56).
   // The store gate freezes hoverIdx while pinned, so effIdx already equals the pinned
@@ -54,6 +59,30 @@ export function Explanation() {
   // Pitfall 3: always set --accent so card::before always has a value.
   // Idle: var(--ink-faint); active: layer accent color.
   const accentVar = layer ? `var(--c-${swatchVar(layer.type)})` : 'var(--ink-faint)';
+
+  // Phase 18 (SUBEX-02): pinned sub-token wins over live sub-hover, mirroring effIdx.
+  const effSub = pinned ? pinned.sub : subHover;
+  // SUBEX-09: copy is the pure-module projection of offset-only SubHover fields —
+  // never reads layer.text, never reconstructs an InChI fragment. null for c-layer
+  // kinds (bond/branch/atom) so the card falls through to the layer branch.
+  const subCopy = effSub ? subTokenInfo(effSub, atomElements) : null;
+  // D-01: the sub-token card inherits the PARENT layer's swatch via accentVar (already
+  // derived from effIdx). D-01a: if effIdx is unresolvable (no layer), map the sub kind
+  // to its layer type, then swatchVar — no store field added.
+  const SUB_KIND_LAYER: Record<SubHover['kind'], LayerType> = {
+    element: 'formula',
+    atom: 'formula',
+    hAtoms: 'h',
+    mobileH: 'h',
+    stereo: 't',
+    bond: 'c',
+    branch: 'c',
+  };
+  const subAccent = layer
+    ? accentVar
+    : effSub
+      ? `var(--c-${swatchVar(SUB_KIND_LAYER[effSub.kind])})`
+      : 'var(--ink-faint)';
 
   // Per-fragment heavy-atom counts — needed for correct multi-component
   // canonical offsetting in readingFor (c/h/t layers). Empty for single-fragment.
@@ -80,6 +109,19 @@ export function Explanation() {
               (consistent across all card states; the left accent strip carries colour). */}
           <h3 className={styles.layerTitle}>{KEY_ZONE_COPY[keyHoverKind].title}</h3>
           <p className={styles.layerBody}>{KEY_ZONE_COPY[keyHoverKind].body}</p>
+        </div>
+      ) : subCopy ? (
+        /* Phase 18 sub-token card (SUBEX-01/02/07). Guarded on subCopy (not effSub) so
+           c-layer kinds (subTokenInfo → null) fall through to the layer card below.
+           T-18-01: prose is React text children only — no raw-HTML injection.
+           Read-only (Invariant): never calls setHover/setSubHover/highlight.
+           D-01: --accent inherits the parent layer's swatch (subAccent). */
+        <div
+          className={[styles.card, styles.active].join(' ')}
+          style={{ '--accent': subAccent } as React.CSSProperties}
+        >
+          <h3 className={styles.layerTitle}>{subCopy.title}</h3>
+          <p className={styles.layerBody}>{subCopy.body}</p>
         </div>
       ) : layer ? (
         /* Active state: a live InChI layer is hovered (InChI string or a present
