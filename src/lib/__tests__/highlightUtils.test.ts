@@ -800,6 +800,25 @@ describe('buildSubHoverSpecs', () => {
       expect(specs[0].color).toBe('--c-hydro-3');
     });
 
+    it('kind hAtoms: GAP-2 guard — resolves via GLOBAL atoms, fragmentOffset is ignored on the highlight path', () => {
+      // A multi-component hAtoms hit carries GLOBAL canonical 19 plus a display-only
+      // fragmentOffset 17 (per-component-local 2). The highlight MUST key auxMap by the
+      // global 19 (→ carbon pool 0 → bonded explicit H pool 6). If fragmentOffset were
+      // subtracted here, auxMap[2] would be undefined and specs would be empty.
+      const struct = makeMockStructWithExplicitH();
+      const specs = buildSubHoverSpecs(
+        { kind: 'hAtoms', atoms: [19], count: 1, fragmentOffset: 17, componentIndex: 1 },
+        { 19: 0 }, // GLOBAL canonical 19 → carbon pool 0 (bonded to explicit H pool 6)
+        atomElements,
+        [6],
+        hLayer,
+        struct,
+        resolveVarFn,
+      );
+      expect(specs.length).toBe(1);
+      expect(specs[0].atoms).toContain(6); // resolved via global 19, NOT the de-offset 2
+    });
+
     it('kind mobileH: atoms from subHover.atoms[], color --c-hydro-mobile', () => {
       const struct = makeMockStruct();
       const specs = buildSubHoverSpecs(
