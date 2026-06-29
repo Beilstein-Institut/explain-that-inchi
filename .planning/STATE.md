@@ -4,9 +4,9 @@ milestone: v1.5
 milestone_name: Sub-token-specific explanations
 current_phase: 17
 current_phase_name: sub-token-copy-core-element-table-pure-module-tests
-status: verifying
+status: executing
 stopped_at: Phase 18 context gathered
-last_updated: "2026-06-29T05:32:04.665Z"
+last_updated: "2026-06-29T05:46:44.531Z"
 last_activity: 2026-06-26
 last_activity_desc: Phase 17 execution started
 progress:
@@ -21,7 +21,7 @@ progress:
 
 **Project:** Explain that InChI
 **Milestone:** v1.5 — Sub-token-specific explanations (roadmapped; Phases 17–18)
-**Status:** Phase complete — ready for verification
+**Status:** Ready to execute
 
 ## Project Reference
 
@@ -90,7 +90,7 @@ None
 
 Phase: 17 (sub-token-copy-core-element-table-pure-module-tests) — EXECUTING
 Plan: 2 of 2
-Status: Phase complete — ready for verification
+Status: Ready to execute
 Last activity: 2026-06-26 — Phase 17 execution started
 
 ## Operator Next Steps
