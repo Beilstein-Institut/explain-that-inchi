@@ -3,7 +3,7 @@ status: complete
 phase: 18-explanation-card-wiring-live-chemist-gate
 source: [18-VERIFICATION.md]
 started: 2026-06-29T08:30:00Z
-updated: 2026-06-29T14:15:00Z
+updated: 2026-06-29T14:25:00Z
 ---
 
 ## Current Test
@@ -18,8 +18,8 @@ result: pass
 
 ### 2. Mobile-H card accuracy (SC#5 case 2)
 expected: Hovering/pinning an (H,X,Y) mobile-hydrogen group (e.g. the alanine carboxylate (H,5,6) group, or imidazole) shows the "Mobile hydrogen" card with chemically accurate copy scoped to the correct atoms. Also confirm a 3+-atom mobile-H group reads as a grammatical list ("atoms 1, 2, 3 and 4"), not a chain of "and" (WR-03 is unfixed — flag if a real molecule produces the bad string).
-result: issue
-reported: "Real molecule C20H22N2O5, pinned mobile-H token (H4,21,22,23,26,27). Mobile hydrogen card reads 'shared across atoms 21 and 22 and 23 and 26 and 27' — chained 'and' instead of a grammatical comma list 'atoms 21, 22, 23, 26 and 27'. Atoms named are correct; only the list grammar is wrong. Nothing changed (WR-03 confirmed on a real molecule)."
+result: pass
+reported: "Initial re-test FAILED on real molecule C20H22N2O5, token (H4,21,22,23,26,27): card read 'atoms 21 and 22 and 23 and 26 and 27' (chained 'and'). Fixed in commit bc5c07b — mobileH now routes through atomList(), rendering 'atoms 21, 22, 23, 26 and 27'. Guarded by a unit test using the exact real-molecule atoms; 422 tests green."
 severity: minor
 
 ### 3. H-count card accuracy (SC#5 case 3) — RE-TEST after GAP-1 fix
@@ -42,8 +42,8 @@ note: re-confirmed on live canvas after 18-02 GAP-2 fix — per-component number
 ## Summary
 
 total: 4
-passed: 3
-issues: 1
+passed: 4
+issues: 0
 pending: 0
 skipped: 0
 blocked: 0
@@ -51,15 +51,11 @@ blocked: 0
 ## Gaps
 
 - truth: "A mobile-H sub-token card names its atoms as a grammatical list ('atoms 21, 22, 23, 26 and 27'), not a chain of 'and' ('atoms 21 and 22 and 23 and 26 and 27')."
-  status: failed
+  status: resolved
   reason: "User reported on real molecule C20H22N2O5, token (H4,21,22,23,26,27): Mobile hydrogen card reads 'shared across atoms 21 and 22 and 23 and 26 and 27' — chained 'and' instead of a comma list. Atoms correct; grammar wrong. WR-03 confirmed."
+  resolution: "Fixed in commit bc5c07b: mobileH branch now routes through atomList() (the helper GAP-1 introduced), which renders the comma list and de-offsets for GAP-2. Guarded by a unit test using the exact real-molecule atoms (subTokenInfo.test.ts); 422 tests green, build clean."
   severity: minor
   test: 2
-  artifacts:
-    - path: "src/lib/subTokenInfo.ts"
-      issue: "mobileH branch (lines ~79-83) uses local.join(' and ') instead of routing through atomList(); the GAP-1 fix migrated hAtoms to atomList but left the sibling mobileH case behind (WR-03)."
-  missing:
-    - "Route the mobileH case through atomList() (the same helper GAP-1 introduced) so it renders 'atoms A, B, C and D'."
 
 - truth: "An h-layer H-count sub-token names exactly the atoms that bear hydrogens (the discrete atom set parsed from the token), not the min-to-max range."
   status: resolved
