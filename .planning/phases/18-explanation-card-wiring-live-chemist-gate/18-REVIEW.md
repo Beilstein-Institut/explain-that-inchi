@@ -1,25 +1,135 @@
 ---
 phase: 18-explanation-card-wiring-live-chemist-gate
-reviewed: 2026-06-29T08:25:00Z
+reviewed: 2026-06-29T13:40:00Z
 depth: standard
-files_reviewed: 2
+files_reviewed: 8
 files_reviewed_list:
   - src/components/Explanation.tsx
   - src/components/__tests__/Explanation.test.tsx
+  - src/lib/subTokenInfo.ts
+  - src/lib/parseInchi.ts
+  - src/components/LayerText.tsx
+  - src/lib/__tests__/subTokenInfo.test.ts
+  - src/__tests__/LayerText.fragmentOffset.test.tsx
+  - src/lib/__tests__/highlightUtils.test.ts
 findings:
   critical: 0
-  warning: 2
-  info: 2
-  total: 4
+  warning: 4
+  info: 3
+  total: 7
 status: issues_found
 ---
 
 # Phase 18: Code Review Report
 
-**Reviewed:** 2026-06-29T08:25:00Z
+**Reviewed:** 2026-06-29T13:40:00Z (gap-closure 18-02 pass)
 **Depth:** standard
-**Files Reviewed:** 2
+**Files Reviewed:** 8 (2 from 18-01, 6 from 18-02)
 **Status:** issues_found
+
+This file contains two review passes for Phase 18:
+- **Pass 2 (18-02 gap-closure)** — the GAP-1/GAP-2 H-count card fix. Findings `CR-`/`WR-`/`IN-` prefixed below.
+- **Pass 1 (18-01 wiring)** — the original `Explanation.tsx` review, preserved verbatim further down.
+
+---
+
+# Pass 2 — Gap-closure 18-02 (subTokenInfo / LayerText)
+
+## Summary
+
+Reviewed the gap-closure diff for plan 18-02 (commits `82718b8`, `9c0173b`):
+GAP-1 replaced `atomPhrase`'s min–max range with `atomList` discrete-set
+enumeration; GAP-2 added per-component display de-offsetting plus a
+`componentMarker`. The core logic is correct: the `hAtoms` card enumerates
+`{3,4,7,8,15}` as `"atoms 3, 4, 7, 8 and 15"`, atoms stay global on the SubHover
+payload (canvas-highlight key unaffected), and de-offset is display-only. All
+421 tests pass, including the new GAP-1/GAP-2 fixtures, no regression.
+
+The findings are correctness-adjacent quality defects, not crashes. The central
+one is a **root-cause incompleteness**: the same diff that fixed the `hAtoms`
+grammar/de-offset left its sibling `mobileH` case half-fixed in the identical
+function — `mobileH` got the de-offset but kept the broken `join(' and ')`
+phrasing that GAP-1 was created to remove.
+
+No security issues — these are pure string-builders emitting HTML-free text
+children (D-07). No injection/secret/XSS surface.
+
+## Warnings (Pass 2)
+
+### WR-03: `mobileH` left using broken `join(' and ')` grammar while sibling `hAtoms` got the `atomList` fix in the same diff
+
+**File:** `src/lib/subTokenInfo.ts:79-83`
+**Issue:** GAP-1 introduced `atomList()` to stop rendering atom sets as a
+degenerate phrase and rewired `hAtoms` to use it. The `mobileH` case sits in the
+same function and **was edited by this very diff** (the de-offset block on lines
+80-83 was added here) — but it still builds its phrase with `local.join(' and ')`
+instead of `atomList`. For any mobile-H group with 3+ atoms this is grammatically
+broken. Real, not hypothetical: a CuSO4-style group `(H2,1,2,3,4)` renders:
+
+> "A mobile, tautomeric proton is shared across **atoms 1 and 2 and 3 and 4** rather than fixed to one of them."
+
+The root-cause fix is to route `mobileH` through the helper the diff already
+added (net-negative lines — deletes the bespoke `off`/`local`/`where` block):
+**Fix:**
+```ts
+case 'mobileH': {
+  const atoms = sub.atoms ?? [];
+  const where = atomList(atoms, sub.fragmentOffset ?? 0);
+  const body =
+    `A mobile, tautomeric proton is shared across ${where}${componentMarker(sub)} rather than fixed to one of them. ` +
+    `InChI records one identifier per tautomer, so this proton is written as shared between these positions instead of drawn as a single fixed bond.`;
+  return { title: 'Mobile hydrogen', body };
+}
+```
+
+### WR-04: `atomList([])` emits `"atoms  and undefined"` on an empty atom set
+
+**File:** `src/lib/subTokenInfo.ts:36-41`
+**Issue:** `atomList` has no empty-array guard. With `atoms = []`:
+`local.length === 1` is false, `head = [].slice(0,-1).join(', ')` is `''`, and
+`local[local.length-1]` is `local[-1]` → `undefined`, producing the literal
+string `"atoms  and undefined"`. Reachable: `LayerText.tsx:389` sets `atoms = []`
+for a parenthesised h-layer group that is **not** a `(H…)` mobile group, yet
+still emits a `mobileH` SubHover. Hovering it surfaces a malformed card instead
+of no card. The `mobileH` branch (line 82-83) has the same length-based shape and
+degrades to `"atoms "`.
+**Fix:** Guard the empty set in `atomList`, or — better — at the call site so a
+non-`(H…)` parenthesis group renders as plain text rather than an interactive
+`mobileH` span:
+```ts
+function atomList(atoms: number[], fragmentOffset = 0): string {
+  if (atoms.length === 0) return '';
+  const local = fragmentOffset ? atoms.map((a) => a - fragmentOffset) : atoms;
+  if (local.length === 1) return `atom ${local[0]}`;
+  const head = local.slice(0, -1).join(', ');
+  return `atoms ${head} and ${local[local.length - 1]}`;
+}
+```
+
+## Info (Pass 2)
+
+### IN-03: Pure `N*` h-token shows a global canonical mixed with a per-component number, contradicting its own comment
+
+**File:** `src/components/LayerText.tsx:441-442, 454-456`
+**Issue:** For an identical-fragment h-token like `2*1H3` the code expands atoms
+across all `n` copies (`[1, 1+atomsPerFrag]`, e.g. `[1, 7]`) but sets
+`fragmentOffset: 0, componentIndex: 0` (line-456 comment: "card shows
+component-local numbers, component 0"). Because the offset is 0, `atomList` does
+not de-offset, so the card prints **"atoms 1 and 7 each bear 3 hydrogens"** —
+per-component-local `1` next to global canonical `7`, with no component marker,
+directly contradicting the comment. Not a regression (the pre-diff form was the
+equally-confusing `atoms 1–7`), but GAP-2's stated purpose is per-component
+display accuracy and this sibling display path was left uncovered.
+**Fix:** For pure-`N*` identical fragments, pass only the first fragment's atoms
+to the card prose (the highlight payload can keep all copies). Out of scope for
+v1 if multi-identical-fragment molecules are not a target fixture.
+
+---
+
+# Pass 1 — Wiring 18-01 (Explanation.tsx) [preserved]
+
+**Reviewed:** 2026-06-29T08:25:00Z
+**Files Reviewed:** 2 (`Explanation.tsx`, `Explanation.test.tsx`)
 
 ## Summary
 
@@ -48,7 +158,7 @@ the project's verbatim-passthrough memory rule:
 All 10 tests pass. The four hard invariants hold. The findings below are quality
 and robustness concerns, none of them blockers.
 
-## Warnings
+## Warnings (Pass 1)
 
 ### WR-01: `SUB_KIND_LAYER` map and `subAccent` fallback are dead/defensive code that ships unused branches
 
@@ -76,7 +186,7 @@ expect(screen.getByText(body)).toBeInTheDocument();
 ```
 Copy-correctness itself belongs in `subTokenInfo`'s own unit tests (out of scope for these two files); note only that this file should not be relied on to catch it.
 
-## Info
+## Info (Pass 1)
 
 ### IN-01: No test covers the pinned c-layer fall-through path
 
@@ -92,6 +202,6 @@ Copy-correctness itself belongs in `subTokenInfo`'s own unit tests (out of scope
 
 ---
 
-_Reviewed: 2026-06-29T08:25:00Z_
+_Reviewed: 2026-06-29T13:40:00Z_
 _Reviewer: Claude (gsd-code-reviewer)_
 _Depth: standard_
