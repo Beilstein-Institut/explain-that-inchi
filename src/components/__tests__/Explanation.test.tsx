@@ -188,3 +188,27 @@ describe('Explanation — sub-token card branch (SUBEX-01/02/07)', () => {
     expect(card.style.getPropertyValue('--accent')).toBe('var(--c-hydro)');
   });
 });
+
+describe('Explanation — invariant guards (SUBEX-09 read-only + verbatim passthrough)', () => {
+  // Read-only: rendering the sub-token card invokes no store mutator (Invariant).
+  it('renders the sub-token card without calling any store mutator', () => {
+    mock.subHover = { kind: 'element', el: 'C' };
+    mock.hoverIdx = FORMULA_IDX;
+    render(<Explanation />);
+    expect(screen.getByText('Carbon (C)')).toBeInTheDocument(); // branch did render
+    expect(spies.setHover).not.toHaveBeenCalled();
+    expect(spies.setSubHover).not.toHaveBeenCalled();
+    expect(spies.setKeyHoverKind).not.toHaveBeenCalled();
+    expect(spies.setLegendHover).not.toHaveBeenCalled();
+  });
+
+  // Verbatim passthrough: the rendered body string IS the pure-module output, proving
+  // the card never re-joins or reconstructs an InChI fragment (SUBEX-09).
+  it('renders the card body verbatim from subTokenInfo output', () => {
+    mock.subHover = { kind: 'mobileH', atoms: [5, 6] }; // projection of h '(H,5,6)'
+    mock.hoverIdx = H_IDX;
+    render(<Explanation />);
+    const body = subTokenInfo(mock.subHover, mock.atomElements)!.body;
+    expect(screen.getByText(body)).toBeInTheDocument();
+  });
+});
