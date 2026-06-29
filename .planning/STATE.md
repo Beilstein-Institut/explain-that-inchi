@@ -4,16 +4,16 @@ milestone: v1.5
 milestone_name: Sub-token-specific explanations
 current_phase: 18
 current_phase_name: explanation-card-wiring-live-chemist-gate
-status: verifying
+status: executing
 stopped_at: Completed 18-01-PLAN.md
-last_updated: "2026-06-29T06:11:27.084Z"
+last_updated: "2026-06-29T11:30:17.772Z"
 last_activity: 2026-06-29
 last_activity_desc: Phase 18 execution started
 progress:
   total_phases: 5
   completed_phases: 5
-  total_plans: 8
-  completed_plans: 8
+  total_plans: 9
+  completed_plans: 9
   percent: 100
 ---
 
@@ -21,7 +21,7 @@ progress:
 
 **Project:** Explain that InChI
 **Milestone:** v1.5 — Sub-token-specific explanations (roadmapped; Phases 17–18)
-**Status:** Phase complete — ready for verification
+**Status:** Ready to execute
 
 ## Project Reference
 
@@ -89,8 +89,8 @@ None
 ## Current Position
 
 Phase: 18 (explanation-card-wiring-live-chemist-gate) — EXECUTING
-Plan: 1 of 1
-Status: Phase complete — ready for verification
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-06-29 — Phase 18 execution started
 
 ## Operator Next Steps
@@ -99,7 +99,7 @@ Last activity: 2026-06-29 — Phase 18 execution started
 
 ## Session Continuity
 
-Last session: 2026-06-29T06:11:23.179Z
+Last session: 2026-06-29T11:29:54.884Z
 Stopped at: Completed 18-01-PLAN.md
 Resume file: None
 
@@ -110,6 +110,7 @@ Resume file: None
 | Phase 17 P01 | 2min | 2 tasks | 2 files |
 | Phase 17 P02 | 30 min | 2 tasks | 2 files |
 | Phase 18 P01 | ~4 min | 3 tasks | 2 files |
+| Phase 18 P02 | 27m | 3 tasks | 6 files |
 
 ## Decisions
 

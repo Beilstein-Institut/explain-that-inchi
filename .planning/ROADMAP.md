@@ -104,7 +104,7 @@ Full phase details: `.planning/milestones/v1.4-ROADMAP.md`
 Plans:
 
 - [x] 18-01-PLAN.md — Wire the sub-token precedence branch (effSub/subCopy) into Explanation.tsx with parent-layer accent; new component test; capture the live chemist accuracy gate (SC#5) for verify-work
-- [ ] 18-02-PLAN.md — Gap closure (chemist gate): atomPhrase enumerates the discrete H-count atom set (GAP-1) and de-offsets multi-component h-tokens to per-component numbering via a display-only fragmentOffset on SubHover (GAP-2); highlight keeps global canonicals
+- [x] 18-02-PLAN.md — Gap closure (chemist gate): atomPhrase enumerates the discrete H-count atom set (GAP-1) and de-offsets multi-component h-tokens to per-component numbering via a display-only fragmentOffset on SubHover (GAP-2); highlight keeps global canonicals
 
 **UI hint**: yes
 
@@ -148,7 +148,7 @@ Plans:
 | 15. C-layer hover precision | v1.4 | 2/2 | Complete | 2026-06-22 |
 | 16. Pin-to-freeze highlights and guided Help tour | — | 2/2 | Complete | 2026-06-25 |
 | 17. Sub-token copy core (element table + pure module + tests) | v1.5 | 2/2 | Complete   | 2026-06-26 |
-| 18. Explanation-card wiring + live chemist gate | v1.5 | 1/1 | Complete   | 2026-06-29 |
+| 18. Explanation-card wiring + live chemist gate | v1.5 | 2/2 | Complete   | 2026-06-29 |
 
 ---
 *Roadmap created: 2026-05-18*
