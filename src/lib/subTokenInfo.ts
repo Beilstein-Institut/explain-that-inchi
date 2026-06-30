@@ -94,10 +94,64 @@ export function subTokenInfo(
       return { title: 'Tetrahedral stereocenter', body };
     }
 
+    case 'atom': {
+      // Neighbour set = the "other endpoint" of each incident pair, deduped + sorted (ring
+      // closures can repeat a neighbour across pair directions). All GLOBAL; de-offset for
+      // DISPLAY only via atomList (GAP-2) — never written back onto sub.
+      const self = sub.canonical!;
+      const off = sub.fragmentOffset ?? 0;
+      const neighbours = [...new Set((sub.incidentPairs ?? []).map(([a, b]) => (a === self ? b : a)))].sort(
+        (x, y) => x - y,
+      );
+      const selfLocal = self - off;
+      if (neighbours.length === 0) {
+        return {
+          title: 'Atom',
+          body: `Atom ${selfLocal}${componentMarker(sub)} has no bonds recorded in the connection layer.`,
+        };
+      }
+      const body =
+        `Atom ${selfLocal} is bonded to ${atomList(neighbours, off)}${componentMarker(sub)} ` +
+        `in the heavy-atom skeleton. The connection layer lists which canonical atom numbers are joined ` +
+        `— it records connectivity only, not bond order or 3-D shape.`;
+      return { title: 'Atom', body };
+    }
+
+    case 'bond': {
+      // One canonical pair (N* repeats it across identical fragments). De-offset for display.
+      const off = sub.fragmentOffset ?? 0;
+      const [a, b] = (sub.endpointPairs ?? [[0, 0]])[0];
+      const body =
+        `Atoms ${a - off} and ${b - off}${componentMarker(sub)} are bonded — this hyphen joins the ` +
+        `canonical numbers on either side of it. It records that the two atoms are connected, not the bond order.`;
+      return { title: 'Bond', body };
+    }
+
+    case 'branch': {
+      // Branch-point is the explicit field (research A1); fall back to the shared left endpoint.
+      const off = sub.fragmentOffset ?? 0;
+      const pairs = sub.bondPairs ?? [];
+      const bp = sub.branchPoint ?? pairs[0]?.[0] ?? 0;
+      const body =
+        `These parentheses are a branch hanging off atom ${bp - off}${componentMarker(sub)}, adding the ` +
+        `bonds ${bondPairList(pairs, off)}. InChI writes side-chains in parentheses so a branched skeleton ` +
+        `fits on one line; after the ) the main chain continues from atom ${bp - off}.`;
+      return { title: 'Branch', body };
+    }
+
     default:
-      // 'atom' | 'bond' | 'branch' — c-layer kinds fall through to the layer card.
       return null;
   }
+}
+
+// Render bond pairs as "a–b" (en-dash), de-offsetting each endpoint for DISPLAY only
+// (GAP-2), with the same comma + "and" grammar as atomList. e.g. [[3,24],[24,11]] → "3–24 and 24–11".
+function bondPairList(pairs: [number, number][], off = 0): string {
+  const fmt = ([a, b]: [number, number]): string => `${a - off}–${b - off}`;
+  if (pairs.length === 0) return '';
+  if (pairs.length === 1) return fmt(pairs[0]);
+  const head = pairs.slice(0, -1).map(fmt).join(', ');
+  return `${head} and ${fmt(pairs[pairs.length - 1])}`;
 }
 
 function capitalise(s: string): string {

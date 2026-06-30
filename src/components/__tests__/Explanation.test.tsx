@@ -133,13 +133,14 @@ describe('Explanation — sub-token card branch (SUBEX-01/02/07)', () => {
     expect(screen.queryByText('Molecular formula')).not.toBeInTheDocument();
   });
 
-  // Test B (SUBEX-01 fall-through): c-layer kind → subTokenInfo null → layer card.
-  it('Test B: c-layer bond sub-token falls through to the layer card', () => {
+  // Test B (CONN-02): a c-layer bond sub-token now renders its own Bond card (Phase 19
+  // reversed the old null fall-through). The whole-layer 'Connection layer' card must NOT show.
+  it('Test B: c-layer bond sub-token renders the Bond card', () => {
     mock.subHover = { kind: 'bond', endpointPairs: [[1, 2]] }; // projection of c '1-2'
     mock.hoverIdx = C_IDX;
     render(<Explanation />);
-    // subTokenInfo(bond) === null → the connections layer title shows instead.
-    expect(screen.getByText('Connection layer')).toBeInTheDocument();
+    expect(screen.getByText('Bond')).toBeInTheDocument();
+    expect(screen.queryByText('Connection layer')).not.toBeInTheDocument();
   });
 
   // Test C (SUBEX-01 layer-only): no sub-token → unchanged whole-layer card.
