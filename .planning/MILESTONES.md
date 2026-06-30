@@ -1,5 +1,65 @@
 # Milestones: Explain that InChI
 
+## v1.6 Connection-layer cards (Shipped: 2026-06-30)
+
+**Phases:** 19 (1 phase, 2 plans + 1 in-milestone gap fix)
+
+### Delivered
+
+Per-sub-token explanation cards for the connection (c-) layer — the copy tier v1.5 deferred. Hovering/pinning a c-layer atom lists its bonded neighbours, a hyphen names the two joined atoms, a parenthesis describes the branch and its bonds; per-component canonical numbering with the Phase-15 canvas highlight unchanged.
+
+### Key Accomplishments
+
+1. Pure `subTokenInfo` c-layer cards (atom/bond/branch) with `SubHover.incidentPairs`/`branchPoint` + exported `segmentBonds`; real-fixture TDD (alanine, melatonin-toluene co-crystal).
+2. Live `ConnectionText` wiring: per-component LOCAL display numbering, global `SubHover` payloads (highlight unchanged), identical card on open/close parens.
+3. N* duplicated-fragment card-text gap found in live chemist UAT and fixed in-milestone (`SubHover.fragMult` — collapse to one representative fragment + multiplicity note; highlight keeps lighting every copy). Same fix corrected the analogous h-layer card.
+4. c-layer card titles prefixed "Connection layer - Atom/Bond/Branch".
+
+### Requirements
+
+4/4 v1.6 requirements (CONN-01..04) shipped. Live chemist accuracy gate passed.
+
+### Known deferred items at close
+
+8 v1.0-era quick-task registry stubs (functionally completed in v1.0/v1.1; see STATE.md Deferred Items).
+
+### Archive
+
+- `.planning/milestones/v1.6-ROADMAP.md`
+- `.planning/milestones/v1.6-REQUIREMENTS.md`
+
+---
+
+## v1.5 Sub-token-specific explanations (Shipped: 2026-06-29)
+
+**Phases:** 17–18 (2 phases, 4 plans incl. 1 gap-closure)
+
+### Delivered
+
+The existing explanation card became sub-token-aware: hovering/pinning an individual sub-token (element / H-count / mobile-H / tetrahedral stereo) updates that same card with chemically-accurate, per-sub-token copy — no new card or surface — validated on real molecules by a human chemist.
+
+### Key Accomplishments
+
+1. Full periodic-table `ELEMENT_NAMES` table (case-exact) + pure, DOM-free `subTokenInfo()` copy module, unit-tested against real `getInchi()` fixtures.
+2. One precedence branch wired into the existing card (keyHoverKind → sub-token → layer → legend → idle); zero store changes, no canvas remount.
+3. GAP-1: H-count card enumerates the discrete atom set ({3,4,7,8,15}), never a min–max range. GAP-2: multi-component cards de-offset to per-component numbers for display; `SubHover.atoms` stay global (auxMap highlight key).
+4. Chemical-accuracy gate enforced by tests + live human-chemist review (parity ≠ R/S; no functional-group naming from H-count; mobile-H is shared/tautomeric).
+
+### Requirements
+
+10/10 v1.5 requirements (SUBEX-01..10) shipped.
+
+### Known deferred items at close
+
+8 v1.0-era quick-task registry stubs (see STATE.md Deferred Items). Sub-token cards for c-layer kinds were deferred here and delivered in v1.6 (Phase 19).
+
+### Archive
+
+- `.planning/milestones/v1.5-ROADMAP.md`
+- `.planning/milestones/v1.5-REQUIREMENTS.md`
+
+---
+
 ## v1.4 Reset control & c-layer hover precision (Shipped: 2026-06-22)
 
 **Phases completed:** 2 phases, 3 plans, 7 tasks

@@ -10,24 +10,17 @@ Shipped as a static build to GitHub Pages (no server, no backend). All InChI com
 
 Every chunk of an InChI string is hoverable, explained, and linked back to the atoms in the drawing — demystifying a notation that most chemists treat as opaque.
 
-## Current Milestone: v1.5 Sub-token-specific explanations
+## Current Milestone: none active — planning next
 
-**Goal:** The existing explanation card becomes sub-token-aware — hovering or pinning an individual sub-token updates that same card to explain the specific piece, chemically accurately. No new card or surface.
-
-**Target features:**
-- H sub-tokens — `H`/`H2`/`H3` groups and mobile `(H,X,Y)` groups each update the card with what that specific hydrogen pattern means.
-- Tetrahedral stereo (t-layer) — hovering a stereocenter updates the card with a plain-language explanation (3D handedness at an sp³ atom) plus the explicit caveat that +/- is canonical-ordering parity, not R/S.
-- Molecular formula elements — hovering a specific element updates the card with its name and role, backed by a full periodic-table element-name table.
-
-**Mechanism:** Add a `subHover`/pinned-sub precedence tier inside the existing explanation card (`Explanation.tsx` currently reads only `hoverIdx`/`pinned`). Sub-token hover already highlights the correct atoms via existing infra — this milestone adds the missing card copy. Zero new dependencies.
+v1.5 (sub-token-specific explanations) and v1.6 (connection-layer cards) both shipped 2026-06-30. Every InChI sub-token across all layers — formula elements, H-count/mobile-H, tetrahedral stereo, and now connection-layer atoms/bonds/branches — updates the existing explanation card with chemically-accurate, per-sub-token copy. Run `/gsd-new-milestone` to scope the next one.
 
 ## Current State
 
-**Version:** v1.5 — Phases 17–18 (sub-token-specific explanations) complete 2026-06-29, ready to ship (not yet tagged). Hovering/pinning a sub-token now updates the existing card with chemically-verified, per-sub-token copy (element, H-count, mobile-H, stereo), validated on real molecules by a human chemist.
+**Version:** v1.6 — Phase 19 (connection-layer cards) shipped 2026-06-30 (tag `v1.6`). Hovering/pinning a c-layer atom lists its bonded neighbours, a hyphen names the two atoms it joins, a parenthesis describes the branch — per-component canonical numbering (incl. N* duplicated fragments), Phase-15 canvas highlight unchanged. Builds on v1.5 (tag `v1.5`, Phases 17–18): sub-token cards for element / H-count / mobile-H / stereo.
 
-- v1.0: 8 phases, 25 plans; v1.1: 70-commit maintenance/polish patch; v1.2: 2 phases (9–10), 6 plans; v1.3: 3 phases (11–13), 6 plans; v1.4: 2 phases (14–15), 3 plans; Phase 16: 2 plans; v1.5: 2 phases (17–18), 4 plans (incl. 1 gap closure)
+- v1.0: 8 phases, 25 plans; v1.1: 70-commit patch; v1.2: 2 phases (9–10), 6 plans; v1.3: 3 phases (11–13), 6 plans; v1.4: 2 phases (14–15), 3 plans; Phase 16: 2 plans; v1.5: 2 phases (17–18), 4 plans; v1.6: 1 phase (19), 2 plans + 1 in-milestone gap fix
 - Tech stack: Vite 8 + React 18 + TypeScript + Ketcher 3.12.0 (WASM) + Zustand 5 + CSS Modules
-- 422 unit/integration tests passing; TypeScript clean; production build clean
+- 446 unit/integration tests passing; TypeScript clean; production build clean
 - Deployed to GitHub Pages via GitHub Actions CD
 
 ## Requirements
@@ -98,6 +91,15 @@ Every chunk of an InChI string is hoverable, explained, and linked back to the a
 - ✓ HELP-06: Non-empty canvas on Help click preserves the existing molecule (no replacement) — Phase 16
 - ✓ HELP-07: Reopening the tour always starts from step 1, not where the user left off — Phase 16
 - ✓ HELP-08: Tour has zero new runtime dependencies (pure React + CSS Modules) — Phase 16
+- ✓ SUBEX-01..02: Sub-token hover/pin updates the existing card; precedence keyHoverKind → sub-token → layer → legend → idle — v1.5
+- ✓ SUBEX-03..04: H-count card states atoms bear N hydrogens (never a functional group); mobile-H card explains a shared/tautomeric proton — v1.5
+- ✓ SUBEX-05..06: Tetrahedral-stereo card explains fixed sp³ handedness; states +/− parity is NOT R/S (m/s layers qualify the enantiomer) — v1.5
+- ✓ SUBEX-07..08: Element card names the element + per-fragment atom count (Hill-order note), backed by a full case-exact periodic-table table — v1.5
+- ✓ SUBEX-09..10: Copy is verbatim-passthrough (no string reconstruction) + no-remount, from a pure unit-tested module on real getInchi fixtures, behind a human chemist gate — v1.5
+- ✓ CONN-01: C-layer atom card lists every canonical atom it is bonded to (full neighbour set), or "no bonds recorded" — v1.6
+- ✓ CONN-02: Hyphen card names the two joined atoms; parenthesis card describes the branch + its bond pairs (identical on open/close) — v1.6
+- ✓ CONN-03: Per-component card numbering (reset after ';', "(component N)"; N* duplicated fragments collapse to one fragment) while SubHover stays global for the highlight — v1.6
+- ✓ CONN-04: No bond-order/H/geometry claim; pure-module copy; real getInchi fixtures (single + co-crystal) + empty atom-list guard — v1.6
 
 ### Active (v2 candidates)
 
@@ -183,4 +185,4 @@ Every chunk of an InChI string is hoverable, explained, and linked back to the a
 This document evolves at phase transitions and milestone boundaries.
 
 ---
-*Last updated: 2026-06-29 — milestone v1.5 (sub-token-specific explanations) complete; Phases 17–18 done, ready to ship*
+*Last updated: 2026-06-30 — v1.5 (Phases 17–18) and v1.6 (Phase 19) both SHIPPED and tagged; sub-token + connection-layer cards complete across all InChI layers*

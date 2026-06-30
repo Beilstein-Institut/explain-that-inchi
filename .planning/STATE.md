@@ -1,34 +1,34 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.5
-milestone_name: Sub-token-specific explanations
-current_phase: 19
-status: completed
-stopped_at: Completed 18-01-PLAN.md
-last_updated: "2026-06-30T10:17:22.219Z"
+milestone: v1.6
+milestone_name: Connection-layer cards
+current_phase: null
+status: milestone_shipped
+stopped_at: Shipped v1.5 + v1.6 (Phases 17–19 tagged)
+last_updated: "2026-06-30T10:30:00.000Z"
 last_activity: 2026-06-30
-last_activity_desc: Phase 19 complete
+last_activity_desc: v1.5 and v1.6 milestones shipped and tagged
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 11
-  completed_plans: 11
-  percent: 100
-current_phase_name: c-layer-connection-cards
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
+current_phase_name: null
 ---
 
 # Project State
 
 **Project:** Explain that InChI
-**Milestone:** v1.5 — Sub-token-specific explanations (roadmapped; Phases 17–18)
-**Status:** Milestone complete
+**Milestone:** v1.6 — Connection-layer cards (SHIPPED 2026-06-30, tag `v1.6`). v1.5 also shipped (tag `v1.5`).
+**Status:** Milestone shipped — no active milestone; run `/gsd-new-milestone` to scope the next.
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-06-26)
+See: .planning/PROJECT.md (updated 2026-06-30)
 
 **Core value:** Every chunk of an InChI string is hoverable, explained, and linked back to the atoms in the drawing — demystifying a notation that most chemists treat as opaque.
-**Current focus:** Phase 19 — c-layer-connection-cards
+**Current focus:** Planning next milestone (sub-token + connection-layer cards complete across all layers)
 
 ## v1.5 Roadmap (Phases 17–18)
 

@@ -7,8 +7,10 @@
 - ✅ **v1.2 In-app feedback via prefilled GitHub issues** — Phases 9–10 (shipped 2026-06-18)
 - ✅ **v1.3 InChIKey display & explanation** — Phases 11–13 (shipped 2026-06-19)
 - ✅ **v1.4 Reset control & c-layer hover precision** — Phases 14–15 (shipped 2026-06-22)
-- 🟢 **v1.5 Sub-token-specific explanations** — Phases 17–18 (complete — ready to ship)
-- 🔵 **v1.6 Connection-layer cards** — Phase 19 (planned)
+- ✅ **v1.5 Sub-token-specific explanations** — Phases 17–18 (shipped 2026-06-29)
+- ✅ **v1.6 Connection-layer cards** — Phase 19 (shipped 2026-06-30)
+
+> Phase 16 (Pin-to-freeze highlights + Help tour) shipped between v1.4 and v1.5; it is not part of a numbered milestone.
 
 ## Phases
 
@@ -59,79 +61,29 @@ Full phase details: `.planning/milestones/v1.4-ROADMAP.md`
 
 </details>
 
-<details open>
-<summary>🟢 v1.5 Sub-token-specific explanations (Phases 17–18) — COMPLETE (ready to ship)</summary>
-
-- [x] **Phase 17: Sub-token copy core (element table + pure module + tests)** - Full periodic-table element names and the chemically-verified, unit-tested pure module that turns a hovered/pinned sub-token into card copy (completed 2026-06-26)
-- [x] **Phase 18: Explanation-card wiring + live chemist gate** - Wire one precedence branch into the existing card so hover/pin updates it, honoring all invariants, then verify the live card strings against real molecules (completed 2026-06-29)
-
-</details>
-
-<details open>
-<summary>🔵 v1.6 Connection-layer cards (Phase 19) — PLANNED</summary>
-
-- [x] **Phase 19: c-layer connection cards** - Sub-token cards for the connection layer: a single atom lists its bonded neighbours, a hyphen names the two atoms it joins, a parenthesis describes the branch and its bonds — per-component canonical indices, highlight unchanged (completed 2026-06-30)
-
-</details>
-
-## Phase Details
-
-> Phase 16 (Pin-to-freeze highlights + Help tour) shipped between the v1.4 milestone and v1.5; its detail block is retained below for reference. v1.5 continues phase numbering from there, starting at Phase 17.
-
-### Phase 17: Sub-token copy core (element table + pure module + tests)
-
-**Goal**: A pure, DOM-free `subTokenInfo()` module turns any hovered/pinned sub-token (element / H-count / mobile-H / tetrahedral stereo) into chemically-accurate card copy, backed by a full periodic-table element-name table — fully unit-tested against real `getInchi()` fixtures, with the mandatory "+/− parity is NOT R/S" caveat pinned by test, before any React is touched.
-**Depends on**: Nothing new (builds on shipped v1.0–Phase 16 infra; the `SubHover` union, store fields, and canvas highlighting already exist)
-**Requirements**: SUBEX-03, SUBEX-04, SUBEX-05, SUBEX-06, SUBEX-08, SUBEX-10
-**Success Criteria** (what must be TRUE):
-
-  1. `ELEMENT_NAMES` in `src/lib/layerInfo.ts` is extended in place to the full periodic table; a non-organic symbol (e.g. `K` → "potassium") resolves to a name, and lookup stays case-exact (`Co` → "cobalt", never confused with `C`+`O`) — existing `layerInfo` tests stay green.
-  2. A new pure module `src/lib/subTokenInfo.ts` returns `{title, body, reading?}` for an `element` / `hAtoms` / `mobileH` / `stereo` sub-token and returns `null` for c-layer kinds (atom/bond/branch) so the caller can fall through gracefully.
-  3. The H-count card states "atom N bears n hydrogen(s)" and never names a functional group (no "methyl"); the mobile-H card says the proton is "shared / mobile / tautomeric" across the listed atoms and never says "bond between" or "each".
-  4. The tetrahedral-stereo card explains fixed 3-D handedness at an sp³ centre AND explicitly states the `+`/`−` sign is a parity of the canonical neighbour order, **not** R/S — a unit test asserts the copy contains "parity" and matches `/not.*R\/S/i`.
-  5. All test fixtures are real `getInchi()` output (a stereocenter molecule with /t/m/s, a heteroatom-H amine, a tautomer, a multi-element/multi-fragment formula); copy for a fragment-2+ element/atom is derived from the already-offset `SubHover` fields, never by re-parsing `layer.text`.
-
-**Plans**: TBD
-**UI hint**: no
-
-### Phase 18: Explanation-card wiring + live chemist gate
-
-**Goal**: The existing explanation card becomes sub-token-aware: hovering or pinning a sub-token updates that same card with the Phase-17 copy, reverting to the whole-layer explanation when only the layer is hovered — all via one new precedence branch and zero store changes, then verified on the live canvas against real molecules by a human chemist before the milestone closes.
-**Depends on**: Phase 17
-**Requirements**: SUBEX-01, SUBEX-02, SUBEX-07, SUBEX-09
-**Success Criteria** (what must be TRUE):
-
-  1. Hovering a sub-token in the InChI string updates the *existing* explanation card (no new card/surface) with that sub-token's specific copy, and the card reverts to the whole-layer explanation when only the layer — not a sub-token — is hovered.
-  2. A pinned sub-token shows its sub-token-specific card (via `effSub = pinned ? pinned.sub : subHover`); precedence is keyHoverKind → sub-token → layer → legend → idle, and an InChIKey-segment hover still wins over a sub-token.
-  3. Hovering a specific element in the formula updates the card with the element's name and "this is the count of that element's atoms," scoped to the hovered fragment in multi-component formulas (the named element matches the highlighted atoms), with a brief Hill-order note.
-  4. The displayed/copied InChI string is byte-identical with a sub-token card open vs. closed (verbatim-passthrough holds), and no loading overlay/WASM re-init occurs on sub-token hover or pin (no-remount holds) — the diff touches no canvas/provider files.
-  5. A human chemist reviews the live card strings for the tetrahedral-stereo, mobile-H, H-count, and multi-fragment-element cases on real molecules and confirms chemical accuracy — this gate is not bypassed before the phase is marked verified.
-
-**Plans**: 2 plans (1 + 1 gap-closure)
-
-Plans:
-
-- [x] 18-01-PLAN.md — Wire the sub-token precedence branch (effSub/subCopy) into Explanation.tsx with parent-layer accent; new component test; capture the live chemist accuracy gate (SC#5) for verify-work
-- [x] 18-02-PLAN.md — Gap closure (chemist gate): atomPhrase enumerates the discrete H-count atom set (GAP-1) and de-offsets multi-component h-tokens to per-component numbering via a display-only fragmentOffset on SubHover (GAP-2); highlight keeps global canonicals
-
-**UI hint**: yes
-
----
-
 <details>
 <summary>Phase 16: Pin-to-freeze highlights and guided Help tour — SHIPPED 2026-06-25 (between v1.4 and v1.5)</summary>
 
-- [x] Phase 16: Pin-to-freeze highlights and guided Help tour (2/2 plans) — completed 2026-06-25
+- [x] Phase 16 (2/2 plans) — completed 2026-06-25. Click-to-pin (freeze) highlights + zero-dep stepped spotlight Help tour. Spec: `docs/superpowers/specs/2026-06-22-pin-freeze-and-help-tour-design.md`
 
-**Goal:** Let users click an InChI chunk (layer or sub-token) to freeze its highlight + explanation for inspection, and add a Help button (next to Reset) that launches a stepped, spotlight-style guided tour of the app.
-**Spec:** docs/superpowers/specs/2026-06-22-pin-freeze-and-help-tour-design.md
-**Requirements**: Feature 1 — Click-to-Pin (Freeze) Highlights; Feature 2 — Guided Help Tour (spec-defined; no ROADMAP requirement IDs mapped)
-**Depends on:** Phase 15
+</details>
 
-Plans:
+<details>
+<summary>✅ v1.5 Sub-token-specific explanations (Phases 17–18) — SHIPPED 2026-06-29</summary>
 
-- [x] 16-01-PLAN.md — Click-to-pin (freeze) highlights: store pin state machine + gate, layer/sub-token click wiring, pinned precedence in highlight hook + explanation, locked-state ring + release hint
-- [x] 16-02-PLAN.md — Guided Help tour: Help button, custom zero-dep stepped spotlight overlay (8 steps), App tour state with empty-canvas Caffeine auto-load
+- [x] Phase 17: Sub-token copy core — element table + pure module + tests (2/2 plans) — completed 2026-06-26; SUBEX-03/04/05/06/08/10
+- [x] Phase 18: Explanation-card wiring + live chemist gate (2/2 plans) — completed 2026-06-29; SUBEX-01/02/07/09
+
+Full phase details: `.planning/milestones/v1.5-ROADMAP.md`
+
+</details>
+
+<details>
+<summary>✅ v1.6 Connection-layer cards (Phase 19) — SHIPPED 2026-06-30</summary>
+
+- [x] Phase 19: c-layer connection cards (2/2 plans) — completed 2026-06-30; CONN-01..04
+
+Full phase details: `.planning/milestones/v1.6-ROADMAP.md`
 
 </details>
 
@@ -155,36 +107,13 @@ Plans:
 | 14. Reset control | v1.4 | 1/1 | Complete | 2026-06-19 |
 | 15. C-layer hover precision | v1.4 | 2/2 | Complete | 2026-06-22 |
 | 16. Pin-to-freeze highlights and guided Help tour | — | 2/2 | Complete | 2026-06-25 |
-| 17. Sub-token copy core (element table + pure module + tests) | v1.5 | 2/2 | Complete   | 2026-06-26 |
-| 18. Explanation-card wiring + live chemist gate | v1.5 | 2/2 | Complete    | 2026-06-29 |
-| 19. c-layer connection cards | v1.6 | 2/2 | Complete    | 2026-06-30 |
-
-### Phase 19: c-layer connection cards
-
-**Goal**: Hovering or pinning a connection-layer sub-token updates the existing card with its connectivity, in canonical atom indices: a single atom number lists the atoms it is bonded to, a hyphen names the two atoms it joins, and a parenthesis describes the branch and the bonds it encodes. Numbers are shown per-component to match the printed string (like the GAP-2 h-layer fix), while `SubHover` payloads keep global canonicals so the existing Phase-15 highlight is unchanged. Cards make no bond-order / hydrogen / geometry claim.
-**Design spec**: `docs/superpowers/specs/2026-06-29-c-layer-connection-cards-design.md`
-**Depends on**: Phase 18 (sub-token card wiring + `subTokenInfo` precedence branch)
-**Requirements**: CONN-01, CONN-02, CONN-03, CONN-04
-**Success Criteria** (what must be TRUE):
-
-  1. Hovering/pinning a single atom number in the c-layer shows a card listing every canonical atom it is bonded to ("atom 28 is bonded to atoms 1, 9 and 27"), enumerating the full neighbour set (no min–max range, no truncation); an atom with no recorded bond says so.
-  2. Hovering/pinning a hyphen shows a card naming the two canonical atoms it joins as bonded; hovering a parenthesis shows a card describing the branch off its branch-point atom and listing the canonical bond pairs it encodes.
-  3. In a multi-component molecule the card numbers match the per-component numbering printed in the string (resetting after each `;`, with a `(component N)` marker), while the canvas highlight still resolves the correct atoms via global canonicals — proven by a `buildSubHoverSpecs` guard test.
-  4. No card claims bond order, hydrogen count, or geometry; `subTokenInfo` produces the copy in the pure module (no string reconstruction, no remount); tests use real `getInchi()` fixtures (one single-component, one salt/co-crystal) and an empty-atom-list guard (closes WR-04 for this surface).
-
-**Plans**: 2/2 plans complete
-
-- [x] 19-01-PLAN.md
-- [x] 19-02-PLAN.md
-
-**UI hint**: yes
+| 17. Sub-token copy core (element table + pure module + tests) | v1.5 | 2/2 | Complete | 2026-06-26 |
+| 18. Explanation-card wiring + live chemist gate | v1.5 | 2/2 | Complete | 2026-06-29 |
+| 19. c-layer connection cards | v1.6 | 2/2 | Complete | 2026-06-30 |
 
 ---
 *Roadmap created: 2026-05-18*
-*Updated: 2026-06-19 — v1.4 milestone roadmapped; Phases 14–15 added*
-*Updated: 2026-06-22 — v1.4 SHIPPED (Phases 14–15); archived to milestones/v1.4-ROADMAP.md*
-*Updated: 2026-06-22 — Phase 16 planned: 2 plans (16-01, 16-02)*
-*Updated: 2026-06-25 — Phase 16 complete (2/2 plans, 13/13 UAT passed)*
-*Updated: 2026-06-26 — v1.5 milestone (Sub-token-specific explanations) roadmapped; Phases 17–18 added, SUBEX-01..10 mapped 100%*
-*Updated: 2026-06-29 — Phase 18 complete (2/2 plans + gap closure; 4/4 live-chemist UAT passed; SECURITY threats_open 0). v1.5 phases all complete — ready to ship via /gsd-complete-milestone. 422 tests green.*
-*Updated: 2026-06-29 — v1.6 (Connection-layer cards) opened; Phase 19 added from design spec, CONN-01..04 mapped. v1.5 still pending ship.*
+*Updated: 2026-06-22 — v1.4 SHIPPED (Phases 14–15)*
+*Updated: 2026-06-25 — Phase 16 complete (between v1.4 and v1.5)*
+*Updated: 2026-06-29 — v1.5 (Phases 17–18) complete*
+*Updated: 2026-06-30 — v1.5 SHIPPED (tag v1.5) and v1.6 SHIPPED (Phase 19, tag v1.6); phase details archived to milestones/.*
