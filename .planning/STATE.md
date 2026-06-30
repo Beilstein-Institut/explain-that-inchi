@@ -2,33 +2,33 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Sub-token-specific explanations
-current_phase: 18
-status: completed
+current_phase: 19
+current_phase_name: c-layer-connection-cards
+status: executing
 stopped_at: Completed 18-01-PLAN.md
-last_updated: "2026-06-29T12:27:45.196Z"
-last_activity: 2026-06-29
-last_activity_desc: Phase 18 complete
+last_updated: "2026-06-30T06:15:45.712Z"
+last_activity: 2026-06-30
+last_activity_desc: Phase 19 execution started
 progress:
-  total_phases: 5
+  total_phases: 6
   completed_phases: 5
-  total_plans: 9
-  completed_plans: 9
-  percent: 100
-current_phase_name: explanation-card-wiring-live-chemist-gate
+  total_plans: 11
+  completed_plans: 10
+  percent: 83
 ---
 
 # Project State
 
 **Project:** Explain that InChI
 **Milestone:** v1.5 — Sub-token-specific explanations (roadmapped; Phases 17–18)
-**Status:** Milestone complete
+**Status:** Ready to execute
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-06-26)
 
 **Core value:** Every chunk of an InChI string is hoverable, explained, and linked back to the atoms in the drawing — demystifying a notation that most chemists treat as opaque.
-**Current focus:** Phase 18 — explanation-card-wiring-live-chemist-gate
+**Current focus:** Phase 19 — c-layer-connection-cards
 
 ## v1.5 Roadmap (Phases 17–18)
 
@@ -88,10 +88,10 @@ None
 
 ## Current Position
 
-Phase: 18
-Plan: Not started
+Phase: 19 (c-layer-connection-cards) — EXECUTING
+Plan: 2 of 2
 Status: Ready to execute
-Last activity: 2026-06-29 — Phase 18 complete
+Last activity: 2026-06-30 — Phase 19 execution started
 
 ## Operator Next Steps
 
@@ -99,7 +99,7 @@ Last activity: 2026-06-29 — Phase 18 complete
 
 ## Session Continuity
 
-Last session: 2026-06-29T11:29:54.884Z
+Last session: 2026-06-30T06:15:40.702Z
 Stopped at: Completed 18-01-PLAN.md
 Resume file: None
 
@@ -111,8 +111,10 @@ Resume file: None
 | Phase 17 P02 | 30 min | 2 tasks | 2 files |
 | Phase 18 P01 | ~4 min | 3 tasks | 2 files |
 | Phase 18 P02 | 27m | 3 tasks | 6 files |
+| Phase 19 P01 | ~3min | 3 tasks | 5 files |
 
 ## Decisions
 
 - [Phase 17]: subTokenInfo: bare 'atom N' phrasing (D-08-safest); atomElements param retained but unused for Phase 18
 - [Phase ?]: Phase 18: sub-token card branch is read-only, guarded on subCopy (c-layer falls through); effSub/subAccent locals, no new store field.
+- [Phase ?]: [Phase 19]: c-layer cards — branchPoint explicit SubHover field (research A1); atom caveat drops 'hydrogens' word to pass CONN-04 element-word guard; de-offset display-only (GAP-2)

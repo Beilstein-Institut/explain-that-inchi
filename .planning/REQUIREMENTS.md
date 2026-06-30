@@ -83,10 +83,10 @@ Carried from prior milestones — not in v1.5 scope:
 
 ### v1.6 Requirements
 
-- [ ] **CONN-01**: Hovering/pinning a single atom number in the c-layer updates the card to list every canonical atom it is bonded to (the full adjacency neighbour set, enumerated — no min–max range, no truncation), or states it has no recorded bond.
-- [ ] **CONN-02**: Hovering/pinning a hyphen updates the card to name the two canonical atoms it joins as bonded; hovering/pinning a parenthesis updates the card to describe the branch off its branch-point atom and list the canonical bond pairs it encodes.
-- [ ] **CONN-03**: In multi-component molecules the card's atom numbers match the per-component numbering printed in the InChI string (resetting after each `;`, with a `(component N)` marker), while `SubHover` payloads keep global canonicals so the existing highlight is unchanged — verified by a `buildSubHoverSpecs` guard.
-- [ ] **CONN-04**: No connection card claims bond order, hydrogen count, or geometry; copy is produced by the pure `subTokenInfo` module (no string reconstruction, no remount); tests use real `getInchi()` fixtures (one single-component, one salt/co-crystal) and guard the empty atom-list case.
+- [x] **CONN-01**: Hovering/pinning a single atom number in the c-layer updates the card to list every canonical atom it is bonded to (the full adjacency neighbour set, enumerated — no min–max range, no truncation), or states it has no recorded bond.
+- [x] **CONN-02**: Hovering/pinning a hyphen updates the card to name the two canonical atoms it joins as bonded; hovering/pinning a parenthesis updates the card to describe the branch off its branch-point atom and list the canonical bond pairs it encodes.
+- [x] **CONN-03**: In multi-component molecules the card's atom numbers match the per-component numbering printed in the InChI string (resetting after each `;`, with a `(component N)` marker), while `SubHover` payloads keep global canonicals so the existing highlight is unchanged — verified by a `buildSubHoverSpecs` guard.
+- [x] **CONN-04**: No connection card claims bond order, hydrogen count, or geometry; copy is produced by the pure `subTokenInfo` module (no string reconstruction, no remount); tests use real `getInchi()` fixtures (one single-component, one salt/co-crystal) and guard the empty atom-list case.
 
 ### Traceability
 
