@@ -45,4 +45,12 @@ blocked: 0
   artifacts: ["src/components/LayerText.tsx:334-345 (ConnectionText segMult branch)", "src/components/LayerText.tsx:520+ (HydrogenText segMult branch)", "src/components/LayerText.tsx:194-206 (incidentPairs fan-out via canonicalFn.canonicals[])"]
   missing: ["Per-component LOCAL display numbering for the N* card (currently global, fragmentOffset=0)", "Single-fragment incidentPairs/atom-list for the N* card (currently fanned across all N copies)", "Real N*-fixture test (e.g. 2C6H6 or caffeine+toluene+3C6H6)"]
   root_cause: "In the N* segMult branch, the multi-fragment canonicalFn (returns canonicals[] across all N copies — correct for the CLYR-05 highlight) is reused to build the card's incidentPairs/atom number, and the branch passes fragmentOffset=0. The HIGHLIGHT data and the CARD-DISPLAY data are not decoupled for the N* case: card needs single-fragment, local-numbered data; highlight needs all-fragment globals."
-  scope_note: "c-layer card is Phase 19 in-scope. h-layer card is the pre-existing Phase 17/18 analogue exposed by the same notation — same root-cause family; recommend fixing together."
+  scope_note: "c-layer card is Phase 19 in-scope. h-layer card is the pre-existing Phase 17/18 analogue exposed by the same notation — same root-cause family; fix BOTH layers in this gap cycle (user-approved)."
+
+- truth: "Connection-layer (c-layer) cards are titled 'Connection layer - Atom' / 'Connection layer - Bond' / 'Connection layer - Branch' so the description box names the layer the hovered token belongs to."
+  status: failed
+  reason: "User-requested enhancement at the chemist gate; not yet applied — titles are still plain 'Atom'/'Bond'/'Branch'."
+  severity: minor
+  test: 1
+  artifacts: ["src/lib/subTokenInfo.ts:109,117 (Atom title x2)", "src/lib/subTokenInfo.ts:127 (Bond title)", "src/lib/subTokenInfo.ts:139 (Branch title)", "src/lib/__tests__/subTokenInfo.test.ts (title assertions)"]
+  missing: ["'Connection layer - ' prefix on the three c-layer card titles", "updated title assertions in subTokenInfo.test.ts"]
