@@ -7,7 +7,7 @@
 import React from 'react';
 import { useInchiStore } from '../store';
 import type { Layer, SubHover, CLayerToken } from '../lib/parseInchi';
-import { formulaFragmentCounts, tokenizeCLayerSeg, collectBranchPointBonds } from '../lib/parseInchi';
+import { formulaFragmentCounts, tokenizeCLayerSeg, collectBranchPointBonds, segmentBonds } from '../lib/parseInchi';
 import styles from './InchiSection.module.css';
 
 // Static lookup — avoids dynamic class name construction which breaks CSS Modules.
@@ -169,7 +169,16 @@ function ConnectionText({ text, fragCounts, layerIdx, pinnedSub }: { text: strin
   const parts: React.ReactNode[] = [];
   let key = 0;
 
-  const renderSegment = (seg: string, offset: number, canonicalFn?: (n: number) => { canonical: number; canonicals?: number[] }) => {
+  // fragmentOffset/componentIndex are DISPLAY-ONLY context threaded onto every c-layer
+  // SubHover (GAP-2). Single-component and identical-fragment (N*) copies pass 0/0; the
+  // ;-split call site passes cumOffset/fragIdx. SubHover numbers stay GLOBAL regardless.
+  const renderSegment = (
+    seg: string,
+    offset: number,
+    canonicalFn?: (n: number) => { canonical: number; canonicals?: number[] },
+    fragmentOffset = 0,
+    componentIndex = 0,
+  ) => {
     // Pass 1 — tokenize the segment into typed CLayerToken[]
     const tokens = tokenizeCLayerSeg(seg);
 
@@ -179,7 +188,23 @@ function ConnectionText({ text, fragCounts, layerIdx, pinnedSub }: { text: strin
 
       if (token.type === 'atom') {
         const hover = canonicalFn ? canonicalFn(token.localN) : { canonical: token.localN + offset };
-        const hit: SubHover = { kind: 'atom', ...hover };
+        // incidentPairs (GLOBAL): every bond pair touching this atom, computed via the shared
+        // segmentBonds adjacency walk (NOT a second walker — GAP-15) filtered to token.localN,
+        // mapped to global canonicals with the SAME offset/canonicalFn the hyphen path uses.
+        const incidentPairs: [number, number][] = segmentBonds(tokens)
+          .filter((b) => b.leftLocal === token.localN || b.rightLocal === token.localN)
+          .flatMap((b) => {
+            if (b.leftLocal == null || b.rightLocal == null) return [];
+            if (canonicalFn) {
+              const lc = canonicalFn(b.leftLocal);
+              const rc = canonicalFn(b.rightLocal);
+              const ls = lc.canonicals ?? [lc.canonical];
+              const rs = rc.canonicals ?? [rc.canonical];
+              return ls.map((l, i) => [l, rs[i]] as [number, number]);
+            }
+            return [[b.leftLocal + offset, b.rightLocal + offset] as [number, number]];
+          });
+        const hit: SubHover = { kind: 'atom', ...hover, incidentPairs, fragmentOffset, componentIndex };
         parts.push(
           <span key={key++} className={[styles.inchiSubtoken, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')} {...subHoverProps(hit, layerIdx)}>
             {seg.slice(token.start, token.end)}
@@ -200,7 +225,7 @@ function ConnectionText({ text, fragCounts, layerIdx, pinnedSub }: { text: strin
                 return ls.map((l, i) => [l, rs[i]] as [number, number]);
               })()
             : [[token.leftLocal + offset, token.rightLocal + offset]];
-          const hit: SubHover = { kind: 'bond', endpointPairs };
+          const hit: SubHover = { kind: 'bond', endpointPairs, fragmentOffset, componentIndex };
           parts.push(
             <span key={key++} className={[styles.inchiSubtoken, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')}
               {...subHoverProps(hit, layerIdx)}>
@@ -229,13 +254,23 @@ function ConnectionText({ text, fragCounts, layerIdx, pinnedSub }: { text: strin
             }
             return [[h.leftLocal + offset, h.rightLocal + offset] as [number, number]];
           });
-          // Store bondPairs on the open token for the close-paren to look up
+          // branchPoint (GLOBAL): the atom the branch hangs off (open token's attachLocal),
+          // run through the SAME offset/canonicalFn as bondPairs (research A2 — explicit field,
+          // identical on both parens). Stored on the open token so the close-paren reuses it.
+          const branchPoint: number | undefined =
+            token.attachLocal == null
+              ? undefined
+              : canonicalFn
+                ? canonicalFn(token.attachLocal).canonical
+                : token.attachLocal + offset;
+          // Store bondPairs + branchPoint on the open token for the close-paren to look up
           (tokens[tokenIdx] as unknown as Record<string, unknown>)['_bondPairs'] = bondPairs;
+          (tokens[tokenIdx] as unknown as Record<string, unknown>)['_branchPoint'] = branchPoint;
           if (bondPairs.length === 0) {
             // Comma-only branch — plain non-interactive span
             parts.push(<span key={key++}>{'('}</span>);
           } else {
-            const hit: SubHover = { kind: 'branch', bondPairs };
+            const hit: SubHover = { kind: 'branch', bondPairs, branchPoint, fragmentOffset, componentIndex };
             parts.push(
               <span key={key++} className={[styles.inchiSubtoken, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')}
                 {...subHoverProps(hit, layerIdx)}>
@@ -248,10 +283,14 @@ function ConnectionText({ text, fragCounts, layerIdx, pinnedSub }: { text: strin
       } else if (token.type === 'close') {
         const bondPairs: [number, number][] =
           (tokens[token.openTokenIdx] as unknown as Record<string, unknown>)?.['_bondPairs'] as [number, number][] ?? [];
+        // branchPoint stashed by the matching open-paren — both parens carry the identical
+        // field so hovering '(' or ')' shows the same card (research A2).
+        const branchPoint =
+          (tokens[token.openTokenIdx] as unknown as Record<string, unknown>)?.['_branchPoint'] as number | undefined;
         if (bondPairs.length === 0) {
           parts.push(<span key={key++}>{')'}</span>);
         } else {
-          const hit: SubHover = { kind: 'branch', bondPairs };
+          const hit: SubHover = { kind: 'branch', bondPairs, branchPoint, fragmentOffset, componentIndex };
           parts.push(
             <span key={key++} className={[styles.inchiSubtoken, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')}
               {...subHoverProps(hit, layerIdx)}>
@@ -275,10 +314,12 @@ function ConnectionText({ text, fragCounts, layerIdx, pinnedSub }: { text: strin
     const n = parseInt(multMatch[1], 10);
     const atomsPerFrag = fragCounts[0] ?? 0;
     parts.push(<span key={key++}>{multMatch[1]}*</span>);
+    // Pure-N* identical-fragment copies share local numbering: card shows local numbers,
+    // component 0 (mirrors the h-layer choice — single-component cards unchanged by design).
     renderSegment(multMatch[2], 0, (localN) => ({
       canonical: localN,
       canonicals: Array.from({ length: n }, (_, fi) => localN + fi * atomsPerFrag),
-    }));
+    }), 0, 0);
     return <>{parts}</>;
   }
 
@@ -294,14 +335,16 @@ function ConnectionText({ text, fragCounts, layerIdx, pinnedSub }: { text: strin
       const n = parseInt(segMult[1], 10);
       const atomsPerFrag = fragCounts[fragIdx] ?? 0;
       parts.push(<span key={key++}>{segMult[1]}*</span>);
+      // Identical-fragment copies share local numbering: 0/0 display context (canonicals
+      // still global via canonicalFn for the highlight) — matches the h-layer N* choice.
       renderSegment(segMult[2], 0, (localN) => ({
         canonical: localN + cumOffset,
         canonicals: Array.from({ length: n }, (_, fi) => localN + cumOffset + fi * atomsPerFrag),
-      }));
+      }), 0, 0);
       cumOffset += n * atomsPerFrag;
       fragIdx += n;
     } else {
-      renderSegment(seg, cumOffset);
+      renderSegment(seg, cumOffset, undefined, cumOffset, fragIdx);
       cumOffset += fragCounts[fragIdx] ?? 0;
       fragIdx += 1;
     }
