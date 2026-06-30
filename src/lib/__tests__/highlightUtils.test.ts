@@ -819,6 +819,42 @@ describe('buildSubHoverSpecs', () => {
       expect(specs[0].atoms).toContain(6); // resolved via global 19, NOT the de-offset 2
     });
 
+    it('kind atom: GAP-2 guard — resolves via GLOBAL canonical, fragmentOffset ignored on highlight (CONN-03)', () => {
+      // A multi-component c-layer atom hit carries GLOBAL canonical 1 plus a display-only
+      // fragmentOffset 17 (per-component-local would be a negative/different number). The
+      // highlight MUST key auxMap by the global 1 (→ pool 0). If fragmentOffset leaked onto
+      // the highlight path the lookup would miss.
+      const struct = makeMockStruct();
+      const specs = buildSubHoverSpecs(
+        { kind: 'atom', canonical: 1, fragmentOffset: 17, componentIndex: 1, incidentPairs: [[1, 2]] },
+        { 1: 0 }, // GLOBAL canonical 1 → pool 0
+        atomElements,
+        [],
+        cLayer,
+        struct,
+        resolveVarFn,
+      );
+      expect(specs.length).toBe(1);
+      expect(specs[0].atoms).toContain(0); // resolved via global 1, NOT a de-offset
+    });
+
+    it('kind bond: GAP-2 guard — resolves bond via GLOBAL endpointPairs, fragmentOffset ignored (CONN-03)', () => {
+      // A bond-kind SubHover with non-zero fragmentOffset still resolves via the global
+      // endpointPairs (auxMap 1→0, 2→1; makeMockStruct bond 0 connects pools 0–1).
+      const struct = makeMockStruct();
+      const specs = buildSubHoverSpecs(
+        { kind: 'bond', endpointPairs: [[1, 2]], fragmentOffset: 17, componentIndex: 1 },
+        { 1: 0, 2: 1 },
+        atomElements,
+        [],
+        cLayer,
+        struct,
+        resolveVarFn,
+      );
+      expect(specs.length).toBe(1);
+      expect(specs[0].bonds.length).toBeGreaterThan(0); // resolved via global endpoints
+    });
+
     it('kind mobileH: atoms from subHover.atoms[], color --c-hydro-mobile', () => {
       const struct = makeMockStruct();
       const specs = buildSubHoverSpecs(

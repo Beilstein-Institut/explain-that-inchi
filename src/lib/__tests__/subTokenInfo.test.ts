@@ -190,16 +190,130 @@ describe('subTokenInfo — stereo (SUBEX-05/06, D-11/D-12/D-13)', () => {
   });
 });
 
-describe('subTokenInfo — c-layer kinds fall through to null', () => {
-  it('atom kind returns null', () => {
-    expect(subTokenInfo({ kind: 'atom', canonical: 1 }, {})).toBeNull();
+// ---------------------------------------------------------------------------
+// Phase 19 (CONN-01..04): the three c-layer cases now return cards (no longer null).
+// Every SubHover literal below is the PARSED PROJECTION of a real getInchi() fixture
+// (ALANINE `c1-2(4)3(5)6`, MELATONIN_TOLUENE component-2 `;1-7-5-3-2-4-6-7`) — the
+// same legitimate precedent the hAtoms `[3,4,7,8,15]` literal above uses. subTokenInfo
+// consumes SubHover numeric fields, never the string (verbatim-passthrough).
+// ---------------------------------------------------------------------------
+describe('subTokenInfo — c-layer kinds return cards (CONN-04: the reversed null contract)', () => {
+  it('atom kind returns a non-null card', () => {
+    expect(subTokenInfo({ kind: 'atom', canonical: 1, incidentPairs: [[1, 2]] }, {})).not.toBeNull();
   });
 
-  it('bond kind returns null', () => {
-    expect(subTokenInfo({ kind: 'bond', endpointPairs: [[1, 2]] }, {})).toBeNull();
+  it('bond kind returns a non-null card', () => {
+    expect(subTokenInfo({ kind: 'bond', endpointPairs: [[1, 2]] }, {})).not.toBeNull();
   });
 
-  it('branch kind returns null', () => {
-    expect(subTokenInfo({ kind: 'branch', bondPairs: [[1, 2]] }, {})).toBeNull();
+  it('branch kind returns a non-null card', () => {
+    expect(subTokenInfo({ kind: 'branch', bondPairs: [[2, 4]], branchPoint: 2 }, {})).not.toBeNull();
+  });
+});
+
+describe('subTokenInfo — atom card (CONN-01)', () => {
+  // ALANINE `c1-2(4)3(5)6`: atom 2 is bonded to 1, 4 and 3 → deduped sorted neighbour set {1,3,4}.
+  const card = subTokenInfo({ kind: 'atom', canonical: 2, incidentPairs: [[1, 2], [2, 3], [2, 4]] }, {})!;
+
+  it('titles "Atom"', () => {
+    expect(card.title).toBe('Atom');
+  });
+
+  it('names the hovered atom', () => {
+    expect(card.body).toContain('Atom 2');
+  });
+
+  it('enumerates the full, deduped, sorted neighbour set "1, 3 and 4"', () => {
+    expect(card.body).toContain('1, 3 and 4');
+  });
+});
+
+describe('subTokenInfo — atom card empty-list guard (CONN-01 / WR-04)', () => {
+  // A single-atom / isolated number with no incident bonds.
+  const card = subTokenInfo({ kind: 'atom', canonical: 4, incidentPairs: [] }, {})!;
+
+  it('says "no bonds recorded"', () => {
+    expect(card.body).toContain('no bonds recorded');
+  });
+
+  it('never renders "atoms  and" or "undefined"', () => {
+    expect(card.body).not.toContain('atoms  and');
+    expect(card.body).not.toContain('undefined');
+  });
+});
+
+describe('subTokenInfo — bond card (CONN-02)', () => {
+  // ALANINE `1-2`: the hyphen joins canonical atoms 1 and 2.
+  const card = subTokenInfo({ kind: 'bond', endpointPairs: [[1, 2]] }, {})!;
+
+  it('titles "Bond"', () => {
+    expect(card.title).toBe('Bond');
+  });
+
+  it('names the two joined atoms "1 and 2"', () => {
+    expect(card.body).toContain('1 and 2');
+  });
+});
+
+describe('subTokenInfo — branch card (CONN-02)', () => {
+  // ALANINE `2(4)`: branch off atom 2 encoding bond pair 2–4 (en-dash).
+  const card = subTokenInfo({ kind: 'branch', bondPairs: [[2, 4]], branchPoint: 2 }, {})!;
+
+  it('titles "Branch"', () => {
+    expect(card.title).toBe('Branch');
+  });
+
+  it('names the branch-point "atom 2"', () => {
+    expect(card.body).toContain('atom 2');
+  });
+
+  it('lists the bond pair "2–4" with an en-dash', () => {
+    expect(card.body).toContain('2–4');
+  });
+});
+
+describe('subTokenInfo — c-layer multi-component de-offset (CONN-03)', () => {
+  // MELATONIN_TOLUENE component-2 (toluene) c-segment `1-7-5-3-2-4-6-7`, global offset +17.
+  // The printed adjacent pair `1-7` → global [18, 24]; de-offset 18-17=1, 24-17=7.
+  const card = subTokenInfo(
+    { kind: 'bond', endpointPairs: [[18, 24]], fragmentOffset: 17, componentIndex: 1 },
+    {},
+  )!;
+
+  it('de-offsets to the printed per-component numbers "1 and 7"', () => {
+    expect(card.body).toContain('1 and 7');
+  });
+
+  it('carries "(component 2)"', () => {
+    expect(card.body).toContain('(component 2)');
+  });
+
+  it('never shows the global numbers 18 or 24', () => {
+    expect(card.body).not.toContain('18');
+    expect(card.body).not.toContain('24');
+  });
+});
+
+describe('subTokenInfo — c-layer copy safety (CONN-04)', () => {
+  const atomCard = subTokenInfo({ kind: 'atom', canonical: 2, incidentPairs: [[1, 2], [2, 3], [2, 4]] }, {})!;
+  const bondCard = subTokenInfo({ kind: 'bond', endpointPairs: [[1, 2]] }, {})!;
+  const branchCard = subTokenInfo({ kind: 'branch', bondPairs: [[2, 4]], branchPoint: 2 }, {})!;
+
+  it('no card makes a POSITIVE bond-order claim', () => {
+    for (const c of [atomCard, bondCard, branchCard]) {
+      expect(c.body).not.toMatch(/bond is (a |an )?(single|double|triple)/i);
+    }
+  });
+
+  it('no card names an element word', () => {
+    for (const c of [atomCard, bondCard, branchCard]) {
+      expect(c.body).not.toMatch(/\b(carbon|nitrogen|oxygen|hydrogens?)\b/i);
+    }
+  });
+
+  it('no card claims geometry', () => {
+    for (const c of [atomCard, bondCard, branchCard]) {
+      expect(c.body).not.toMatch(/\bgeometry\b/i);
+    }
   });
 });
