@@ -3,7 +3,7 @@ status: complete
 phase: 19-c-layer-connection-cards
 source: [19-VERIFICATION.md]
 started: 2026-06-30T06:55:15Z
-updated: 2026-06-30T08:59:22Z
+updated: 2026-06-30T10:10:40Z
 ---
 
 ## Current Test
@@ -18,9 +18,8 @@ result: pass
 
 ### 2. Multi-component per-component numbering
 expected: Load/draw a salt or co-crystal whose SECOND component has a real ring/chain (e.g. toluene co-crystal). Hover an atom/hyphen/parenthesis IN COMPONENT 2 → card numbers match the per-component numbers PRINTED in the string (reset after the ";"), card shows "(component 2)", and the canvas highlight still lights the correct atoms via global canonicals.
-result: issue
-reported: "Numbers in the card text don't match the printed string for repeated/duplicated components. Caffeine+toluene+3*benzene: hovering atom token '2' in the c-layer '3*1-2-4-6-5-3-1' shows 'Atom 23 is bonded to atoms 22, 25, 28, 29, 34 and 35' (global numbers, neighbours fanned across all 3 benzene copies = 6 neighbours instead of 2). Same family of bug in h-layer: '2*1-6H' shows 'Atoms 1..12 (component 3)' instead of '1-6'. Highlight is correct (lights atom in every copy); card text is wrong."
-severity: major
+result: pass
+reported: "INITIAL: card text didn't match the printed string for N* duplicated components (c-layer atom showed global numbers + neighbours fanned across all copies; h-layer '2*1-6H' showed '1-12 (component 3)' instead of '1-6'). RESOLVED by fix 2e881d9 (SubHover.fragMult — card collapses to one representative fragment in local numbering + 'in each of N identical components' note; highlight unchanged). Re-verified live by chemist: c-layer atom now reads 'Atom 2 is bonded to atoms 1 and 4 ... in each of the 2 identical components (components 3 and 4)'; h-layer reads 'Atoms 1-6 ... in each of the 2 identical components'. Highlight still lights all copies."
 
 ### 3. No-remount + no false claims
 expected: On any c-layer hover/pin, the canvas shows no loading overlay / no re-init flash (no-remount). Cards make NO bond-order, hydrogen-count, or geometry claim — atom numbers only.
@@ -29,16 +28,19 @@ result: pass
 ## Summary
 
 total: 3
-passed: 2
-issues: 1
+passed: 3
+issues: 0
 pending: 0
 skipped: 0
 blocked: 0
 
 ## Gaps
 
+> ALL RESOLVED by fix 2e881d9 (re-verified live by chemist 2026-06-30). Retained for traceability.
+
 - truth: "In a multi-component molecule the card numbers match the per-component numbering printed in the string, while the highlight resolves correct atoms via global canonicals."
-  status: failed
+  status: resolved
+  resolved_by: 2e881d9
   reason: "User reported: for N* duplicated-fragment notation (e.g. 3*1-2-4-6-5-3-1), the c-layer Atom card shows global atom numbers and fans neighbours across all N copies (atom 2 → 'Atom 23 bonded to 22,25,28,29,34,35'); the h-layer Hydrogen card merges both copies ('atoms 1-12 (component 3)' for 2*1-6H). Highlight is correct (CLYR-05); card text is wrong."
   severity: major
   test: 2
@@ -48,7 +50,8 @@ blocked: 0
   scope_note: "c-layer card is Phase 19 in-scope. h-layer card is the pre-existing Phase 17/18 analogue exposed by the same notation — same root-cause family; fix BOTH layers in this gap cycle (user-approved)."
 
 - truth: "Connection-layer (c-layer) cards are titled 'Connection layer - Atom' / 'Connection layer - Bond' / 'Connection layer - Branch' so the description box names the layer the hovered token belongs to."
-  status: failed
+  status: resolved
+  resolved_by: 2e881d9
   reason: "User-requested enhancement at the chemist gate; not yet applied — titles are still plain 'Atom'/'Bond'/'Branch'."
   severity: minor
   test: 1
