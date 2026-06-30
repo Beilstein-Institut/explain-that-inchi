@@ -61,6 +61,15 @@ export interface SubHover {
    *  branch's brackets. Includes nested sub-branches. Fragment offset already applied.
    *  N* multi-fragment: pairs from all fragment instances combined. */
   bondPairs?: [number, number][];
+
+  /** 'atom' kind: every [a, b] bond pair incident to the hovered atom, GLOBAL canonicals
+   *  (fragment offset already applied — never de-offset before storing; the card derives
+   *  neighbours as the "other endpoint" and de-offsets for DISPLAY only, GAP-2). */
+  incidentPairs?: [number, number][];
+
+  /** 'branch' kind: the GLOBAL canonical of the atom the branch hangs off (the branch-point).
+   *  Explicit field rather than inferring direction from bondPairs[0][0] (research A1). */
+  branchPoint?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -188,7 +197,7 @@ export function tokenizeCLayerSeg(seg: string): CLayerToken[] {
  * the parent→child direction in which each bond is emitted. All values are LOCAL
  * (pre-offset). Hyphen characters carry no adjacency information — adjacency covers them.
  */
-function segmentBonds(tokens: CLayerToken[]): Extract<CLayerToken, { type: 'hyphen' }>[] {
+export function segmentBonds(tokens: CLayerToken[]): Extract<CLayerToken, { type: 'hyphen' }>[] {
   const bonds: Extract<CLayerToken, { type: 'hyphen' }>[] = [];
   const stack: (number | null)[] = [];
   let last: number | null = null;
