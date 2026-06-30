@@ -7,7 +7,7 @@ status: milestone_shipped
 stopped_at: Shipped v1.5 + v1.6 (Phases 17–19 tagged)
 last_updated: "2026-06-30T10:30:00.000Z"
 last_activity: 2026-06-30
-last_activity_desc: v1.5 and v1.6 milestones shipped and tagged
+last_activity_desc: "Quick task 260630-mpc: Docker support for zero-config deploy"
 progress:
   total_phases: 0
   completed_phases: 0
@@ -53,6 +53,12 @@ See: .planning/PROJECT.md (updated 2026-06-30)
 - Separate `vitest.config.ts` for Vite 8 + Vitest 3 — Plugin type conflict if merged.
 - `getInchi(true)` returns concatenated string — split on `AuxInfo=`, not destructuring.
 - Stale closures in `editor.subscribe` — read state through `useRef` in handler.
+
+## Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260630-mpc | Docker support (multi-stage Dockerfile + nginx COOP/COEP + docker-compose, zero-config deploy) | 2026-06-30 | f9dd176 | [260630-mpc-add-docker-support-multi-stage-dockerfil](./quick/260630-mpc-add-docker-support-multi-stage-dockerfil/) |
 
 ## Deferred Items
 
