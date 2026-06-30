@@ -1,30 +1,31 @@
 ---
 phase: 19-c-layer-connection-cards
-verified: 2026-06-30T09:00:00Z
-status: human_needed
-score: 3/4 must-haves verified
+verified: 2026-06-30T10:15:00Z
+status: passed
+score: 4/4 must-haves verified
 behavior_unverified: 0
 overrides_applied: 0
-human_verification:
-  - test: "Run npm run dev. Single-component (alanine c1-2(4)3(5)6 or Caffeine preset): hover an atom number (check a one-neighbour and a multi-neighbour atom), a hyphen, and a parenthesis in the c-layer."
-    expected: "Atom card lists the bonded atoms matching the adjacency readable in the string (titled 'Atom'); hyphen card names the two joined atoms (titled 'Bond'); '(' and ')' show the SAME 'Branch' card naming the branch-point atom + bond pairs (en-dash). Canvas highlight still lights the correct atoms/bonds (Phase 15 behaviour)."
-    why_human: "Chemical/notation accuracy of live card strings on a real molecule — the v1.5/v1.6 load-bearing control. Cannot be judged by grep; requires a chemist reading the rendered card against the printed string."
-  - test: "Multi-component: draw/load a salt or co-crystal whose SECOND component has a real ring/chain (toluene co-crystal, or a salt with a multi-atom anion/cation). Hover an atom/hyphen/parenthesis IN COMPONENT 2."
-    expected: "Card numbers match the per-component numbers PRINTED in the string (reset after the ';'), card shows '(component 2)', and the canvas highlight still lights the correct atoms via global canonicals."
-    why_human: "Live per-component de-offset correctness + highlight invariance on a real co-crystal — chemist judgement against the printed string. The unit tests prove the projection logic on fixture-derived literals, but live rendering on a freshly-drawn co-crystal is the gate the plan declared blocking."
-  - test: "On any c-layer hover/pin, watch the canvas."
-    expected: "No loading overlay / canvas re-init flash (no-remount); cards make NO bond-order, hydrogen-count, or geometry claim — atom numbers only."
-    why_human: "Visual/runtime no-remount behaviour and live copy review — not observable via static checks."
+human_verification_resolved: |
+  All three human-verification items PASSED in live chemist UAT (2026-06-30; see 19-UAT.md).
+  Test 2 initially FAILED on N* duplicated-fragment card text in both layers (global numbers +
+  neighbours fanned across every copy; h-layer merged copies "1-12"). Root-caused and fixed in
+  commit 2e881d9 (SubHover.fragMult — the card collapses to ONE representative fragment in
+  per-component LOCAL numbering and states "in each of N identical components"; highlight fields
+  untouched, CLYR-05 preserved). The deferred "Connection layer - " title prefix was also applied.
+  Re-verified live by the chemist on caffeine+toluene+2-benzene. 446 tests pass, tsc + build clean.
 notes:
-  - "19-02 is committed (21b793b) but has NO SUMMARY: it is paused at its blocking checkpoint:human-verify chemist-accuracy gate. The wiring is fully present and machine-verified; only the live chemist confirmation remains."
-  - "Title-prefix tweak NOT applied: titles are plain 'Atom'/'Bond'/'Branch' (subTokenInfo.ts:109,117,127,139). The 'Connection layer - ' prefix requested at the gate is not yet in the code."
+
+  - "19-02 SUMMARY written (9571c77) after the chemist gate passed; wiring 21b793b + gap fix 2e881d9."
+  - "N* card fix (2e881d9): single-fragment local display via SubHover.fragMult; GAP-2 highlight-invariance guards still pass."
+  - "Title prefix applied: c-layer card titles are 'Connection layer - Atom/Bond/Branch'."
+
 ---
 
 # Phase 19: c-layer Connection Cards Verification Report
 
 **Phase Goal:** Hovering or pinning a connection-layer sub-token updates the existing card with its connectivity, in canonical atom indices: a single atom number lists the atoms it is bonded to, a hyphen names the two atoms it joins, and a parenthesis describes the branch and the bonds it encodes. Per-component numbering (reset after ';' with '(component N)') while SubHover payloads keep global canonicals (Phase-15 highlight unchanged). Cards make no bond-order / hydrogen / geometry claim.
 **Verified:** 2026-06-30
-**Status:** human_needed
+**Status:** passed (4/4 — all human items re-verified live after fix 2e881d9)
 **Re-verification:** No — initial verification
 
 ## Goal Achievement

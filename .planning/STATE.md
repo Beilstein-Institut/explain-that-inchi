@@ -3,25 +3,25 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Sub-token-specific explanations
 current_phase: 19
-current_phase_name: c-layer-connection-cards
-status: executing
+status: completed
 stopped_at: Completed 18-01-PLAN.md
-last_updated: "2026-06-30T06:15:45.712Z"
+last_updated: "2026-06-30T10:17:22.219Z"
 last_activity: 2026-06-30
-last_activity_desc: Phase 19 execution started
+last_activity_desc: Phase 19 complete
 progress:
   total_phases: 6
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 11
-  completed_plans: 10
-  percent: 83
+  completed_plans: 11
+  percent: 100
+current_phase_name: c-layer-connection-cards
 ---
 
 # Project State
 
 **Project:** Explain that InChI
 **Milestone:** v1.5 — Sub-token-specific explanations (roadmapped; Phases 17–18)
-**Status:** Ready to execute
+**Status:** Milestone complete
 
 ## Project Reference
 
@@ -84,14 +84,14 @@ Items acknowledged and deferred at v1.3 milestone close on 2026-06-19 (same v1.0
 
 ## Blockers
 
-None
+- Phase 19 P02: awaiting live chemist accuracy gate (checkpoint:human-verify, blocking). Wiring committed 21b793b; tsc+440 tests green; highlight unchanged. Resume via /gsd-verify-work or 'approved'.
 
 ## Current Position
 
-Phase: 19 (c-layer-connection-cards) — EXECUTING
-Plan: 2 of 2
+Phase: 19
+Plan: Not started
 Status: Ready to execute
-Last activity: 2026-06-30 — Phase 19 execution started
+Last activity: 2026-06-30 — Phase 19 complete
 
 ## Operator Next Steps
 
@@ -99,7 +99,7 @@ Last activity: 2026-06-30 — Phase 19 execution started
 
 ## Session Continuity
 
-Last session: 2026-06-30T06:15:40.702Z
+Last session: 2026-06-30T06:35:44.475Z
 Stopped at: Completed 18-01-PLAN.md
 Resume file: None
 

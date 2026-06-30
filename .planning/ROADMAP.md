@@ -70,7 +70,7 @@ Full phase details: `.planning/milestones/v1.4-ROADMAP.md`
 <details open>
 <summary>🔵 v1.6 Connection-layer cards (Phase 19) — PLANNED</summary>
 
-- [ ] **Phase 19: c-layer connection cards** - Sub-token cards for the connection layer: a single atom lists its bonded neighbours, a hyphen names the two atoms it joins, a parenthesis describes the branch and its bonds — per-component canonical indices, highlight unchanged
+- [x] **Phase 19: c-layer connection cards** - Sub-token cards for the connection layer: a single atom lists its bonded neighbours, a hyphen names the two atoms it joins, a parenthesis describes the branch and its bonds — per-component canonical indices, highlight unchanged (completed 2026-06-30)
 
 </details>
 
@@ -157,7 +157,7 @@ Plans:
 | 16. Pin-to-freeze highlights and guided Help tour | — | 2/2 | Complete | 2026-06-25 |
 | 17. Sub-token copy core (element table + pure module + tests) | v1.5 | 2/2 | Complete   | 2026-06-26 |
 | 18. Explanation-card wiring + live chemist gate | v1.5 | 2/2 | Complete    | 2026-06-29 |
-| 19. c-layer connection cards | v1.6 | 1/2 | In Progress|  |
+| 19. c-layer connection cards | v1.6 | 2/2 | Complete    | 2026-06-30 |
 
 ### Phase 19: c-layer connection cards
 
@@ -172,10 +172,10 @@ Plans:
   3. In a multi-component molecule the card numbers match the per-component numbering printed in the string (resetting after each `;`, with a `(component N)` marker), while the canvas highlight still resolves the correct atoms via global canonicals — proven by a `buildSubHoverSpecs` guard test.
   4. No card claims bond order, hydrogen count, or geometry; `subTokenInfo` produces the copy in the pure module (no string reconstruction, no remount); tests use real `getInchi()` fixtures (one single-component, one salt/co-crystal) and an empty-atom-list guard (closes WR-04 for this surface).
 
-**Plans**: 1/2 plans executed
+**Plans**: 2/2 plans complete
 
 - [x] 19-01-PLAN.md
-- [ ] 19-02-PLAN.md
+- [x] 19-02-PLAN.md
 
 **UI hint**: yes
 
