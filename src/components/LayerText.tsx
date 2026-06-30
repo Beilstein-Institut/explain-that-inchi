@@ -178,6 +178,7 @@ function ConnectionText({ text, fragCounts, layerIdx, pinnedSub }: { text: strin
     canonicalFn?: (n: number) => { canonical: number; canonicals?: number[] },
     fragmentOffset = 0,
     componentIndex = 0,
+    fragMult = 1,
   ) => {
     // Pass 1 — tokenize the segment into typed CLayerToken[]
     const tokens = tokenizeCLayerSeg(seg);
@@ -196,15 +197,15 @@ function ConnectionText({ text, fragCounts, layerIdx, pinnedSub }: { text: strin
           .flatMap((b) => {
             if (b.leftLocal == null || b.rightLocal == null) return [];
             if (canonicalFn) {
-              const lc = canonicalFn(b.leftLocal);
-              const rc = canonicalFn(b.rightLocal);
-              const ls = lc.canonicals ?? [lc.canonical];
-              const rs = rc.canonicals ?? [rc.canonical];
-              return ls.map((l, i) => [l, rs[i]] as [number, number]);
+              // N* duplicated fragment: the CARD describes ONE representative fragment, so use the
+              // single frag-0 canonical (.canonical) — NOT the fanned .canonicals (GAP-19). Fanning
+              // here made every neighbour pair repeat across all copies and the neighbour extractor
+              // (subTokenInfo) leaked non-self pairs in. The highlight reads `canonicals`, untouched.
+              return [[canonicalFn(b.leftLocal).canonical, canonicalFn(b.rightLocal).canonical] as [number, number]];
             }
             return [[b.leftLocal + offset, b.rightLocal + offset] as [number, number]];
           });
-        const hit: SubHover = { kind: 'atom', ...hover, incidentPairs, fragmentOffset, componentIndex };
+        const hit: SubHover = { kind: 'atom', ...hover, incidentPairs, fragmentOffset, componentIndex, fragMult };
         parts.push(
           <span key={key++} className={[styles.inchiSubtoken, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')} {...subHoverProps(hit, layerIdx)}>
             {seg.slice(token.start, token.end)}
@@ -225,7 +226,7 @@ function ConnectionText({ text, fragCounts, layerIdx, pinnedSub }: { text: strin
                 return ls.map((l, i) => [l, rs[i]] as [number, number]);
               })()
             : [[token.leftLocal + offset, token.rightLocal + offset]];
-          const hit: SubHover = { kind: 'bond', endpointPairs, fragmentOffset, componentIndex };
+          const hit: SubHover = { kind: 'bond', endpointPairs, fragmentOffset, componentIndex, fragMult };
           parts.push(
             <span key={key++} className={[styles.inchiSubtoken, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')}
               {...subHoverProps(hit, layerIdx)}>
@@ -243,17 +244,24 @@ function ConnectionText({ text, fragCounts, layerIdx, pinnedSub }: { text: strin
           // (the atom the branch hangs off) — the chain-in, branch, and chain-out bonds
           // (typically 3). Not the whole substituent (clyr-03-paren-bonds, user-confirmed).
           const branchHyphens = collectBranchPointBonds(tokens, tokenIdx);
-          const bondPairs: [number, number][] = branchHyphens.flatMap(h => {
-            if (h.leftLocal == null || h.rightLocal == null) return [];
-            if (canonicalFn) {
-              const lc = canonicalFn(h.leftLocal);
-              const rc = canonicalFn(h.rightLocal);
-              const ls = lc.canonicals ?? [lc.canonical];
-              const rs = rc.canonicals ?? [rc.canonical];
-              return ls.map((l, i) => [l, rs[i]] as [number, number]);
-            }
-            return [[h.leftLocal + offset, h.rightLocal + offset] as [number, number]];
-          });
+          const validHyphens = branchHyphens.filter(h => h.leftLocal != null && h.rightLocal != null);
+          let bondPairs: [number, number][];
+          if (canonicalFn) {
+            const perHyphen = validHyphens.map(h => {
+              const lc = canonicalFn(h.leftLocal!);
+              const rc = canonicalFn(h.rightLocal!);
+              return { ls: lc.canonicals ?? [lc.canonical], rs: rc.canonicals ?? [rc.canonical] };
+            });
+            const nFrag = perHyphen[0]?.ls.length ?? 1;
+            // N* duplicated fragment: GROUP pairs by fragment (frag-0 first) so the card's
+            // firstFragment() slice reads one representative branch (GAP-19); the highlight lights
+            // every copy's bonds regardless of order (CLYR-05).
+            bondPairs = Array.from({ length: nFrag }, (_, fi) =>
+              perHyphen.map(p => [p.ls[fi], p.rs[fi]] as [number, number]),
+            ).flat();
+          } else {
+            bondPairs = validHyphens.map(h => [h.leftLocal! + offset, h.rightLocal! + offset] as [number, number]);
+          }
           // branchPoint (GLOBAL): the atom the branch hangs off (open token's attachLocal),
           // run through the SAME offset/canonicalFn as bondPairs (research A2 — explicit field,
           // identical on both parens). Stored on the open token so the close-paren reuses it.
@@ -270,7 +278,7 @@ function ConnectionText({ text, fragCounts, layerIdx, pinnedSub }: { text: strin
             // Comma-only branch — plain non-interactive span
             parts.push(<span key={key++}>{'('}</span>);
           } else {
-            const hit: SubHover = { kind: 'branch', bondPairs, branchPoint, fragmentOffset, componentIndex };
+            const hit: SubHover = { kind: 'branch', bondPairs, branchPoint, fragmentOffset, componentIndex, fragMult };
             parts.push(
               <span key={key++} className={[styles.inchiSubtoken, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')}
                 {...subHoverProps(hit, layerIdx)}>
@@ -290,7 +298,7 @@ function ConnectionText({ text, fragCounts, layerIdx, pinnedSub }: { text: strin
         if (bondPairs.length === 0) {
           parts.push(<span key={key++}>{')'}</span>);
         } else {
-          const hit: SubHover = { kind: 'branch', bondPairs, branchPoint, fragmentOffset, componentIndex };
+          const hit: SubHover = { kind: 'branch', bondPairs, branchPoint, fragmentOffset, componentIndex, fragMult };
           parts.push(
             <span key={key++} className={[styles.inchiSubtoken, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')}
               {...subHoverProps(hit, layerIdx)}>
@@ -314,12 +322,13 @@ function ConnectionText({ text, fragCounts, layerIdx, pinnedSub }: { text: strin
     const n = parseInt(multMatch[1], 10);
     const atomsPerFrag = fragCounts[0] ?? 0;
     parts.push(<span key={key++}>{multMatch[1]}*</span>);
-    // Pure-N* identical-fragment copies share local numbering: card shows local numbers,
-    // component 0 (mirrors the h-layer choice — single-component cards unchanged by design).
+    // Pure-N* identical-fragment copies share local numbering (offset 0); fragMult=n tells the
+    // card to describe ONE representative fragment + state the multiplicity (GAP-19), while the
+    // highlight still lights every copy via canonicals. componentIndex 0 → "components 1–n".
     renderSegment(multMatch[2], 0, (localN) => ({
       canonical: localN,
       canonicals: Array.from({ length: n }, (_, fi) => localN + fi * atomsPerFrag),
-    }), 0, 0);
+    }), 0, 0, n);
     return <>{parts}</>;
   }
 
@@ -335,12 +344,14 @@ function ConnectionText({ text, fragCounts, layerIdx, pinnedSub }: { text: strin
       const n = parseInt(segMult[1], 10);
       const atomsPerFrag = fragCounts[fragIdx] ?? 0;
       parts.push(<span key={key++}>{segMult[1]}*</span>);
-      // Identical-fragment copies share local numbering: 0/0 display context (canonicals
-      // still global via canonicalFn for the highlight) — matches the h-layer N* choice.
+      // Identical-fragment copies share per-component LOCAL numbering: pass fragmentOffset=cumOffset
+      // + componentIndex=fragIdx so the card de-offsets to the printed local numbers and names the
+      // component span, and fragMult=n so it describes ONE representative fragment (GAP-19). The
+      // canonicals array stays global across all copies for the highlight (CLYR-05).
       renderSegment(segMult[2], 0, (localN) => ({
         canonical: localN + cumOffset,
         canonicals: Array.from({ length: n }, (_, fi) => localN + cumOffset + fi * atomsPerFrag),
-      }), 0, 0);
+      }), cumOffset, fragIdx, n);
       cumOffset += n * atomsPerFrag;
       fragIdx += n;
     } else {
@@ -482,7 +493,7 @@ function HLayerText({ text, fragCounts, layerIdx, pinnedSub }: { text: string; f
           ? Array.from({ length: n }, (_, fi) => expandAtoms(match[1], fi * atomsPerFrag)).flat()
           : [];
         // Pure-N* copies share local numbering (base 0): card shows component-local numbers, component 0.
-        const hit: SubHover = { kind: 'mobileH', atoms, fragmentOffset: 0, componentIndex: 0 };
+        const hit: SubHover = { kind: 'mobileH', atoms, fragmentOffset: 0, componentIndex: 0, fragMult: n };
         parts.push(
           <span key={key++} className={[styles.hydroMobile, styles.inchiSubtoken, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')}
             {...subHoverProps(hit, layerIdx)}
@@ -496,7 +507,7 @@ function HLayerText({ text, fragCounts, layerIdx, pinnedSub }: { text: string; f
         const count = j > i + 1 ? parseInt(pattern.slice(i + 1, j), 10) : 1;
         const atoms = Array.from({ length: n }, (_, fi) => expandAtoms(buf.replace(/^,/, ''), fi * atomsPerFrag)).flat();
         const hydroClass = [(styles as Record<string, string>)[`hydro${Math.min(count, 4)}`], styles.inchiSubtoken].join(' ');
-        const hit: SubHover = { kind: 'hAtoms', atoms, count, fragmentOffset: 0, componentIndex: 0 };
+        const hit: SubHover = { kind: 'hAtoms', atoms, count, fragmentOffset: 0, componentIndex: 0, fragMult: n };
         parts.push(
           <span key={key++} className={[hydroClass, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')} {...subHoverProps(hit, layerIdx)}>
             {buf + pattern.slice(i, j)}
@@ -538,7 +549,7 @@ function HLayerText({ text, fragCounts, layerIdx, pinnedSub }: { text: string; f
           const atoms = match
             ? Array.from({ length: n }, (_, fi) => expandAtoms(match[1], baseOffset + fi * atomsPerFrag)).flat()
             : [];
-          const hit: SubHover = { kind: 'mobileH', atoms, fragmentOffset: baseOffset, componentIndex: fragIdx };
+          const hit: SubHover = { kind: 'mobileH', atoms, fragmentOffset: baseOffset, componentIndex: fragIdx, fragMult: n };
           parts.push(
             <span key={key++} className={[styles.hydroMobile, styles.inchiSubtoken, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')}
               {...subHoverProps(hit, layerIdx)}
@@ -552,7 +563,7 @@ function HLayerText({ text, fragCounts, layerIdx, pinnedSub }: { text: string; f
           const count = j > i + 1 ? parseInt(pattern.slice(i + 1, j), 10) : 1;
           const atoms = Array.from({ length: n }, (_, fi) => expandAtoms(buf.replace(/^,/, ''), baseOffset + fi * atomsPerFrag)).flat();
           const hydroClass = [(styles as Record<string, string>)[`hydro${Math.min(count, 4)}`], styles.inchiSubtoken].join(' ');
-          const hit: SubHover = { kind: 'hAtoms', atoms, count, fragmentOffset: baseOffset, componentIndex: fragIdx };
+          const hit: SubHover = { kind: 'hAtoms', atoms, count, fragmentOffset: baseOffset, componentIndex: fragIdx, fragMult: n };
           parts.push(
             <span key={key++} className={[hydroClass, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')} {...subHoverProps(hit, layerIdx)}>
               {buf + pattern.slice(i, j)}

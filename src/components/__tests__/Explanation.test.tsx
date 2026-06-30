@@ -134,12 +134,13 @@ describe('Explanation — sub-token card branch (SUBEX-01/02/07)', () => {
   });
 
   // Test B (CONN-02): a c-layer bond sub-token now renders its own Bond card (Phase 19
-  // reversed the old null fall-through). The whole-layer 'Connection layer' card must NOT show.
+  // reversed the old null fall-through). The whole-layer 'Connection layer' card (exact title)
+  // must NOT show — the sub-card title 'Connection layer - Bond' is a distinct exact string.
   it('Test B: c-layer bond sub-token renders the Bond card', () => {
     mock.subHover = { kind: 'bond', endpointPairs: [[1, 2]] }; // projection of c '1-2'
     mock.hoverIdx = C_IDX;
     render(<Explanation />);
-    expect(screen.getByText('Bond')).toBeInTheDocument();
+    expect(screen.getByText('Connection layer - Bond')).toBeInTheDocument();
     expect(screen.queryByText('Connection layer')).not.toBeInTheDocument();
   });
 

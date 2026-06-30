@@ -53,6 +53,13 @@ export interface SubHover {
   fragmentOffset?: number;
   componentIndex?: number;
 
+  /** N* duplicated-fragment multiplicity: how many identical components this one token
+   *  describes (e.g. `2*1-6H` → 2). Absent/1 = single fragment. When >1, the card collapses
+   *  to ONE representative fragment in per-component LOCAL numbering and states the multiplicity,
+   *  while the highlight fields (canonicals / full atoms / fanned pairs) stay GLOBAL across every
+   *  copy (CLYR-05). componentIndex points at the FIRST of the duplicated components. */
+  fragMult?: number;
+
   /** 'bond' kind: each pair is [leftCanonical, rightCanonical] with fragment offset applied.
    *  Single fragment: one pair. N* multi-fragment: one pair per fragment instance. */
   endpointPairs?: [number, number][];

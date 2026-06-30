@@ -18,12 +18,22 @@ const SALT = 'InChI=1S/CH5N.ClH/c1-2;/h2H2,1H3;1H';
 //    (component 1 = 17 heavy atoms: C13 N2 O2) to {19,20,21,22,23}.
 const MELATONIN_TOLUENE =
   'InChI=1S/C13H16N2O2.C7H8/c1-9(16)14-6-5-10-8-15-13-4-3-11(17-2)7-12(10)13;1-7-5-3-2-4-6-7/h3-4,7-8,15H,5-6H2,1-2H3,(H,14,16);2-6H,1H3';
+// CAFFEINE_TOLUENE_2BENZENE: caffeine (C8H10N4O2) + toluene (C7H8) + 2× benzene (2C6H6),
+// real getInchi() output observed verbatim from the live app (Phase-19 UAT screenshot).
+// Exercises the N* duplicated-fragment notation in BOTH layers:
+//  - c-layer segment `2*1-2-4-6-5-3-1` (components 3 & 4, global offset +21 = caffeine 14 + toluene 7).
+//  - h-layer segment `2*1-6H` (atoms 1-6 in EACH of the two identical benzene copies).
+// The N* card must show ONE representative fragment in per-component LOCAL numbering, while the
+// canvas highlight still lights the atom in every copy (CLYR-05) — proven separately in highlightUtils.
+const CAFFEINE_TOLUENE_2BENZENE =
+  'InChI=1S/C8H10N4O2.C7H8.2C6H6/c1-10-4-9-6-5(10)7(13)12(3)8(14)11(6)2;1-7-5-3-2-4-6-5-3-1;2*1-2-4-6-5-3-1/h4H,1-3H3;2-6H,1H3;2*1-6H';
 
 describe('subTokenInfo — anti-fabrication fixture sanity (D-18)', () => {
   it('every fixture const is real getInchi() output (starts with InChI=1S/)', () => {
     expect(ALANINE).toMatch(/^InChI=1S\//);
     expect(SALT).toMatch(/^InChI=1S\//);
     expect(MELATONIN_TOLUENE).toMatch(/^InChI=1S\//);
+    expect(CAFFEINE_TOLUENE_2BENZENE).toMatch(/^InChI=1S\//);
   });
 });
 
@@ -215,8 +225,8 @@ describe('subTokenInfo — atom card (CONN-01)', () => {
   // ALANINE `c1-2(4)3(5)6`: atom 2 is bonded to 1, 4 and 3 → deduped sorted neighbour set {1,3,4}.
   const card = subTokenInfo({ kind: 'atom', canonical: 2, incidentPairs: [[1, 2], [2, 3], [2, 4]] }, {})!;
 
-  it('titles "Atom"', () => {
-    expect(card.title).toBe('Atom');
+  it('titles "Connection layer - Atom"', () => {
+    expect(card.title).toBe('Connection layer - Atom');
   });
 
   it('names the hovered atom', () => {
@@ -246,8 +256,8 @@ describe('subTokenInfo — bond card (CONN-02)', () => {
   // ALANINE `1-2`: the hyphen joins canonical atoms 1 and 2.
   const card = subTokenInfo({ kind: 'bond', endpointPairs: [[1, 2]] }, {})!;
 
-  it('titles "Bond"', () => {
-    expect(card.title).toBe('Bond');
+  it('titles "Connection layer - Bond"', () => {
+    expect(card.title).toBe('Connection layer - Bond');
   });
 
   it('names the two joined atoms "1 and 2"', () => {
@@ -259,8 +269,8 @@ describe('subTokenInfo — branch card (CONN-02)', () => {
   // ALANINE `2(4)`: branch off atom 2 encoding bond pair 2–4 (en-dash).
   const card = subTokenInfo({ kind: 'branch', bondPairs: [[2, 4]], branchPoint: 2 }, {})!;
 
-  it('titles "Branch"', () => {
-    expect(card.title).toBe('Branch');
+  it('titles "Connection layer - Branch"', () => {
+    expect(card.title).toBe('Connection layer - Branch');
   });
 
   it('names the branch-point "atom 2"', () => {
@@ -315,5 +325,68 @@ describe('subTokenInfo — c-layer copy safety (CONN-04)', () => {
     for (const c of [atomCard, bondCard, branchCard]) {
       expect(c.body).not.toMatch(/\bgeometry\b/i);
     }
+  });
+});
+
+// Phase 19 gap closure (UAT test 2): N* duplicated-fragment notation.
+// Projections below come from CAFFEINE_TOLUENE_2BENZENE (real getInchi() output):
+//   c `…;…;2*1-2-4-6-5-3-1`  and  h `…;…;2*1-6H`
+// The duplicated benzenes are components 3 & 4; global offset +21 (caffeine 14 + toluene 7),
+// atomsPerFrag 6, fragMult 2. The card must read ONE fragment in LOCAL numbering and state the
+// multiplicity; the SubHover's highlight fields (canonicals / full atoms) stay GLOBAL & fanned.
+describe('subTokenInfo — c-layer N* atom card (CONN-01 / CONN-03, GAP-19)', () => {
+  // benzene `1-2-4-6-5-3-1`, hover local atom 2 → bonded to local 1 and 4 (single fragment).
+  // incidentPairs are single-fragment GLOBAL (frag-0): atom 23 ↔ 22 and 25. fragMult=2 → components 3 & 4.
+  const card = subTokenInfo(
+    { kind: 'atom', canonical: 23, incidentPairs: [[22, 23], [23, 25]], fragmentOffset: 21, componentIndex: 2, fragMult: 2 },
+    {},
+  )!;
+
+  it('shows the per-component LOCAL self number, not the global one', () => {
+    expect(card.body).toMatch(/Atom 2 is bonded to/);
+    expect(card.body).not.toMatch(/Atom 23/);
+  });
+
+  it('lists only this fragment’s neighbours in local numbering (1 and 4, not 6 fanned globals)', () => {
+    expect(card.body).toMatch(/bonded to atoms 1 and 4/);
+    expect(card.body).not.toMatch(/22|25|28|29|34|35/);
+  });
+
+  it('states the duplicated-fragment multiplicity and component span', () => {
+    expect(card.body).toMatch(/in each of the 2 identical components \(components 3 and 4\)/);
+  });
+});
+
+describe('subTokenInfo — c-layer N* bond card (CONN-02 / CONN-03, GAP-19)', () => {
+  // hyphen `1-2` inside the 2* benzene segment: endpointPairs fanned across both copies
+  // [frag0, frag1]; the card reads pair[0] (frag-0 global) and de-offsets to local 1 and 2.
+  const card = subTokenInfo(
+    { kind: 'bond', endpointPairs: [[22, 23], [28, 29]], fragmentOffset: 21, componentIndex: 2, fragMult: 2 },
+    {},
+  )!;
+
+  it('names the two atoms in local numbering and states the multiplicity', () => {
+    expect(card.body).toMatch(/Atoms 1 and 2 are bonded/);
+    expect(card.body).toMatch(/in each of the 2 identical components \(components 3 and 4\)/);
+    expect(card.body).not.toMatch(/22|23|28|29/);
+  });
+});
+
+describe('subTokenInfo — h-layer N* hAtoms card (GAP-19, screenshot-1 regression)', () => {
+  // `2*1-6H`: atoms[] is the FULL highlight set across both copies (grouped frag-0 then frag-1):
+  // [22..27, 28..33]. fragMult=2 → the card shows ONE fragment, local 1-6.
+  const atoms = [22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33];
+  const card = subTokenInfo(
+    { kind: 'hAtoms', atoms, count: 1, fragmentOffset: 21, componentIndex: 2, fragMult: 2 },
+    {},
+  )!;
+
+  it('enumerates ONE fragment in local numbering (1-6), not both copies (1-12)', () => {
+    expect(card.body).toMatch(/Atoms 1, 2, 3, 4, 5 and 6 each bear one hydrogen/);
+    expect(card.body).not.toMatch(/\b7, 8, 9\b|and 12\b/);
+  });
+
+  it('states the duplicated-fragment multiplicity and component span', () => {
+    expect(card.body).toMatch(/in each of the 2 identical components \(components 3 and 4\)/);
   });
 });

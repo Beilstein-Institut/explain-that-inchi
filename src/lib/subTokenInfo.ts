@@ -64,12 +64,19 @@ export function subTokenInfo(
     }
 
     case 'hAtoms': {
-      const atoms = sub.atoms ?? [];
+      const mult = sub.fragMult ?? 1;
+      // N* duplicated fragments: sub.atoms is the FULL highlight set across every copy (grouped,
+      // frag-0 first); collapse to ONE fragment for the card (GAP-19). Single fragment: unchanged.
+      const atoms = firstFragment(sub.atoms ?? [], mult);
       const count = sub.count ?? 1;
       const h = count === 1 ? 'one hydrogen' : `${count} hydrogens`;
       const verb = atoms.length === 1 ? 'bears' : 'each bear';
+      const ctx = mult > 1 ? `,${multiplicityClause(sub)}` : componentMarker(sub);
       // Plain "atom N" — never infer a functional group from an H-count (D-08).
-      const body = `${capitalise(atomList(atoms, sub.fragmentOffset ?? 0))}${componentMarker(sub)} ${verb} ${h}. This is a count of attached hydrogens, nothing about what kind of group the atom is part of.`;
+      const body =
+        mult > 1
+          ? `${capitalise(atomList(atoms, sub.fragmentOffset ?? 0))} ${verb} ${h}${ctx}. This is a count of attached hydrogens, nothing about what kind of group the atom is part of.`
+          : `${capitalise(atomList(atoms, sub.fragmentOffset ?? 0))}${ctx} ${verb} ${h}. This is a count of attached hydrogens, nothing about what kind of group the atom is part of.`;
       return { title: `Hydrogen count: ${count}`, body };
     }
 
@@ -77,10 +84,16 @@ export function subTokenInfo(
       // Reads sub.atoms ONLY — mobileH carries no count (Pitfall 3 / D-10).
       // Route through atomList so a 3+-atom group reads "atoms 21, 22, 23, 26 and 27",
       // not a chain of "and" (WR-03); atomList also de-offsets for display (GAP-2).
-      const where = atomList(sub.atoms ?? [], sub.fragmentOffset ?? 0);
+      // N* duplicated fragments: collapse to one representative fragment (GAP-19).
+      const mult = sub.fragMult ?? 1;
+      const where = atomList(firstFragment(sub.atoms ?? [], mult), sub.fragmentOffset ?? 0);
+      const ctx = mult > 1 ? `,${multiplicityClause(sub)}` : componentMarker(sub);
       const body =
-        `A mobile, tautomeric proton is shared across ${where}${componentMarker(sub)} rather than fixed to one of them. ` +
-        `InChI records one identifier per tautomer, so this proton is written as shared between these positions instead of drawn as a single fixed bond.`;
+        mult > 1
+          ? `A mobile, tautomeric proton is shared across ${where} rather than fixed to one of them${ctx}. ` +
+            `InChI records one identifier per tautomer, so this proton is written as shared between these positions instead of drawn as a single fixed bond.`
+          : `A mobile, tautomeric proton is shared across ${where}${ctx} rather than fixed to one of them. ` +
+            `InChI records one identifier per tautomer, so this proton is written as shared between these positions instead of drawn as a single fixed bond.`;
       return { title: 'Mobile hydrogen', body };
     }
 
@@ -104,39 +117,52 @@ export function subTokenInfo(
         (x, y) => x - y,
       );
       const selfLocal = self - off;
+      const mult = sub.fragMult ?? 1;
       if (neighbours.length === 0) {
+        const tail = mult > 1 ? `,${multiplicityClause(sub)}` : componentMarker(sub);
         return {
-          title: 'Atom',
-          body: `Atom ${selfLocal}${componentMarker(sub)} has no bonds recorded in the connection layer.`,
+          title: 'Connection layer - Atom',
+          body: `Atom ${selfLocal}${tail} has no bonds recorded in the connection layer.`,
         };
       }
+      const tail =
+        mult > 1
+          ? ` in the heavy-atom skeleton,${multiplicityClause(sub)}`
+          : `${componentMarker(sub)} in the heavy-atom skeleton`;
       const body =
-        `Atom ${selfLocal} is bonded to ${atomList(neighbours, off)}${componentMarker(sub)} ` +
-        `in the heavy-atom skeleton. The connection layer lists which canonical atom numbers are joined ` +
+        `Atom ${selfLocal} is bonded to ${atomList(neighbours, off)}${tail}. ` +
+        `The connection layer lists which canonical atom numbers are joined ` +
         `— it records connectivity only, not bond order or 3-D shape.`;
-      return { title: 'Atom', body };
+      return { title: 'Connection layer - Atom', body };
     }
 
     case 'bond': {
       // One canonical pair (N* repeats it across identical fragments). De-offset for display.
       const off = sub.fragmentOffset ?? 0;
       const [a, b] = (sub.endpointPairs ?? [[0, 0]])[0];
+      const mult = sub.fragMult ?? 1;
       const body =
-        `Atoms ${a - off} and ${b - off}${componentMarker(sub)} are bonded — this hyphen joins the ` +
-        `canonical numbers on either side of it. It records that the two atoms are connected, not the bond order.`;
-      return { title: 'Bond', body };
+        mult > 1
+          ? `Atoms ${a - off} and ${b - off} are bonded — this hyphen joins the canonical numbers on ` +
+            `either side of it —${multiplicityClause(sub)}. It records that the two atoms are connected, not the bond order.`
+          : `Atoms ${a - off} and ${b - off}${componentMarker(sub)} are bonded — this hyphen joins the ` +
+            `canonical numbers on either side of it. It records that the two atoms are connected, not the bond order.`;
+      return { title: 'Connection layer - Bond', body };
     }
 
     case 'branch': {
       // Branch-point is the explicit field (research A1); fall back to the shared left endpoint.
       const off = sub.fragmentOffset ?? 0;
-      const pairs = sub.bondPairs ?? [];
+      const mult = sub.fragMult ?? 1;
+      const allPairs = sub.bondPairs ?? [];
+      const pairs = firstFragment(allPairs, mult);
       const bp = sub.branchPoint ?? pairs[0]?.[0] ?? 0;
+      const ctx = mult > 1 ? `,${multiplicityClause(sub)}` : componentMarker(sub);
       const body =
-        `These parentheses are a branch hanging off atom ${bp - off}${componentMarker(sub)}, adding the ` +
+        `These parentheses are a branch hanging off atom ${bp - off}${ctx}, adding the ` +
         `bonds ${bondPairList(pairs, off)}. InChI writes side-chains in parentheses so a branched skeleton ` +
         `fits on one line; after the ) the main chain continues from atom ${bp - off}.`;
-      return { title: 'Branch', body };
+      return { title: 'Connection layer - Branch', body };
     }
 
     default:
@@ -164,4 +190,22 @@ function capitalise(s: string): string {
 function componentMarker(sub: SubHover): string {
   const idx = sub.componentIndex ?? 0;
   return idx > 0 ? ` (component ${idx + 1})` : '';
+}
+
+// N* duplicated-fragment phrasing (GAP-19). The token `N*…` describes N identical components;
+// the card shows ONE representative fragment in local numbering and appends this clause naming
+// how many copies and which component span (1-based, contiguous). componentIndex = first copy.
+// e.g. fragMult 2, componentIndex 2 → "in each of the 2 identical components (components 3 and 4)".
+function multiplicityClause(sub: SubHover): string {
+  const mult = sub.fragMult ?? 1;
+  const a = (sub.componentIndex ?? 0) + 1;
+  const b = a + mult - 1;
+  const span = b - a === 1 ? `components ${a} and ${b}` : `components ${a}–${b}`;
+  return ` in each of the ${mult} identical components (${span})`;
+}
+
+// First fragment's slice of a GLOBAL highlight array that was fanned/grouped across all N copies
+// (frag-0 first). Used by the card so an N* token reads one representative fragment (GAP-19).
+function firstFragment<T>(arr: T[], mult: number): T[] {
+  return mult > 1 && arr.length % mult === 0 ? arr.slice(0, arr.length / mult) : arr;
 }
