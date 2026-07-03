@@ -243,7 +243,7 @@ export function hydroColor(count: number | null | undefined): string | null {
 
 export function parseStereoParities(text: string): Record<number, string> {
   const out: Record<number, string> = {};
-  for (const m of text.matchAll(/(\d+)([\-+?])/g)) {
+  for (const m of text.matchAll(/(\d+)([-+?])/g)) {
     out[parseInt(m[1], 10)] = m[2];
   }
   return out;
@@ -342,7 +342,7 @@ export function readingFor(
       let cumulativeOffset = 0;
       fragmentTexts.forEach((fragText, fi) => {
         const off = cumulativeOffset;
-        const re = /([\d,\-]+)H(\d*)(?=,|$)/g;
+        const re = /([\d,-]+)H(\d*)(?=,|$)/g;
         const cleaned = fragText.replace(/\([^)]*\)/g, '');
         let m: RegExpExecArray | null;
         while ((m = re.exec(cleaned))) {

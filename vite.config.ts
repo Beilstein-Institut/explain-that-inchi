@@ -20,7 +20,7 @@ function resolveCommitSha(): string {
   const SHA_RE = /^[0-9a-f]{7,40}$/i;
 
   // Step 1: try git describe
-  let sha = '';
+  let sha: string;
   try {
     const raw = execSync('git describe --tags --always', { encoding: 'utf-8' }).trim();
     if (SHA_RE.test(raw)) {

@@ -274,7 +274,7 @@ export function parseHydrogenAtoms(text: string): Record<number, number> {
   const cleaned = text.replace(/\([^)]*\)/g, '');
   // Match runs of digits/commas/dashes followed by "Hn?", up to the next
   // comma or end of string.
-  const re = /([\d,\-]+)H(\d*)(?=,|$)/g;
+  const re = /([\d,-]+)H(\d*)(?=,|$)/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(cleaned))) {
     const count = m[2] ? parseInt(m[2], 10) : 1;
@@ -312,7 +312,7 @@ export function parseMobileHydrogens(text: string): number[] {
  */
 export function parseStereoAtoms(text: string): number[] {
   const nums: number[] = [];
-  for (const m of text.matchAll(/(\d+)[\-+?]/g)) nums.push(parseInt(m[1], 10));
+  for (const m of text.matchAll(/(\d+)[-+?]/g)) nums.push(parseInt(m[1], 10));
   return nums;
 }
 

@@ -370,7 +370,7 @@ function ParityText({ text, fragCounts, layerIdx, pinnedSub }: { text: string; f
   let key = 0;
 
   const renderSegment = (seg: string, offset: number) => {
-    const re = /(\d+)([\-+?])/g;
+    const re = /(\d+)([-+?])/g;
     let m: RegExpExecArray | null;
     let last = 0;
     while ((m = re.exec(seg)) !== null) {

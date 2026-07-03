@@ -235,7 +235,7 @@ export function buildFeedbackUrl(opts: BuildFeedbackUrlOpts): BuildFeedbackUrlRe
       // Binary-search-style shrink: halve remaining chars until under budget.
       // Each iteration we trim the InChI and check the byte length.
       let trimLen = rawInchi.length;
-      let trimmedInchi = rawInchi;
+      let trimmedInchi: string;
 
       while (trimLen > 0) {
         trimLen = Math.floor(trimLen / 2);

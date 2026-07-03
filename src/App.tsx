@@ -192,8 +192,8 @@ export default function App() {
           // parseInchiWithAux returns canonical → 0-based mol-file rank (from AuxInfo N: field).
           // Ketcher atom Pool IDs are NOT sequential from 0 — they are cumulative across draws.
           // We must read actual Pool IDs and remap rank → poolId so highlights.create() works.
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const poolIds: number[] = [];
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (ketcher.editor as any).render.ctab.molecule.atoms.forEach((_: unknown, id: number) => poolIds.push(id));
           // Collect explicit H atom pool IDs from Ketcher render struct (INCHI-05)
           const hAtomPoolIds: number[] = [];

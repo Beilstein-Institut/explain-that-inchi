@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
 import type { Layer, AuxMap, SubHover, LayerType } from './lib/parseInchi';
 
 // All v1 fields defined here per D-02.
@@ -58,11 +57,7 @@ interface InchiState {
 
 // Zustand 5 TypeScript pattern: create<State>()() — double-call required.
 // The outer () binds the generic; the inner () receives the initialiser.
-// devtools middleware provides Redux DevTools integration in development.
-// Note: TypeScript may warn about @redux-devtools/extension types — this is
-// a dev-only DX issue; no @redux-devtools/extension install is needed.
 export const useInchiStore = create<InchiState>()(
-  devtools(
     (set, get) => ({
       inchi: '',
       layers: [],
@@ -102,8 +97,6 @@ export const useInchiStore = create<InchiState>()(
         legendHover: null,
       }),
     }),
-    { name: 'inchi-store' },
-  ),
 );
 
 // Usage patterns for Phase 3+ components:
