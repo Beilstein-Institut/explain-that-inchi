@@ -56,7 +56,7 @@ export interface BuildFeedbackUrlResult {
 // ---------------------------------------------------------------------------
 
 /** GitHub issues/new base URL for the explain-that-inchi repo. */
-const REPO_ISSUES_URL = 'https://github.com/cm-beilstein/explain-that-inchi/issues/new';
+const REPO_ISSUES_URL = 'https://github.com/Beilstein-Institut/explain-that-inchi/issues/new';
 
 /** Byte budget for the final URL (~7.5 KB; GitHub silently truncates above ~8 KB). */
 const BYTE_BUDGET = 7680;

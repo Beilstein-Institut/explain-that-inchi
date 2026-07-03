@@ -220,7 +220,7 @@ describe('FEED-04/05: body composition', () => {
       category: 'Bug',
       context: {},
     });
-    expect(url).toMatch(/^https:\/\/github\.com\/cm-beilstein\/explain-that-inchi\/issues\/new\?/);
+    expect(url).toMatch(/^https:\/\/github\.com\/Beilstein-Institut\/explain-that-inchi\/issues\/new\?/);
   });
 });
 

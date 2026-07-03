@@ -2,6 +2,7 @@
   "name": "explain-that-inchi",
   "private": true,
   "version": "1.2.0",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,6 +12,9 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@fontsource/ibm-plex-mono": "^5.2.7",
+    "@fontsource/ibm-plex-sans": "^5.2.8",
+    "@fontsource/ibm-plex-serif": "^5.2.7",
     "ketcher-core": "3.12.0",
     "ketcher-react": "3.12.0",
     "ketcher-standalone": "3.12.0",
