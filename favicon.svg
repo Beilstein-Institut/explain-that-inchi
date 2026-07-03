@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Explain that InChI">
+  <!-- soft card background for tab contrast (app cream bg) -->
+  <rect x="1" y="1" width="30" height="30" rx="7" fill="#fbfbf6" stroke="#e3e1d8" stroke-width="1"/>
+  <!-- benzene ring -->
+  <polygon points="26,16 21,25 11,25 6,16 11,7 21,7"
+           fill="none" stroke="#2b2f36" stroke-width="2" stroke-linejoin="round"/>
+  <!-- color-coded layer vertices (echoes the app's per-layer palette) -->
+  <circle cx="26" cy="16" r="2.5" fill="#3a78c9"/>
+  <circle cx="21" cy="25" r="2.5" fill="#2e9e6e"/>
+  <circle cx="11" cy="25" r="2.5" fill="#c98a3e"/>
+  <circle cx="6"  cy="16" r="2.5" fill="#9b5fc0"/>
+  <circle cx="11" cy="7"  r="2.5" fill="#6aa02e"/>
+  <circle cx="21" cy="7"  r="2.5" fill="#2f9fb0"/>
+  <!-- question mark overlaid on the ring (the "explain / understand" theme) -->
+  <text x="16" y="16" text-anchor="middle" dominant-baseline="central"
+        font-family="system-ui, 'Segoe UI', Helvetica, Arial, sans-serif"
+        font-weight="700" font-size="25"
+        fill="#2b2f36" stroke="#fbfbf6" stroke-width="3.2" paint-order="stroke">?</text>
+</svg>
