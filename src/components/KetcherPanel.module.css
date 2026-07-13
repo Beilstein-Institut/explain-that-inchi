@@ -8,11 +8,17 @@
   height: 460px;
 }
 
-/* Mobile: the mol-list sidebar is hidden (global .mol-list @media rule), so the
-   canvas takes the full width instead of leaving a phantom 240px column. */
+/* Mobile: stack the editor over the examples. The canvas takes full width with a
+   fixed height; the mol-list (global class) reflows into row 2 as a horizontal
+   chip strip (see the .mol-list rules in styles.css @media). */
 @media (max-width: 900px) {
   .ketcher {
     grid-template-columns: 1fr;
+    grid-template-rows: 360px auto;
+    height: auto;
+  }
+  .canvasWrap {
+    border-radius: 5px 5px 0 0;
   }
 }
 

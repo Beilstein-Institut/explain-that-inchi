@@ -690,8 +690,38 @@ body {
 
 @media (max-width: 900px) {
   .app { padding: 20px 16px 32px; }
-  .mol-list { display: none; }
   .explain { grid-template-columns: 1fr; }
   .header h1 { font-size: 36px; }
   .section-label { flex-wrap: wrap; row-gap: 8px; }
+
+  /* Examples reflow from a vertical sidebar into a horizontal chip strip
+     below the editor (the mol-list is grid row 2 on mobile — see
+     KetcherPanel.module.css). */
+  .mol-list {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    max-height: none;
+    padding: 10px 12px;
+    border-left: none;
+    border-top: 1px solid var(--line);
+    border-radius: 0 0 5px 5px;
+  }
+  .mol-list-header { display: none; }
+  .mol-item {
+    flex: 0 0 auto;
+    width: auto;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 6px;
+    padding: 6px 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .mol-item.active {
+    background: var(--bg-panel);
+    border-color: var(--ink);
+  }
 }
