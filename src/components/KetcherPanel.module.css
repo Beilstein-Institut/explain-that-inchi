@@ -8,6 +8,14 @@
   height: 460px;
 }
 
+/* Mobile: the mol-list sidebar is hidden (global .mol-list @media rule), so the
+   canvas takes the full width instead of leaving a phantom 240px column. */
+@media (max-width: 900px) {
+  .ketcher {
+    grid-template-columns: 1fr;
+  }
+}
+
 .canvasWrap {
   position: relative;
   height: 100%;

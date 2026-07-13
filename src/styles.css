@@ -689,8 +689,9 @@ body {
 }
 
 @media (max-width: 900px) {
-  .ketcher { grid-template-columns: 56px 1fr; }
+  .app { padding: 20px 16px 32px; }
   .mol-list { display: none; }
   .explain { grid-template-columns: 1fr; }
   .header h1 { font-size: 36px; }
+  .section-label { flex-wrap: wrap; row-gap: 8px; }
 }
