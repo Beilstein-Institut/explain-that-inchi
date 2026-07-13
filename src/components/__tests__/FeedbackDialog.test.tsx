@@ -133,7 +133,7 @@ describe('FeedbackDialog', () => {
   it('non-truncated submit closes dialog and resets form (D-09)', async () => {
     const dialogRef = makeDialogRef();
     const onSubmit = makeOnSubmit({
-      url: 'https://github.com/Beilstein-Institut/explain-that-inchi/issues/new?title=...',
+      url: 'https://github.com/cm-beilstein/explain-that-inchi/issues/new?title=...',
       truncated: false,
       fullBody: 'full body text',
     });
@@ -169,7 +169,7 @@ describe('FeedbackDialog', () => {
   it('truncated submit keeps dialog open and shows truncation UI (D-10)', async () => {
     const dialogRef = makeDialogRef();
     const onSubmit = makeOnSubmit({
-      url: 'https://github.com/Beilstein-Institut/explain-that-inchi/issues/new?truncated',
+      url: 'https://github.com/cm-beilstein/explain-that-inchi/issues/new?truncated',
       truncated: true,
       fullBody: 'full body text',
     });
@@ -195,7 +195,7 @@ describe('FeedbackDialog', () => {
   it('Copy full issue body calls clipboard with fullBody (D-11)', async () => {
     const dialogRef = makeDialogRef();
     const onSubmit = makeOnSubmit({
-      url: 'https://github.com/Beilstein-Institut/explain-that-inchi/issues/new?truncated',
+      url: 'https://github.com/cm-beilstein/explain-that-inchi/issues/new?truncated',
       truncated: true,
       fullBody: 'full body text',
     });
@@ -241,7 +241,7 @@ describe('FeedbackDialog', () => {
     try {
       const dialogRef = makeDialogRef();
       const onSubmit = makeOnSubmit({
-        url: 'https://github.com/Beilstein-Institut/explain-that-inchi/issues/new?truncated',
+        url: 'https://github.com/cm-beilstein/explain-that-inchi/issues/new?truncated',
         truncated: true,
         fullBody: 'full body text',
       });
