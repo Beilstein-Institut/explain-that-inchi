@@ -19,6 +19,11 @@
   }
   .canvasWrap {
     border-radius: 5px 5px 0 0;
+    /* min-width:0 lets the 1fr grid track shrink below the editor's intrinsic
+       min-width (its wide toolbar) instead of ballooning the page; overflow
+       gives the editor its own scroll box so its toolbar stays reachable. */
+    min-width: 0;
+    overflow: auto;
   }
 }
 
