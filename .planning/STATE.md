@@ -59,6 +59,7 @@ See: .planning/PROJECT.md (updated 2026-06-30)
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260630-mpc | Docker support (multi-stage Dockerfile + nginx COOP/COEP + docker-compose, zero-config deploy) | 2026-06-30 | f9dd176 | [260630-mpc-add-docker-support-multi-stage-dockerfil](./quick/260630-mpc-add-docker-support-multi-stage-dockerfil/) |
+| 260713-mob | Fix mobile layout — collapse .ketcher grid to full-width canvas at ≤900px, lighter .app padding, wrapping section-label actions (CSS-only) | 2026-07-13 | b5abc33 | — |
 
 ## Deferred Items
 
@@ -105,8 +106,8 @@ Last activity: 2026-06-30 — Phase 19 complete
 
 ## Session Continuity
 
-Last session: 2026-06-30T06:35:44.475Z
-Stopped at: Completed 18-01-PLAN.md
+Last session: 2026-07-13
+Stopped at: Session resumed — no active milestone; v1.6 shipped, public-launch prep committed since (repo move, self-hosted fonts, legal, eslint, docker). Awaiting next milestone scope.
 Resume file: None
 
 ## Performance Metrics
