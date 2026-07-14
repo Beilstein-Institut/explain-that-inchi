@@ -14,9 +14,12 @@ import '@fontsource/ibm-plex-serif/500.css';
 import 'ketcher-react/dist/index.css';
 import './styles.css';
 import App from './App';
+import { Root } from './components/Root';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App />
+    <Root>
+      <App />
+    </Root>
   </React.StrictMode>,
 );

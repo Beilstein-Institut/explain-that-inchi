@@ -7,6 +7,7 @@ import { KetcherPanel } from './components/KetcherPanel';
 import { InchiSection } from './components/InchiSection';
 import { InchiKeySection } from './components/InchiKeySection';
 import { Explanation } from './components/Explanation';
+import { SiteFooter } from './components/SiteFooter';
 import { parseInchiWithAux, remapAuxToPoolIds } from './lib/parseAuxMapping';
 import { useInchiStore } from './store';
 import { useKetcherHighlights } from './hooks/useKetcherHighlights';
@@ -268,13 +269,7 @@ export default function App() {
       <InchiSection />
       <InchiKeySection />
       <Explanation />
-      <footer className="site-footer">
-        <a href="https://www.beilstein-institut.de/en/impressum/" target="_blank" rel="noopener noreferrer">Imprint</a>
-        <span aria-hidden="true">·</span>
-        <a href="https://www.beilstein-institut.de/en/privacy-policy/" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
-        <span aria-hidden="true">·</span>
-        <a href="https://github.com/Beilstein-Institut/explain-that-inchi/blob/master/THIRD-PARTY-NOTICES.md" target="_blank" rel="noopener noreferrer">Licenses</a>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
