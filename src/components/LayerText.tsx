@@ -12,9 +12,10 @@ import { JMOL_COLORS } from '../lib/jmolColors';
 import styles from './InchiSection.module.css';
 
 // Inline per-element style from the Jmol color. Hydrogen renders black (Jmol
-// white is invisible on the page), so it gets no per-element style.
+// white is invisible on the page); it must be set explicitly, otherwise it
+// inherits the formula layer's blue --c-formula color.
 function elStyle(el: string): React.CSSProperties | undefined {
-  if (el === 'H') return undefined;
+  if (el === 'H') return { color: 'var(--ink)' } as React.CSSProperties;
   const hex = JMOL_COLORS[el];
   if (!hex) return undefined;
   return {

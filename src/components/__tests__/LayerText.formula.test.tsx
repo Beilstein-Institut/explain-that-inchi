@@ -15,7 +15,9 @@ describe('LayerText formula Jmol colors', () => {
 
     const hSpan = spans.find((s) => s.textContent?.startsWith('H'));
     expect(hSpan).toBeTruthy();
+    // H renders black (var(--ink)) — never the Jmol white, and never the
+    // inherited blue formula color. No per-element --el-color is set.
+    expect(hSpan!.style.color).toBe('var(--ink)');
     expect(hSpan!.style.getPropertyValue('--el-color')).toBe('');
-    expect(hSpan!.style.color).toBe('');
   });
 });
