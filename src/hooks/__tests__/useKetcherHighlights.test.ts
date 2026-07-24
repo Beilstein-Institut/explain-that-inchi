@@ -131,6 +131,9 @@ describe('outlineWhiteHalos', () => {
     const ring = svg.querySelector('[data-h-ring]');
     expect(ring).not.toBeNull();
     expect(ring!.getAttribute('stroke')).not.toBe('white');
+    // Ring must be the svg's first child so bonds/glyphs drawn after it in
+    // markup order paint on top (z-order: disc behind, H glyph in front).
+    expect(svg.firstChild).toBe(ring);
   });
 
   it('draws nothing for a non-white spec', () => {

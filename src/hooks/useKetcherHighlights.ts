@@ -91,7 +91,7 @@ export function outlineWhiteHalos(svgRoot: Element, specs: HighlightSpec[]): voi
       ring.setAttribute('stroke', '#333');    // dark outline; tune in Step 6
       ring.setAttribute('stroke-width', '1.5');
       ring.setAttribute('pointer-events', 'none');
-      svgRoot.appendChild(ring);
+      svgRoot.insertBefore(ring, svgRoot.firstChild);
     }
   }
 }

@@ -58,7 +58,7 @@ export function resolveVar(name: string): string {
 
 /**
  * Strips a CSS var() wrapper to get the custom property name.
- * elementColor('C') => 'var(--c-el-C)' => '--c-el-C'
+ * '--c-conn' stays '--c-conn'; a raw hex like '#909090' passes through unchanged.
  */
 function stripVar(cssVar: string): string {
   return cssVar.replace('var(', '').replace(')', '');
