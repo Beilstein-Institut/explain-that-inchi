@@ -1,13 +1,17 @@
 // Wave 0 RED state: all tests FAIL against stubs that return []
 // Implementation fills in Plan 02.
 import { describe, it, expect, vi } from 'vitest';
-import { buildHighlightSpecs, buildSubHoverSpecs } from '../highlightUtils';
+import { buildHighlightSpecs, buildSubHoverSpecs, resolveVar } from '../highlightUtils';
 import type { StructLike } from '../highlightUtils';
 import { parseInchi } from '../parseInchi';
 import type { Layer, AuxMap } from '../parseInchi';
 
 // Identity mock — CSS var names passed through as-is for readable assertions
 const resolveVarFn = (name: string): string => name;
+
+it('resolveVar passes a hex color through unchanged', () => {
+  expect(resolveVar('#909090')).toBe('#909090');
+});
 
 // Benzene fixture (6 C atoms, cyclic bonds)
 const auxMap: AuxMap = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5 };
@@ -237,7 +241,7 @@ describe('buildHighlightSpecs', () => {
       // With identity resolveVarFn, color should be '--c-el-C'
       const cSpec = specs.find(s => s.atoms.includes(0));
       expect(cSpec).toBeDefined();
-      expect(cSpec!.color).toBe('--c-el-C');
+      expect(cSpec!.color).toBe('#909090');
     });
 
     it('formula layer with N atom: N atoms get --c-el-N color', () => {
@@ -251,7 +255,7 @@ describe('buildHighlightSpecs', () => {
       const specs = buildHighlightSpecs(mixedLayer, null, { 1: 0, 2: 1, 3: 2 }, mixedElements, [], allLayers, struct, resolveVarFn);
       const nSpec = specs.find(s => s.atoms.includes(2));
       expect(nSpec).toBeDefined();
-      expect(nSpec!.color).toBe('--c-el-N');
+      expect(nSpec!.color).toBe('#3050f8');
     });
 
     it('formula layer: bonds array is empty (no bond highlights)', () => {
@@ -467,14 +471,14 @@ describe('buildHighlightSpecs', () => {
       const specs = buildHighlightSpecs(formulaLayer, null, auxMap, atomElements, hAtomPoolIds, allLayers, struct, resolveVarFn);
       const hSpec = specs.find(s => s.atoms.includes(7));
       expect(hSpec).toBeDefined();
-      expect(hSpec!.color).toBe('--c-el-H');
+      expect(hSpec!.color).toBe('#ffffff');
     });
 
     it('formula layer with empty hAtomPoolIds: no H spec appended', () => {
       const struct = makeMockStruct();
       const specs = buildHighlightSpecs(formulaLayer, null, auxMap, atomElements, [], allLayers, struct, resolveVarFn);
       // No H pool IDs — should not produce an H-colored spec
-      const hSpec = specs.find(s => s.color === '--c-el-H');
+      const hSpec = specs.find(s => s.color === '#ffffff');
       expect(hSpec).toBeUndefined();
     });
 
@@ -482,7 +486,7 @@ describe('buildHighlightSpecs', () => {
       const struct = makeMockStruct();
       const hAtomPoolIds = [10, 11, 12];
       const specs = buildHighlightSpecs(formulaLayer, null, auxMap, atomElements, hAtomPoolIds, allLayers, struct, resolveVarFn);
-      const hSpec = specs.find(s => s.color === '--c-el-H');
+      const hSpec = specs.find(s => s.color === '#ffffff');
       expect(hSpec).toBeDefined();
       expect(hSpec!.atoms).toContain(10);
       expect(hSpec!.atoms).toContain(11);
@@ -695,7 +699,7 @@ describe('buildSubHoverSpecs', () => {
         resolveVarFn,
       );
       expect(specs.length).toBeGreaterThan(0);
-      expect(specs[0].color).toBe('--c-el-C');
+      expect(specs[0].color).toBe('#909090');
     });
 
     it('kind atom: single atom highlighted, bonds is [] (CLYR-01 D-01: no incident bonds)', () => {
@@ -889,7 +893,7 @@ describe('buildSubHoverSpecs', () => {
       expect(specs.length).toBeGreaterThan(0);
       expect(specs[0].atoms).toContain(7);
       expect(specs[0].atoms).toContain(8);
-      expect(specs[0].color).toBe('--c-el-H');
+      expect(specs[0].color).toBe('#ffffff');
     });
 
     it('kind element H with empty hAtomPoolIds: silent no-op, returns []  (D-04)', () => {

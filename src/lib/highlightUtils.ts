@@ -37,6 +37,8 @@ export interface StructLike {
 /** Production implementation: reads CSS custom property and converts to rgb for Ketcher SVG renderer.
  * getComputedStyle returns oklch() strings which Raphaël cannot parse — use canvas to normalise. */
 export function resolveVar(name: string): string {
+  // A concrete hex is already Raphaël-safe — no CSS-var lookup needed.
+  if (name.startsWith('#')) return name;
   const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   if (!raw) return '#888';
   // Convert to rgb via a 1x1 canvas — handles oklch, hsl, named colors, etc.
