@@ -100,17 +100,6 @@
   color: oklch(from var(--el-color, currentColor) calc(l + 0.1) c h);
 }
 
-/* Formula element colors — attribute selector targets data-layer="formula" */
-[data-layer="formula"] .elC  { color: var(--c-el-C);  --el-color: var(--c-el-C);  --el-bg-color: var(--c-el-C-bg);  }
-[data-layer="formula"] .elH  { color: var(--c-el-H);  --el-color: var(--c-el-H);  --el-bg-color: var(--c-el-H-bg);  }
-[data-layer="formula"] .elN  { color: var(--c-el-N);  --el-color: var(--c-el-N);  --el-bg-color: var(--c-el-N-bg);  }
-[data-layer="formula"] .elO  { color: var(--c-el-O);  --el-color: var(--c-el-O);  --el-bg-color: var(--c-el-O-bg);  }
-[data-layer="formula"] .elS  { color: var(--c-el-S);  --el-color: var(--c-el-S);  --el-bg-color: var(--c-el-S-bg);  }
-[data-layer="formula"] .elP  { color: var(--c-el-P);  --el-color: var(--c-el-P);  --el-bg-color: var(--c-el-P-bg);  }
-[data-layer="formula"] .elF  { color: var(--c-el-F);  --el-color: var(--c-el-F);  --el-bg-color: var(--c-el-F-bg);  }
-[data-layer="formula"] .elCl { color: var(--c-el-Cl); --el-color: var(--c-el-Cl); --el-bg-color: var(--c-el-Cl-bg); }
-[data-layer="formula"] .elBr { color: var(--c-el-Br); --el-color: var(--c-el-Br); --el-bg-color: var(--c-el-Br-bg); }
-[data-layer="formula"] .elI  { color: var(--c-el-I);  --el-color: var(--c-el-I);  --el-bg-color: var(--c-el-I-bg);  }
 
 /* Stereo parity colors */
 [data-layer="t"] .parityPlus,

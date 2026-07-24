@@ -9,10 +9,12 @@ import {
   LAYER_INFO,
   DEFAULT_INFO,
   ELEMENT_NAMES,
+  elementColor,
 } from '../layerInfo';
 import { parseInchi, formulaFragmentCounts, parseStereoAtoms } from '../parseInchi';
 import { buildAtomElements } from '../parseAuxMapping';
 import type { Layer } from '../parseInchi';
+import { JMOL_COLORS } from '../jmolColors';
 
 // Repro from PLAN objective: three-component InChI (two amines + benzene).
 // formulaFragmentCounts = [13, 12, 6]; fragment canonical ranges A=1-13, C=14-25, B(benzene)=26-31.
@@ -213,5 +215,24 @@ describe('ELEMENT_NAMES — D-19 full periodic table', () => {
   it('includes both hydrogen-isotope pseudo-symbols', () => {
     expect(ELEMENT_NAMES['D']).toBeDefined();
     expect(ELEMENT_NAMES['T']).toBeDefined();
+  });
+});
+
+describe('elementColor (Jmol)', () => {
+  it('returns the Jmol hex for carbon (grey)', () => {
+    expect(elementColor('C')).toBe('#909090');
+  });
+  it('returns Jmol white for hydrogen', () => {
+    expect(elementColor('H')).toBe('#ffffff');
+  });
+  it('covers off-list elements (Fe)', () => {
+    expect(elementColor('Fe')).toBe('#e06633');
+  });
+  it('has the corrected xenon value, not iodine', () => {
+    expect(JMOL_COLORS.Xe).toBe('#429eb0');
+    expect(JMOL_COLORS.I).toBe('#940094');
+  });
+  it('falls back for non-element pseudo-symbols', () => {
+    expect(elementColor('R')).toBe('var(--c-formula)');
   });
 });

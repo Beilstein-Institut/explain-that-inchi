@@ -5,6 +5,7 @@
 
 import type { Layer, LayerType } from './parseInchi';
 import { parseMobileHydrogens, parseConnectionBonds, parseStereoAtoms, expandLayerText } from './parseInchi';
+import { JMOL_COLORS } from './jmolColors';
 
 // ---------------------------------------------------------------------------
 // LAYER_INFO — verbatim from layers-info.js lines 1-81
@@ -219,12 +220,12 @@ export const ELEMENT_NAMES: Record<string, string> = {
 };
 
 // ---------------------------------------------------------------------------
-// elementColor — verbatim from layers-info.js lines 212-215
+// elementColor — returns the Jmol CPK color for the element (see jmolColors.ts).
+// Non-element pseudo-symbols (R-groups, etc.) fall back to the formula color.
 // ---------------------------------------------------------------------------
 
 export function elementColor(el: string): string {
-  const known = ['C', 'H', 'N', 'O', 'S', 'P', 'F', 'Cl', 'Br', 'I'];
-  return known.includes(el) ? `var(--c-el-${el})` : 'var(--c-formula)';
+  return JMOL_COLORS[el] ?? 'var(--c-formula)';
 }
 
 // ---------------------------------------------------------------------------
