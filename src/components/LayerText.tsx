@@ -8,15 +8,21 @@ import React from 'react';
 import { useInchiStore } from '../store';
 import type { Layer, SubHover, CLayerToken } from '../lib/parseInchi';
 import { formulaFragmentCounts, tokenizeCLayerSeg, collectBranchPointBonds, segmentBonds } from '../lib/parseInchi';
+import { JMOL_COLORS } from '../lib/jmolColors';
 import styles from './InchiSection.module.css';
 
-// Static lookup — avoids dynamic class name construction which breaks CSS Modules.
-// Per Pitfall 1 in RESEARCH.md.
-const EL_CLASS: Record<string, string> = {
-  C: styles.elC, H: styles.elH, N: styles.elN, O: styles.elO,
-  S: styles.elS, P: styles.elP, F: styles.elF, Cl: styles.elCl,
-  Br: styles.elBr, I: styles.elI,
-};
+// Inline per-element style from the Jmol color. Hydrogen renders black (Jmol
+// white is invisible on the page), so it gets no per-element style.
+function elStyle(el: string): React.CSSProperties | undefined {
+  if (el === 'H') return undefined;
+  const hex = JMOL_COLORS[el];
+  if (!hex) return undefined;
+  return {
+    color: hex,
+    ['--el-color' as string]: hex,
+    ['--el-bg-color' as string]: `oklch(from ${hex} 0.95 0.04 h)`,
+  } as React.CSSProperties;
+}
 
 // Hover + pin handler factory — sets subHover in store on enter, clears on leave,
 // and pins/unpins on click (Phase 16).
@@ -86,7 +92,7 @@ export function LayerText({ layer, rawText, fragCounts = [], layerIdx = 0, pinne
 }
 
 // Port of app.jsx FormulaText lines 138-156.
-// Uses EL_CLASS lookup (not "el-"+el).
+// Uses elStyle() for inline Jmol color (not a CSS class lookup).
 // For single dot-segment (including pure N* like "2C6H6"): no canonRange — hovers all fragments.
 // For multiple dot-segments: computes inclusive canonRange per segment so hover is scoped to
 // that fragment or group (e.g. "C7" in "C7H8.2C6H6" scopes to canonicals 1-7 only;
@@ -110,7 +116,8 @@ function FormulaText({ text, layerIdx, pinnedSub }: { text: string; layerIdx: nu
       const el = m[1];
       const hit: SubHover = { kind: 'element', el };
       out.push(
-        <span key={key++} className={[EL_CLASS[el] ?? '', styles.inchiSubtoken, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')}
+        <span key={key++} className={[styles.inchiSubtoken, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')}
+          style={elStyle(el)}
           {...subHoverProps(hit, layerIdx)}>
           {el}{m[2]}
         </span>
@@ -148,7 +155,8 @@ function FormulaText({ text, layerIdx, pinnedSub }: { text: string; layerIdx: nu
       const el = m[1];
       const hit: SubHover = { kind: 'element', el, canonRange };
       out.push(
-        <span key={key++} className={[EL_CLASS[el] ?? '', styles.inchiSubtoken, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')}
+        <span key={key++} className={[styles.inchiSubtoken, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')}
+          style={elStyle(el)}
           {...subHoverProps(hit, layerIdx)}>
           {el}{m[2]}
         </span>
