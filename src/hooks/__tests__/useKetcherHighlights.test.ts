@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { applyKetcherHighlights, whiteAtomLabels, renderHBadges, cleanHBadges, renderFormulaHBadges } from '../useKetcherHighlights';
+import { applyKetcherHighlights, whiteAtomLabels, renderHBadges, cleanHBadges, renderFormulaHBadges, outlineWhiteHalos } from '../useKetcherHighlights';
 import type { HighlightSpec, StructLike } from '../../lib/highlightUtils';
 import type { SubHover, AuxMap, Layer } from '../../lib/parseInchi';
 
@@ -103,6 +103,47 @@ describe('whiteAtomLabels', () => {
     whiteAtomLabels(svg, specs);
     expect((nEl as unknown as HTMLElement).style.fill).toBe('white');
     expect((clEl as unknown as HTMLElement).style.fill).toBe('white');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// outlineWhiteHalos: dark ring around white (hydrogen) highlights on canvas
+// ---------------------------------------------------------------------------
+
+function makeSvgWithAtom(atomId: number) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  const g = document.createElementNS(ns, 'g');
+  const el = document.createElementNS(ns, 'text');
+  el.setAttribute('data-atom-id', String(atomId));
+  // JSDOM lacks getBBox — stub it on the group.
+  (g as unknown as { getBBox(): DOMRect }).getBBox = () =>
+    ({ x: 10, y: 20, width: 8, height: 8 } as DOMRect);
+  g.appendChild(el);
+  svg.appendChild(g);
+  return svg;
+}
+
+describe('outlineWhiteHalos', () => {
+  it('draws a ringed circle for a white-colored spec', () => {
+    const svg = makeSvgWithAtom(3);
+    outlineWhiteHalos(svg, [{ atoms: [3], bonds: [], rgroupAttachmentPoints: [], color: '#ffffff' }]);
+    const ring = svg.querySelector('[data-h-ring]');
+    expect(ring).not.toBeNull();
+    expect(ring!.getAttribute('stroke')).not.toBe('white');
+  });
+
+  it('draws nothing for a non-white spec', () => {
+    const svg = makeSvgWithAtom(3);
+    outlineWhiteHalos(svg, [{ atoms: [3], bonds: [], rgroupAttachmentPoints: [], color: '#909090' }]);
+    expect(svg.querySelector('[data-h-ring]')).toBeNull();
+  });
+
+  it('cleanHBadges removes injected rings', () => {
+    const svg = makeSvgWithAtom(3);
+    outlineWhiteHalos(svg, [{ atoms: [3], bonds: [], rgroupAttachmentPoints: [], color: '#ffffff' }]);
+    cleanHBadges(svg);
+    expect(svg.querySelector('[data-h-ring]')).toBeNull();
   });
 });
 
