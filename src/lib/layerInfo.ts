@@ -39,14 +39,14 @@ export const LAYER_INFO: Record<LayerType, LayerInfoEntry> = {
     title: 'Connection layer',
     accent: 'var(--c-conn)',
     blurb:
-      'How the heavy atoms are wired together, using canonical atom numbers. Hyphens chain bonds; parentheses open and close branches. The skeleton, without any hydrogens.',
+      'How the heavy atoms are connected, using canonical atom numbers. Hyphens represent bonds; parentheses open and close branches. The heavy atom core, without explicit hydrogens.',
     egLabel: 'Reads as',
   },
   h: {
     title: 'Hydrogen layer',
     accent: 'var(--c-hydro)',
     blurb:
-      "Where the hydrogens live. '1H3' means atom 1 carries three H. Ranges like '1-6H' apply to each atom in the range. Parenthesised groups like '(H,3,4)' are mobile (tautomeric) protons shared between atoms. Implicit hydrogens are shown as badges on the canvas when you hover this layer.",
+      "Where the non-explicit hydrogen atoms are represented. '1H3' means atom 1 carries three H. Ranges like '1-6H' indicates that atoms 1-6 each carry one H. Parenthesised groups like '(H,3,4)' are mobile (tautomeric) protons shared between atoms. Implicit hydrogens are shown as badges on the canvas when you hover this layer.",
     egLabel: 'Reads as',
   },
   q: {
