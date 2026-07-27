@@ -64,6 +64,23 @@ function stripVar(cssVar: string): string {
   return cssVar.replace('var(', '').replace(')', '');
 }
 
+/** True for the pure-white Jmol colors (hydrogen and the superheavies). */
+export function isWhite(color: string): boolean {
+  const c = color.replace(/\s/g, '').toLowerCase();
+  return c === '#ffffff' || c === '#fff' || c === 'rgb(255,255,255)' || c === 'white';
+}
+
+/**
+ * Canvas highlight color for an element. Jmol paints hydrogen white, which is
+ * invisible as a halo on the white canvas, so hydrogen (and any other pure-white
+ * element) borrows --c-hydro-1 — the same brown hydrogens already carry in the
+ * /h-layer highlights, badges and strip. Every other element keeps its Jmol color.
+ */
+function elementHighlightColor(el: string): string {
+  const jmol = elementColor(el);
+  return isWhite(jmol) ? 'var(--c-hydro-1)' : jmol;
+}
+
 export function buildHighlightSpecs(
   layer: Layer,
   subHover: SubHover | null,
@@ -93,13 +110,13 @@ export function buildHighlightSpecs(
         if (!el) continue;
         const kId = auxMap[canon];
         if (kId === undefined) continue;
-        const color = resolveVarFn(stripVar(elementColor(el)));
+        const color = resolveVarFn(stripVar(elementHighlightColor(el)));
         if (!colorToAtoms.has(color)) colorToAtoms.set(color, []);
         colorToAtoms.get(color)!.push(kId);
       }
       // Append explicit H atom pool IDs with H element color (D-05)
       if (hAtomPoolIds.length > 0) {
-        const hColor = resolveVarFn(stripVar(elementColor('H')));
+        const hColor = resolveVarFn(stripVar(elementHighlightColor('H')));
         const existing = colorToAtoms.get(hColor) ?? [];
         colorToAtoms.set(hColor, [...existing, ...hAtomPoolIds]);
       }
@@ -387,7 +404,7 @@ export function buildSubHoverSpecs(
       // Explicit H atoms: direct pool ID list, no canonical lookup (D-04, D-06)
       if (el === 'H') {
         if (hAtomPoolIds.length === 0) return []; // silent no-op per D-04
-        const color = resolveVarFn(stripVar(elementColor('H')));
+        const color = resolveVarFn(stripVar(elementHighlightColor('H')));
         // No canonRange → single-fragment behavior unchanged: all explicit H atoms.
         if (subHover.canonRange === undefined) {
           return [{ atoms: hAtomPoolIds, bonds: [], rgroupAttachmentPoints: [], color }];
@@ -427,7 +444,7 @@ export function buildSubHoverSpecs(
         .map(canon => auxMap[canon])
         .filter((id): id is number => id !== undefined);
       if (kAtoms.length === 0) return [];
-      const color = resolveVarFn(stripVar(elementColor(el)));
+      const color = resolveVarFn(stripVar(elementHighlightColor(el)));
       return [{ atoms: kAtoms, bonds: [], rgroupAttachmentPoints: [], color }];
     }
 

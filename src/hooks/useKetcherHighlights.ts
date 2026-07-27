@@ -13,6 +13,7 @@ import {
   expandLayerText,
   parseHydrogenAtoms,
   parseMobileHydrogens,
+  isWhite,
 } from '../lib/highlightUtils';
 import type { HighlightSpec, StructLike } from '../lib/highlightUtils';
 import type { SubHover, AuxMap, Layer } from '../lib/parseInchi';
@@ -45,11 +46,6 @@ export function applyKetcherHighlights(
  * The inline style.fill overrides Raphaël's fill attribute and is wiped automatically
  * on the next redraw (highlights.clear() → redraw → fresh elements).
  */
-function isWhite(color: string): boolean {
-  const c = color.replace(/\s/g, '').toLowerCase();
-  return c === '#ffffff' || c === '#fff' || c === 'rgb(255,255,255)' || c === 'white';
-}
-
 export function whiteAtomLabels(svgRoot: Element, specs: HighlightSpec[]): void {
   for (const spec of specs) {
     if (isWhite(spec.color)) continue; // white halos keep their dark labels
@@ -60,38 +56,6 @@ export function whiteAtomLabels(svgRoot: Element, specs: HighlightSpec[]): void 
       if (label !== 'C') {
         (el as SVGElement).style.fill = 'white';
       }
-    }
-  }
-}
-
-/**
- * Jmol hydrogen (and any pure-white element) highlights render a white halo that
- * is invisible on the white Ketcher canvas. Draw a dark-outlined white disc on
- * each such atom so the highlight reads. Canvas-only; mirrors renderHBadges'
- * SVG-injection + cleanHBadges removal pattern.
- */
-export function outlineWhiteHalos(svgRoot: Element, specs: HighlightSpec[]): void {
-  const ns = 'http://www.w3.org/2000/svg';
-  for (const spec of specs) {
-    if (!isWhite(spec.color)) continue;
-    for (const atomId of spec.atoms) {
-      const el = svgRoot.querySelector(`[data-atom-id="${atomId}"]`);
-      if (!el) continue;
-      const group = el.closest('g') ?? el;
-      const bbox = (group as SVGGraphicsElement).getBBox?.();
-      if (!bbox) continue;
-      const cx = bbox.x + bbox.width / 2;
-      const cy = bbox.y + bbox.height / 2;
-      const ring = document.createElementNS(ns, 'circle');
-      ring.setAttribute('data-h-ring', 'true');
-      ring.setAttribute('cx', String(cx));
-      ring.setAttribute('cy', String(cy));
-      ring.setAttribute('r', '9');            // tune in Step 6
-      ring.setAttribute('fill', 'white');
-      ring.setAttribute('stroke', '#333');    // dark outline; tune in Step 6
-      ring.setAttribute('stroke-width', '1.5');
-      ring.setAttribute('pointer-events', 'none');
-      svgRoot.insertBefore(ring, svgRoot.firstChild);
     }
   }
 }
@@ -238,7 +202,7 @@ export function renderHBadges(
  * Must be called on all highlight-clear paths to prevent badge persistence (D-03, D-06).
  */
 export function cleanHBadges(svgRoot: Element): void {
-  svgRoot.querySelectorAll('[data-h-badge], [data-h-ring]').forEach(el => el.remove());
+  svgRoot.querySelectorAll('[data-h-badge]').forEach(el => el.remove());
 }
 
 /**
@@ -389,7 +353,6 @@ export function useKetcherHighlights(
       // whiteAtomLabels only meaningful when there are highlighted atoms.
       if (specs.length > 0) {
         whiteAtomLabels(svgRoot, specs);
-        outlineWhiteHalos(svgRoot, specs);
       }
       // QUICK-260610-ist: badges run regardless of specs.length so purely-implicit
       // /h tokens (zero explicit H drawn) still render count badges.

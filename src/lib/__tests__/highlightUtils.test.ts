@@ -464,21 +464,22 @@ describe('buildHighlightSpecs', () => {
   });
 
   describe('INCHI-05: formula layer with explicit H atoms (hAtomPoolIds)', () => {
-    it('formula layer with hAtomPoolIds: H pool IDs are appended with --c-el-H color', () => {
+    it('formula layer with hAtomPoolIds: H pool IDs are appended with the hydrogen brown', () => {
       const struct = makeMockStruct();
       // Simulate ethanol-like molecule: 2 C atoms (canonical 1,2 → ketcher 0,1) + 1 explicit H (pool id 7)
       const hAtomPoolIds = [7];
       const specs = buildHighlightSpecs(formulaLayer, null, auxMap, atomElements, hAtomPoolIds, allLayers, struct, resolveVarFn);
       const hSpec = specs.find(s => s.atoms.includes(7));
       expect(hSpec).toBeDefined();
-      expect(hSpec!.color).toBe('#ffffff');
+      // Jmol white is invisible on the white canvas — hydrogen borrows --c-hydro-1.
+      expect(hSpec!.color).toBe('--c-hydro-1');
     });
 
     it('formula layer with empty hAtomPoolIds: no H spec appended', () => {
       const struct = makeMockStruct();
       const specs = buildHighlightSpecs(formulaLayer, null, auxMap, atomElements, [], allLayers, struct, resolveVarFn);
       // No H pool IDs — should not produce an H-colored spec
-      const hSpec = specs.find(s => s.color === '#ffffff');
+      const hSpec = specs.find(s => s.color === '--c-hydro-1');
       expect(hSpec).toBeUndefined();
     });
 
@@ -486,7 +487,7 @@ describe('buildHighlightSpecs', () => {
       const struct = makeMockStruct();
       const hAtomPoolIds = [10, 11, 12];
       const specs = buildHighlightSpecs(formulaLayer, null, auxMap, atomElements, hAtomPoolIds, allLayers, struct, resolveVarFn);
-      const hSpec = specs.find(s => s.color === '#ffffff');
+      const hSpec = specs.find(s => s.color === '--c-hydro-1');
       expect(hSpec).toBeDefined();
       expect(hSpec!.atoms).toContain(10);
       expect(hSpec!.atoms).toContain(11);
@@ -893,7 +894,7 @@ describe('buildSubHoverSpecs', () => {
       expect(specs.length).toBeGreaterThan(0);
       expect(specs[0].atoms).toContain(7);
       expect(specs[0].atoms).toContain(8);
-      expect(specs[0].color).toBe('#ffffff');
+      expect(specs[0].color).toBe('--c-hydro-1');
     });
 
     it('kind element H with empty hAtomPoolIds: silent no-op, returns []  (D-04)', () => {
