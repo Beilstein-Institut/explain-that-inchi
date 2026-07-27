@@ -127,8 +127,10 @@ export function subTokenInfo(
       }
       const tail =
         mult > 1
-          ? ` in the heavy-atom skeleton,${multiplicityClause(sub)}`
-          : `${componentMarker(sub)} in the heavy-atom skeleton`;
+          // Not "heavy-atom skeleton": the hovered atom is itself a hydrogen when a
+          // bridging H carries a canonical number (boranes).
+          ? ` in the connection skeleton,${multiplicityClause(sub)}`
+          : `${componentMarker(sub)} in the connection skeleton`;
       const body =
         `Atom ${selfLocal} is bonded to ${atomList(neighbours, off)}${tail}. ` +
         `The connection layer lists which canonical atom numbers are joined ` +

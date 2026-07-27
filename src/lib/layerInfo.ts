@@ -39,14 +39,14 @@ export const LAYER_INFO: Record<LayerType, LayerInfoEntry> = {
     title: 'Connection layer',
     accent: 'var(--c-conn)',
     blurb:
-      'How the heavy atoms are connected, using canonical atom numbers. Hyphens represent bonds; parentheses open and close branches. The heavy atom core, without explicit hydrogens.',
+      'How the heavy atoms are connected, using canonical atom numbers. Hyphens represent bonds; parentheses open and close branches. Hydrogens are normally left out here and counted in the h-layer instead — the exception is a hydrogen bonded to two atoms at once, such as the bridging H of a borane: it cannot be written as a per-atom count, so it gets its own canonical number and appears in this layer.',
     egLabel: 'Reads as',
   },
   h: {
     title: 'Hydrogen layer',
     accent: 'var(--c-hydro)',
     blurb:
-      "Where the non-explicit hydrogen atoms are represented. '1H3' means atom 1 carries three H. Ranges like '1-6H' indicates that atoms 1-6 each carry one H. Parenthesised groups like '(H,3,4)' are mobile (tautomeric) protons shared between atoms. Implicit hydrogens are shown as badges on the canvas when you hover this layer.",
+      "Where the hydrogens left out of the connection layer are recorded — as a count stored per atom, not something you deduce from valence rules. '1H3' means atom 1 carries three H. Ranges like '1-6H' indicate that atoms 1-6 each carry one H. Parenthesised groups like '(H,3,4)' are mobile (tautomeric) protons shared between atoms. Hydrogens you have not drawn are shown as badges on the canvas when you hover this layer.",
     egLabel: 'Reads as',
   },
   q: {
