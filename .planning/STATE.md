@@ -5,9 +5,9 @@ milestone_name: Connection-layer cards
 current_phase: null
 status: milestone_shipped
 stopped_at: Shipped v1.5 + v1.6 (Phases 17–19 tagged)
-last_updated: "2026-06-30T10:30:00.000Z"
-last_activity: 2026-06-30
-last_activity_desc: "Quick task 260630-mpc: Docker support for zero-config deploy"
+last_updated: "2026-07-27T00:00:00.000Z"
+last_activity: 2026-07-24
+last_activity_desc: "Jmol CPK element colors merged (non-GSD commits f413a96)"
 progress:
   total_phases: 0
   completed_phases: 0
@@ -106,8 +106,8 @@ Last activity: 2026-06-30 — Phase 19 complete
 
 ## Session Continuity
 
-Last session: 2026-07-13
-Stopped at: Session resumed — no active milestone; v1.6 shipped, public-launch prep committed since (repo move, self-hosted fonts, legal, eslint, docker). Awaiting next milestone scope.
+Last session: 2026-07-27
+Stopped at: Session resumed — no active milestone. Work landed outside GSD since 2026-07-13: Jmol CPK element colors (map + hex passthrough + white-atom ring + dead --c-el-* cleanup), in-app Imprint/Privacy/Terms pages, refined connection/hydrogen layer explanations (PR #3). HEAD f413a96, both remotes synced, tree clean. Stale HANDOFF.json + .continue-here.md consumed and deleted. Awaiting next milestone scope.
 Resume file: None
 
 ## Performance Metrics
