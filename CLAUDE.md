@@ -26,9 +26,9 @@ A single-page public web tool for chemists and chemistry students to understand 
 | Build tool | Vite | ^8.0 (latest) | HIGH |
 | UI framework | React | ^18.2 | HIGH |
 | Language | TypeScript | ^5.x | HIGH |
-| Molecule editor | ketcher-react | 3.12.0 | HIGH |
-| Standalone WASM provider | ketcher-standalone | 3.12.0 (keep in sync) | HIGH |
-| Type definitions | ketcher-core | 3.12.0 (keep in sync) | HIGH |
+| Molecule editor | ketcher-react | 3.17.1 | HIGH |
+| Standalone WASM provider | ketcher-standalone | 3.17.1 (keep in sync) | HIGH |
+| Type definitions | ketcher-core | 3.17.1 (keep in sync) | HIGH |
 | State management | Zustand | ^5.0.13 | HIGH |
 | Styling | CSS Modules + CSS custom properties | (built into Vite) | HIGH |
 | Deployment | Netlify (primary) / GitHub Pages (fallback) | — | MEDIUM |
@@ -41,7 +41,7 @@ A single-page public web tool for chemists and chemistry students to understand 
 ## Rationale
 ### Vite 8 + react-ts template
 ### React 18, not React 19
-### ketcher-react + ketcher-standalone + ketcher-core — all at 3.12.0
+### ketcher-react + ketcher-standalone + ketcher-core — all at 3.17.1
 - `ketcher-react` — exports the `Editor` React component and `ButtonsConfig` type
 - `ketcher-standalone` — exports `StandaloneStructServiceProvider` (WASM-backed, no server needed)
 - `ketcher-core` — exports `Ketcher` type (used for typing the `onInit` callback result)
@@ -68,13 +68,13 @@ A single-page public web tool for chemists and chemistry students to understand 
 | Rejected Choice | Why |
 |----------------|-----|
 | `@vitejs/plugin-react-swc` | Confirmed SWC panic crash when processing ketcher packages (issue #5565). Use standard `@vitejs/plugin-react` (esbuild) |
-| React 19 | ketcher-react peerDeps are `^18.2.0`; React 19 upgrade PR (#6657) not merged in 3.12.0 stable |
+| React 19 | Not required. 3.17.1 peerDeps allow `^18.2.0 \|\| ^19.0.0`, so React 18 stays supported and the upgrade buys nothing here |
 | Tailwind CSS | Would require duplicating all oklch token definitions from the canonical `styles.css`; CSS Modules work with CSS variables natively without duplication |
 | Redux Toolkit | Massive overkill for a store with 6-7 fields; no async side effects requiring middleware |
 | Styled-components / Emotion | Runtime CSS-in-JS is unnecessary here; the token system is CSS variables which CSS Modules handle natively |
 | `indigo-ketcher` direct import | This is a transitive dependency of `ketcher-standalone`; do not import it directly — only the ketcher packages' public API (`StandaloneStructServiceProvider`) should be used |
 | Server-side rendering (Next.js) | The project constraint is a static build; Next.js adds SSR complexity and breaks Ketcher's browser-only WASM initialization |
-| RC releases of ketcher (3.15.x, 3.16.x) | Not stable releases; changelog shows they target macromolecule/polymer features irrelevant to this tool |
+| RC releases of ketcher (3.18.x-rc) | Not stable releases. NOTE: 3.13-3.17 went stable 2026-07-13/16; the app moved 3.12.0 -> 3.17.1 on 2026-07-27 to clear 7 high advisories (draft-js and replace are gone from the dep tree) |
 ## Open Questions
 ## Sources
 - ketcher-react npm (version data): https://security.snyk.io/package/npm/ketcher-react/versions
