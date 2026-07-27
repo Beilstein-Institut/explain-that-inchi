@@ -2,7 +2,12 @@
 // Parses the N: field from Ketcher's getInchi(true) AuxInfo block.
 // Based on CONTEXT.md D-10/D-11 and RESEARCH.md Pattern 3.
 
-import { parseInchi, formulaFragmentCounts } from './parseInchi';
+import {
+  parseInchi,
+  formulaFragmentCounts,
+  expandFormulaFragments,
+  skeletonHydrogenCounts,
+} from './parseInchi';
 import type { Layer, AuxMap } from './parseInchi';
 
 /**
@@ -13,40 +18,19 @@ import type { Layer, AuxMap } from './parseInchi';
 export function buildAtomElements(layers: Layer[]): Record<number, string> {
   const formulaLayer = layers.find(l => l.type === 'formula');
   if (!formulaLayer) return {};
+  const hLayer = layers.find(l => l.type === 'h');
+  const skeletonH = skeletonHydrogenCounts(formulaLayer.text, hLayer?.text ?? '');
+
   const out: Record<number, string> = {};
-  const atoms = formulaLayer.atoms; // [1, 2, ... totalAtoms] after enrichLayers fix
-
-  // Expand multi-fragment formulas before parsing element runs:
-  //   "2C6H6"      → "C6H6C6H6"       (top-level multiplier)
-  //   "C7H8.C6H6"  → "C7H8C6H6"       (dot-separated)
-  //   "C7H8.2C6H6" → "C7H8C6H6C6H6"  (mixed: dot + multiplied sub-group)
-  const expandedFormula = (() => {
-    const t = formulaLayer.text;
-    const multMatch = t.match(/^(\d+)([A-Z].*)/);
-    if (multMatch && !t.includes('.')) {
-      const n = parseInt(multMatch[1], 10);
-      return multMatch[2].repeat(n);
+  let canon = 1;
+  expandFormulaFragments(formulaLayer.text).forEach((frag, fi) => {
+    for (const m of frag.matchAll(/([A-Z][a-z]?)(\d*)/g)) {
+      if (!m[1] || m[1] === 'H') continue;
+      const count = m[2] ? parseInt(m[2], 10) : 1;
+      for (let i = 0; i < count; i++) out[canon++] = m[1];
     }
-    if (t.includes('.')) {
-      return t.split('.').map(seg => {
-        const sm = seg.match(/^(\d+)([A-Z].*)/);
-        if (sm) return sm[2].repeat(parseInt(sm[1], 10));
-        return seg;
-      }).join('');
-    }
-    return t;
-  })();
-
-  const elements: string[] = [];
-  const re = /([A-Z][a-z]?)(\d*)/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(expandedFormula))) {
-    if (!m[1] || m[1] === 'H') continue;
-    const count = m[2] ? parseInt(m[2], 10) : 1;
-    for (let i = 0; i < count; i++) elements.push(m[1]);
-  }
-  atoms.forEach((canon, i) => {
-    if (elements[i]) out[canon] = elements[i];
+    // Bridging H are numbered after every heavy atom of their fragment.
+    for (let i = 0; i < (skeletonH[fi] ?? 0); i++) out[canon++] = 'H';
   });
   return out;
 }

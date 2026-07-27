@@ -322,7 +322,8 @@ export function parseStereoAtoms(text: string): number[] {
 
 /**
  * Counts total heavy atoms in a single-component formula like 'C6H6' or 'C2H6O'.
- * Hydrogen atoms are excluded because canonical numbering covers heavy atoms only.
+ * Hydrogen is excluded here; the hydrogens InChI *does* number as skeleton atoms
+ * (bridging H — see skeletonHydrogenCounts) are counted separately.
  */
 export function countFormulaAtoms(formulaText: string): number {
   let total = 0;
@@ -330,6 +331,60 @@ export function countFormulaAtoms(formulaText: string): number {
     if (m[1] !== 'H') total += m[2] ? parseInt(m[2], 10) : 1;
   }
   return total;
+}
+
+/**
+ * Splits a formula layer text into one string per fragment, expanding multipliers.
+ *   "C7H8.2C6H6"    → ["C7H8", "C6H6", "C6H6"]
+ *   "4CH3.2CH2.2Al" → ["CH3", "CH3", "CH3", "CH3", "CH2", "CH2", "Al", "Al"]
+ * The formula analogue of expandLayerText — index i lines up with fragment i of
+ * every other layer.
+ */
+export function expandFormulaFragments(formulaText: string): string[] {
+  return formulaText.split('.').flatMap(seg => {
+    const mult = seg.match(/^(\d+)([A-Z][\s\S]*)$/);
+    return mult ? (Array(parseInt(mult[1], 10)).fill(mult[2]) as string[]) : [seg];
+  });
+}
+
+/** Hydrogens written in a single-component formula. 'Hg'/'He' are not hydrogen. */
+function countFormulaHydrogens(formulaText: string): number {
+  let total = 0;
+  for (const m of formulaText.matchAll(/([A-Z][a-z]?)(\d*)/g)) {
+    if (m[1] === 'H') total += m[2] ? parseInt(m[2], 10) : 1;
+  }
+  return total;
+}
+
+/**
+ * Hydrogens accounted for by one fragment's h-layer segment: fixed counts
+ * ('1-2H2' → 4) plus mobile-group counts ('(H,3,4)' → 1, '(H2,3,4)' → 2).
+ * parseMobileHydrogens deliberately drops the count, so mobile groups are
+ * re-scanned here — without them, acetate would report a phantom skeleton H.
+ */
+function countLayerHydrogens(hText: string): number {
+  let total = 0;
+  for (const n of Object.values(parseHydrogenAtoms(hText))) total += n;
+  for (const m of hText.matchAll(/\(H(\d*)/g)) total += m[1] ? parseInt(m[1], 10) : 1;
+  return total;
+}
+
+/**
+ * Per-fragment count of hydrogens InChI numbers as skeleton atoms rather than as
+ * h-layer counts. A hydrogen bonded to two heavy atoms (the bridging H of boranes,
+ * B2Cl2H4 → 'InChI=1S/B2Cl2H4/c3-1-5-2(4)6-1/h1-2H') cannot be expressed as a
+ * per-atom H count, so InChI gives it its own canonical number — placed AFTER every
+ * heavy atom of the fragment, even when the Hill formula writes H second
+ * ('CH8B2' → C₁ B₂ B₃ H₄ H₅).
+ *
+ * Derived as formula H minus h-layer H: whatever the h-layer cannot account for is
+ * in the connection table. Lone H2 ('H2' / 'h1H') is one skeleton H bearing one H.
+ */
+export function skeletonHydrogenCounts(formulaText: string, hText: string): number[] {
+  const hFragments = hText ? expandLayerText(hText) : [];
+  return expandFormulaFragments(formulaText).map((frag, i) =>
+    Math.max(0, countFormulaHydrogens(frag) - countLayerHydrogens(hFragments[i] ?? '')),
+  );
 }
 
 /**
@@ -342,24 +397,10 @@ export function countFormulaAtoms(formulaText: string): number {
  *   "C6H6"         — single component                   → [6]
  */
 export function formulaFragmentCounts(formulaText: string): number[] {
-  if (formulaText.includes('.')) {
-    return formulaText.split('.').flatMap(seg => {
-      const multMatch = seg.match(/^(\d+)([A-Z])/);
-      if (multMatch) {
-        const n = parseInt(multMatch[1], 10);
-        const base = countFormulaAtoms(seg.slice(multMatch[1].length));
-        return Array(n).fill(base) as number[];
-      }
-      return [countFormulaAtoms(seg)];
-    });
-  }
-  const multMatch = formulaText.match(/^(\d+)([A-Z])/);
-  if (multMatch) {
-    const n = parseInt(multMatch[1], 10);
-    const base = countFormulaAtoms(formulaText.slice(multMatch[1].length));
-    return Array(n).fill(base) as number[];
-  }
-  return [countFormulaAtoms(formulaText)];
+  // ponytail: heavy atoms only — bridging H are not included, so a multi-fragment
+  // structure whose *non-final* fragment has bridging H gets short canonical offsets
+  // (see skeletonHydrogenCounts). Thread the h-layer text in here if that ever shows up.
+  return expandFormulaFragments(formulaText).map(countFormulaAtoms);
 }
 
 /**
@@ -399,7 +440,14 @@ function enrichLayers(layers: Layer[]): Layer[] {
 
   // Per-fragment heavy-atom counts — handles both "C7H8.C6H6" and "2C6H6" notation.
   const fragCounts = formulaLayer ? formulaFragmentCounts(formulaLayer.text) : [];
-  const totalAtoms = fragCounts.reduce((s, n) => s + n, 0);
+  // Bridging H carry canonical numbers too, so the formula layer's atom set must
+  // cover them or hovering the formula misses those atoms on the canvas.
+  const hLayer = layers.find(l => l.type === 'h');
+  const skeletonH = formulaLayer
+    ? skeletonHydrogenCounts(formulaLayer.text, hLayer?.text ?? '')
+    : [];
+  const totalAtoms =
+    fragCounts.reduce((s, n) => s + n, 0) + skeletonH.reduce((s, n) => s + n, 0);
 
   return layers.map(layer => {
     switch (layer.type) {
