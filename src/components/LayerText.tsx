@@ -51,7 +51,12 @@ function isSubPinned(hit: SubHover, pinnedSub: SubHover | null): boolean {
   if (hit.kind !== pinnedSub.kind) return false;
   // Compare by kind-specific identity fields
   if (hit.kind === 'atom' && pinnedSub.kind === 'atom') return hit.canonical === pinnedSub.canonical;
-  if (hit.kind === 'element' && pinnedSub.kind === 'element') return hit.el === pinnedSub.el;
+  // canonRange is part of an element token's identity: in "C3H8.B2Cl2H4" the two H
+  // tokens differ only by which component they count, so comparing el alone pins both.
+  if (hit.kind === 'element' && pinnedSub.kind === 'element') {
+    return hit.el === pinnedSub.el
+      && JSON.stringify(hit.canonRange) === JSON.stringify(pinnedSub.canonRange);
+  }
   if (hit.kind === 'bond' && pinnedSub.kind === 'bond') {
     return JSON.stringify(hit.endpointPairs) === JSON.stringify(pinnedSub.endpointPairs);
   }
