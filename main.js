@@ -20,8 +20,8 @@ import _classCallCheck from '@babel/runtime/helpers/classCallCheck';
 import _createClass from '@babel/runtime/helpers/createClass';
 import _defineProperty from '@babel/runtime/helpers/defineProperty';
 import _regeneratorRuntime from '@babel/runtime/regenerator';
-import { C as Command, W as WorkerEvent, S as SupportedFormat } from './indigoWorker.types-44870eb7.js';
-import { pickStandardServerOptions, CoreEditor, getLabelRenderModeForIndigo, ChemicalMimeType } from 'ketcher-core';
+import { C as Command, W as WorkerEvent, S as SupportedFormat } from './indigoWorker.types-dd55aa65.js';
+import { pickStandardServerOptions, provideEditorInstance, getLabelRenderModeForIndigo, ChemicalMimeType } from 'ketcher-core';
 
 var domain;
 
@@ -492,7 +492,7 @@ function unwrapListeners(arr) {
 var STRUCT_SERVICE_NO_RENDER_INITIALIZED_EVENT = 'struct-service-no-render-initialized';
 var STRUCT_SERVICE_INITIALIZED_EVENT = 'struct-service-initialized';
 
-var indigoWorker = new Worker(new URL("indigoWorker-5d0a61ab.js", import.meta.url), {
+var indigoWorker = new Worker(new URL("indigoWorker-2c9587b1.js", import.meta.url), {
   type: 'module'
 });
 
@@ -594,6 +594,11 @@ function convertMimeTypeToOutputFormat(mimeType) {
         format = SupportedFormat.HELM;
         break;
       }
+    case ChemicalMimeType.BILN:
+      {
+        format = SupportedFormat.BILN;
+        break;
+      }
     case ChemicalMimeType.RDF:
       format = SupportedFormat.RDF;
       break;
@@ -621,6 +626,20 @@ function mapWarningGroup(property) {
   return property.toLowerCase();
 }
 var messageTypeToEventMapping = (_messageTypeToEventMa = {}, _defineProperty(_defineProperty(_defineProperty(_defineProperty(_defineProperty(_defineProperty(_defineProperty(_defineProperty(_defineProperty(_defineProperty(_messageTypeToEventMa, Command.Info, WorkerEvent.Info), Command.Convert, WorkerEvent.Convert), Command.Layout, WorkerEvent.Layout), Command.Clean, WorkerEvent.Clean), Command.Aromatize, WorkerEvent.Aromatize), Command.Dearomatize, WorkerEvent.Dearomatize), Command.CalculateCip, WorkerEvent.CalculateCip), Command.Automap, WorkerEvent.Automap), Command.Check, WorkerEvent.Check), Command.Calculate, WorkerEvent.Calculate), _defineProperty(_defineProperty(_defineProperty(_defineProperty(_messageTypeToEventMa, Command.GenerateImageAsBase64, WorkerEvent.GenerateImageAsBase64), Command.GetInChIKey, WorkerEvent.GetInChIKey), Command.ExplicitHydrogens, WorkerEvent.ExplicitHydrogens), Command.CalculateMacromoleculeProperties, WorkerEvent.CalculateMacromoleculeProperties));
+function makeMolResultAction(resolve, reject) {
+  return function (_ref) {
+    var data = _ref.data;
+    var msg = data;
+    if (!msg.hasError) {
+      resolve({
+        struct: msg.payload,
+        format: ChemicalMimeType.Mol
+      });
+    } else {
+      reject(new Error(msg.error));
+    }
+  };
+}
 var IndigoService = function () {
   function IndigoService(defaultOptions) {
     var _this = this;
@@ -672,19 +691,20 @@ var IndigoService = function () {
   }, {
     key: "getInChIKey",
     value: function () {
-      var _getInChIKey = _asyncToGenerator( _regeneratorRuntime.mark(function _callee(struct) {
+      var _getInChIKey = _asyncToGenerator(_regeneratorRuntime.mark(function _callee(struct) {
         var _this2 = this;
         return _regeneratorRuntime.wrap(function _callee$(_context) {
           while (1) switch (_context.prev = _context.next) {
             case 0:
               return _context.abrupt("return", new Promise(function (resolve, reject) {
-                var action = function action(_ref) {
-                  var data = _ref.data;
+                var action = function action(_ref2) {
+                  var data = _ref2.data;
                   var msg = data;
                   if (!msg.hasError) {
-                    resolve(msg.payload || '');
+                    var _msg$payload;
+                    resolve((_msg$payload = msg.payload) !== null && _msg$payload !== void 0 ? _msg$payload : '');
                   } else {
-                    reject(msg.error);
+                    reject(new Error(msg.error));
                   }
                 };
                 var inputMessage = {
@@ -693,8 +713,7 @@ var IndigoService = function () {
                     struct: struct
                   }
                 };
-                _this2.EE.removeListener(WorkerEvent.GetInChIKey, action);
-                _this2.EE.addListener(WorkerEvent.GetInChIKey, action);
+                _this2.EE.once(WorkerEvent.GetInChIKey, action);
                 _this2.worker.postMessage(inputMessage);
               }));
             case 1:
@@ -713,8 +732,8 @@ var IndigoService = function () {
     value: function info() {
       var _this3 = this;
       return new Promise(function (resolve, reject) {
-        var action = function action(_ref2) {
-          var data = _ref2.data;
+        var action = function action(_ref3) {
+          var data = _ref3.data;
           var msg = data;
           if (!msg.hasError) {
             var result = {
@@ -724,11 +743,10 @@ var IndigoService = function () {
             };
             resolve(result);
           } else {
-            reject(msg.error);
+            reject(new Error(msg.error));
           }
         };
-        _this3.EE.removeListener(WorkerEvent.Info, action);
-        _this3.EE.addListener(WorkerEvent.Info, action);
+        _this3.EE.once(WorkerEvent.Info, action);
         _this3.worker.postMessage({
           type: Command.Info
         });
@@ -743,9 +761,9 @@ var IndigoService = function () {
         struct = data.struct;
       var format = convertMimeTypeToOutputFormat(outputFormat);
       return new Promise(function (resolve, reject) {
-        var _CoreEditor$provideEd;
-        var action = function action(_ref3) {
-          var data = _ref3.data;
+        var _provideEditorInstanc;
+        var action = function action(_ref4) {
+          var data = _ref4.data;
           var msg = data;
           if (msg.inputData === struct) {
             if (!msg.hasError) {
@@ -755,11 +773,11 @@ var IndigoService = function () {
               };
               resolve(result);
             } else {
-              reject(msg.error);
+              reject(new Error(msg.error));
             }
           }
         };
-        var monomerLibrary = JSON.stringify((_CoreEditor$provideEd = CoreEditor.provideEditorInstance()) === null || _CoreEditor$provideEd === void 0 ? void 0 : _CoreEditor$provideEd.monomersLibraryParsedJson);
+        var monomerLibrary = JSON.stringify((_provideEditorInstanc = provideEditorInstance()) === null || _provideEditorInstanc === void 0 ? void 0 : _provideEditorInstanc.monomersLibraryParsedJson);
         var commandOptions = _objectSpread(_objectSpread({}, _this4.getStandardServerOptions(options)), {}, {
           'bond-length-unit': options === null || options === void 0 ? void 0 : options['bond-length-unit'],
           'bond-length': options === null || options === void 0 ? void 0 : options['bond-length'],
@@ -783,8 +801,7 @@ var IndigoService = function () {
           type: Command.Convert,
           data: commandData
         };
-        _this4.EE.removeListener(WorkerEvent.Convert, action);
-        _this4.EE.addListener(WorkerEvent.Convert, action);
+        _this4.EE.once(WorkerEvent.Convert, action);
         _this4.worker.postMessage(inputMessage);
       });
     }
@@ -796,8 +813,8 @@ var IndigoService = function () {
         outputFormat = data.output_format;
       var format = convertMimeTypeToOutputFormat(outputFormat);
       return new Promise(function (resolve, reject) {
-        var action = function action(_ref4) {
-          var data = _ref4.data;
+        var action = function action(_ref5) {
+          var data = _ref5.data;
           var msg = data;
           if (!msg.hasError) {
             var _struct = msg.payload.struct;
@@ -807,7 +824,7 @@ var IndigoService = function () {
             };
             resolve(result);
           } else {
-            reject(msg.error);
+            reject(new Error(msg.error));
           }
         };
         var commandOptions = _objectSpread(_objectSpread({}, _this5.getStandardServerOptions(options)), {}, {
@@ -832,8 +849,7 @@ var IndigoService = function () {
           type: Command.Layout,
           data: commandData
         };
-        _this5.EE.removeListener(WorkerEvent.Layout, action);
-        _this5.EE.addListener(WorkerEvent.Layout, action);
+        _this5.EE.once(WorkerEvent.Layout, action);
         _this5.worker.postMessage(inputMessage);
       });
     }
@@ -843,42 +859,6 @@ var IndigoService = function () {
       var _this6 = this;
       var struct = data.struct,
         selected = data.selected,
-        outputFormat = data.output_format;
-      var format = convertMimeTypeToOutputFormat(outputFormat);
-      return new Promise(function (resolve, reject) {
-        var action = function action(_ref5) {
-          var data = _ref5.data;
-          var msg = data;
-          if (!msg.hasError) {
-            var result = {
-              struct: msg.payload,
-              format: ChemicalMimeType.Mol
-            };
-            resolve(result);
-          } else {
-            reject(msg.error);
-          }
-        };
-        var commandData = {
-          struct: struct,
-          format: format,
-          options: _this6.getStandardServerOptions(options),
-          selectedAtoms: selected || []
-        };
-        var inputMessage = {
-          type: Command.Clean,
-          data: commandData
-        };
-        _this6.EE.removeListener(WorkerEvent.Clean, action);
-        _this6.EE.addListener(WorkerEvent.Clean, action);
-        _this6.worker.postMessage(inputMessage);
-      });
-    }
-  }, {
-    key: "aromatize",
-    value: function aromatize(data, options) {
-      var _this7 = this;
-      var struct = data.struct,
         outputFormat = data.output_format;
       var format = convertMimeTypeToOutputFormat(outputFormat);
       return new Promise(function (resolve, reject) {
@@ -892,9 +872,32 @@ var IndigoService = function () {
             };
             resolve(result);
           } else {
-            reject(msg.error);
+            reject(new Error(msg.error));
           }
         };
+        var commandData = {
+          struct: struct,
+          format: format,
+          options: _this6.getStandardServerOptions(options),
+          selectedAtoms: selected !== null && selected !== void 0 ? selected : []
+        };
+        var inputMessage = {
+          type: Command.Clean,
+          data: commandData
+        };
+        _this6.EE.once(WorkerEvent.Clean, action);
+        _this6.worker.postMessage(inputMessage);
+      });
+    }
+  }, {
+    key: "aromatize",
+    value: function aromatize(data, options) {
+      var _this7 = this;
+      var struct = data.struct,
+        outputFormat = data.output_format;
+      var format = convertMimeTypeToOutputFormat(outputFormat);
+      return new Promise(function (resolve, reject) {
+        var action = makeMolResultAction(resolve, reject);
         var commandData = {
           struct: struct,
           format: format,
@@ -904,8 +907,7 @@ var IndigoService = function () {
           type: Command.Aromatize,
           data: commandData
         };
-        _this7.EE.removeListener(WorkerEvent.Aromatize, action);
-        _this7.EE.addListener(WorkerEvent.Aromatize, action);
+        _this7.EE.once(WorkerEvent.Aromatize, action);
         _this7.worker.postMessage(inputMessage);
       });
     }
@@ -913,6 +915,28 @@ var IndigoService = function () {
     key: "dearomatize",
     value: function dearomatize(data, options) {
       var _this8 = this;
+      var struct = data.struct,
+        outputFormat = data.output_format;
+      var format = convertMimeTypeToOutputFormat(outputFormat);
+      return new Promise(function (resolve, reject) {
+        var action = makeMolResultAction(resolve, reject);
+        var commandData = {
+          struct: struct,
+          format: format,
+          options: _this8.getStandardServerOptions(options)
+        };
+        var inputMessage = {
+          type: Command.Dearomatize,
+          data: commandData
+        };
+        _this8.EE.once(WorkerEvent.Dearomatize, action);
+        _this8.worker.postMessage(inputMessage);
+      });
+    }
+  }, {
+    key: "calculateCip",
+    value: function calculateCip(data, options) {
+      var _this9 = this;
       var struct = data.struct,
         outputFormat = data.output_format;
       var format = convertMimeTypeToOutputFormat(outputFormat);
@@ -927,28 +951,28 @@ var IndigoService = function () {
             };
             resolve(result);
           } else {
-            reject(msg.error);
+            reject(new Error(msg.error));
           }
         };
         var commandData = {
           struct: struct,
           format: format,
-          options: _this8.getStandardServerOptions(options)
+          options: _this9.getStandardServerOptions(options)
         };
         var inputMessage = {
-          type: Command.Dearomatize,
+          type: Command.CalculateCip,
           data: commandData
         };
-        _this8.EE.removeListener(WorkerEvent.Dearomatize, action);
-        _this8.EE.addListener(WorkerEvent.Dearomatize, action);
-        _this8.worker.postMessage(inputMessage);
+        _this9.EE.once(WorkerEvent.CalculateCip, action);
+        _this9.worker.postMessage(inputMessage);
       });
     }
   }, {
-    key: "calculateCip",
-    value: function calculateCip(data, options) {
-      var _this9 = this;
-      var struct = data.struct,
+    key: "automap",
+    value: function automap(data, options) {
+      var _this0 = this;
+      var mode = data.mode,
+        struct = data.struct,
         outputFormat = data.output_format;
       var format = convertMimeTypeToOutputFormat(outputFormat);
       return new Promise(function (resolve, reject) {
@@ -962,69 +986,32 @@ var IndigoService = function () {
             };
             resolve(result);
           } else {
-            reject(msg.error);
-          }
-        };
-        var commandData = {
-          struct: struct,
-          format: format,
-          options: _this9.getStandardServerOptions(options)
-        };
-        var inputMessage = {
-          type: Command.CalculateCip,
-          data: commandData
-        };
-        _this9.EE.removeListener(WorkerEvent.CalculateCip, action);
-        _this9.EE.addListener(WorkerEvent.CalculateCip, action);
-        _this9.worker.postMessage(inputMessage);
-      });
-    }
-  }, {
-    key: "automap",
-    value: function automap(data, options) {
-      var _this10 = this;
-      var mode = data.mode,
-        struct = data.struct,
-        outputFormat = data.output_format;
-      var format = convertMimeTypeToOutputFormat(outputFormat);
-      return new Promise(function (resolve, reject) {
-        var action = function action(_ref9) {
-          var data = _ref9.data;
-          var msg = data;
-          if (!msg.hasError) {
-            var result = {
-              struct: msg.payload,
-              format: ChemicalMimeType.Mol
-            };
-            resolve(result);
-          } else {
-            reject(msg.error);
+            reject(new Error(msg.error));
           }
         };
         var commandData = {
           struct: struct,
           format: format,
           mode: mode,
-          options: _this10.getStandardServerOptions(options)
+          options: _this0.getStandardServerOptions(options)
         };
         var inputMessage = {
           type: Command.Automap,
           data: commandData
         };
-        _this10.EE.removeListener(WorkerEvent.Automap, action);
-        _this10.EE.addListener(WorkerEvent.Automap, action);
-        _this10.worker.postMessage(inputMessage);
+        _this0.EE.once(WorkerEvent.Automap, action);
+        _this0.worker.postMessage(inputMessage);
       });
     }
   }, {
     key: "check",
     value: function check(data, options) {
-      var _this11 = this;
+      var _this1 = this;
       var types = data.types,
         struct = data.struct;
       return new Promise(function (resolve, reject) {
-        var action = function action(_ref10) {
-          var data = _ref10.data;
+        var action = function action(_ref9) {
+          var data = _ref9.data;
           var msg = data;
           if (!msg.hasError) {
             var warnings = JSON.parse(msg.payload);
@@ -1038,33 +1025,32 @@ var IndigoService = function () {
             }, {});
             resolve(result);
           } else {
-            reject(msg.error);
+            reject(new Error(msg.error));
           }
         };
         var commandData = {
           struct: struct,
           types: types,
-          options: _this11.getStandardServerOptions(options)
+          options: _this1.getStandardServerOptions(options)
         };
         var inputMessage = {
           type: Command.Check,
           data: commandData
         };
-        _this11.EE.removeListener(WorkerEvent.Check, action);
-        _this11.EE.addListener(WorkerEvent.Check, action);
-        _this11.worker.postMessage(inputMessage);
+        _this1.EE.once(WorkerEvent.Check, action);
+        _this1.worker.postMessage(inputMessage);
       });
     }
   }, {
     key: "calculate",
     value: function calculate(data, options) {
-      var _this12 = this;
+      var _this10 = this;
       var properties = data.properties,
         struct = data.struct,
         selected = data.selected;
       return new Promise(function (resolve, reject) {
-        var action = function action(_ref11) {
-          var data = _ref11.data;
+        var action = function action(_ref0) {
+          var data = _ref0.data;
           var msg = data;
           if (!msg.hasError) {
             var calculatedProperties = JSON.parse(msg.payload);
@@ -1080,22 +1066,21 @@ var IndigoService = function () {
             }, {});
             resolve(result);
           } else {
-            reject(msg.error);
+            reject(new Error(msg.error));
           }
         };
         var commandData = {
           struct: struct,
           properties: properties,
-          options: _this12.getStandardServerOptions(options),
-          selectedAtoms: selected || []
+          options: _this10.getStandardServerOptions(options),
+          selectedAtoms: selected !== null && selected !== void 0 ? selected : []
         };
         var inputMessage = {
           type: Command.Calculate,
           data: commandData
         };
-        _this12.EE.removeListener(WorkerEvent.Calculate, action);
-        _this12.EE.addListener(WorkerEvent.Calculate, action);
-        _this12.worker.postMessage(inputMessage);
+        _this10.EE.once(WorkerEvent.Calculate, action);
+        _this10.worker.postMessage(inputMessage);
       });
     }
   }, {
@@ -1106,7 +1091,7 @@ var IndigoService = function () {
   }, {
     key: "generateImageAsBase64",
     value: function generateImageAsBase64(inputData) {
-      var _this13 = this;
+      var _this11 = this;
       var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {
         outputFormat: 'png',
         backgroundColor: ''
@@ -1115,19 +1100,19 @@ var IndigoService = function () {
         backgroundColor = options.backgroundColor,
         restOptions = _objectWithoutProperties(options, _excluded);
       return new Promise(function (resolve, reject) {
-        var action = function action(_ref12) {
-          var data = _ref12.data;
+        var action = function action(_ref1) {
+          var data = _ref1.data;
           var msg = data;
           if (msg.inputData === inputData) {
             if (!msg.hasError) {
               resolve(msg.payload);
             } else {
-              reject(msg.error);
+              reject(new Error(msg.error));
             }
           }
         };
-        var commandOptions = _objectSpread(_objectSpread({}, _this13.getStandardServerOptions(restOptions)), {}, {
-          'render-label-mode': _this13.ketcherId ? getLabelRenderModeForIndigo(_this13.ketcherId) : undefined,
+        var commandOptions = _objectSpread(_objectSpread({}, _this11.getStandardServerOptions(restOptions)), {}, {
+          'render-label-mode': _this11.ketcherId ? getLabelRenderModeForIndigo(_this11.ketcherId) : undefined,
           'render-coloring': restOptions['render-coloring'],
           'render-font-size': restOptions['render-font-size'],
           'render-font-size-unit': restOptions['render-font-size-unit'],
@@ -1157,66 +1142,52 @@ var IndigoService = function () {
           type: Command.GenerateImageAsBase64,
           data: commandData
         };
-        _this13.EE.removeListener(WorkerEvent.GenerateImageAsBase64, action);
-        _this13.EE.addListener(WorkerEvent.GenerateImageAsBase64, action);
-        _this13.worker.postMessage(inputMessage);
+        _this11.EE.once(WorkerEvent.GenerateImageAsBase64, action);
+        _this11.worker.postMessage(inputMessage);
       });
     }
   }, {
     key: "toggleExplicitHydrogens",
     value: function toggleExplicitHydrogens(data, options) {
-      var _this14 = this;
+      var _this12 = this;
       var struct = data.struct,
         outputFormat = data.output_format;
       var format = convertMimeTypeToOutputFormat(outputFormat);
       var mode = 'auto';
       return new Promise(function (resolve, reject) {
-        var action = function action(_ref13) {
-          var data = _ref13.data;
-          var msg = data;
-          if (!msg.hasError) {
-            var result = {
-              struct: msg.payload,
-              format: ChemicalMimeType.Mol
-            };
-            resolve(result);
-          } else {
-            reject(msg.error);
-          }
-        };
+        var action = makeMolResultAction(resolve, reject);
         var commandData = {
           struct: struct,
           format: format,
           mode: mode,
-          options: _this14.getStandardServerOptions(options)
+          options: _this12.getStandardServerOptions(options)
         };
         var inputMessage = {
           type: Command.ExplicitHydrogens,
           data: commandData
         };
-        _this14.EE.removeListener(WorkerEvent.ExplicitHydrogens, action);
-        _this14.EE.addListener(WorkerEvent.ExplicitHydrogens, action);
-        _this14.worker.postMessage(inputMessage);
+        _this12.EE.once(WorkerEvent.ExplicitHydrogens, action);
+        _this12.worker.postMessage(inputMessage);
       });
     }
   }, {
     key: "calculateMacromoleculeProperties",
     value: function calculateMacromoleculeProperties(data, options) {
-      var _this15 = this;
+      var _this13 = this;
       var struct = data.struct;
       return new Promise(function (resolve, reject) {
-        var action = function action(_ref14) {
-          var data = _ref14.data;
+        var action = function action(_ref10) {
+          var data = _ref10.data;
           var msg = data;
           if (!msg.hasError) {
             resolve(JSON.parse(msg.payload));
           } else {
-            reject(msg.error);
+            reject(new Error(msg.error));
           }
         };
         var commandData = {
           struct: struct,
-          options: _objectSpread(_objectSpread({}, _this15.getStandardServerOptions(options)), {}, {
+          options: _objectSpread(_objectSpread({}, _this13.getStandardServerOptions(options)), {}, {
             upc: options === null || options === void 0 ? void 0 : options.upc,
             nac: options === null || options === void 0 ? void 0 : options.nac
           })
@@ -1225,9 +1196,8 @@ var IndigoService = function () {
           type: Command.CalculateMacromoleculeProperties,
           data: commandData
         };
-        _this15.EE.removeAllListeners(WorkerEvent.CalculateMacromoleculeProperties);
-        _this15.EE.addListener(WorkerEvent.CalculateMacromoleculeProperties, action);
-        _this15.worker.postMessage(inputMessage);
+        _this13.EE.once(WorkerEvent.CalculateMacromoleculeProperties, action);
+        _this13.worker.postMessage(inputMessage);
       });
     }
   }, {
