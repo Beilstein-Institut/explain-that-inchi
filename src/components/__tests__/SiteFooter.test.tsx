@@ -3,9 +3,9 @@ import { render, screen } from '@testing-library/react';
 import { SiteFooter } from '../SiteFooter';
 
 describe('SiteFooter', () => {
-  it('links Imprint to the in-app #imprint page', () => {
+  it('links Impressum to the in-app #imprint page', () => {
     render(<SiteFooter />);
-    expect(screen.getByRole('link', { name: 'Imprint' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Impressum' })).toHaveAttribute(
       'href',
       '#imprint',
     );
@@ -19,9 +19,9 @@ describe('SiteFooter', () => {
     );
   });
 
-  it('links Terms to the in-app #terms page', () => {
+  it('links Terms & Conditions to the in-app #terms page', () => {
     render(<SiteFooter />);
-    expect(screen.getByRole('link', { name: 'Terms' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Terms & Conditions' })).toHaveAttribute(
       'href',
       '#terms',
     );
@@ -37,7 +37,7 @@ describe('SiteFooter', () => {
 
   it('opens the legal pages in the same tab (no target=_blank)', () => {
     render(<SiteFooter />);
-    for (const name of ['Imprint', 'Privacy Policy', 'Terms']) {
+    for (const name of ['Impressum', 'Privacy Policy', 'Terms & Conditions']) {
       expect(screen.getByRole('link', { name })).not.toHaveAttribute('target');
     }
   });

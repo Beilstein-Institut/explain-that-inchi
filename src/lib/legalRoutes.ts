@@ -1,4 +1,4 @@
-// Hash-based routing for the standalone legal pages (Imprint / Privacy / Terms).
+// Hash-based routing for the standalone legal pages (Impressum / Privacy / Terms).
 // No router dependency: the app is a static SPA served from a base path, so a
 // hash route (#imprint) works on GitHub Pages with no server fallback config.
 import { IMPRINT_HTML, PRIVACY_HTML, TERMS_HTML } from '../data/legalContent';
@@ -14,7 +14,7 @@ export interface LegalDoc {
 }
 
 export const LEGAL_DOCS: readonly LegalDoc[] = [
-  { id: 'imprint', title: 'Imprint', html: IMPRINT_HTML },
+  { id: 'imprint', title: 'Impressum', html: IMPRINT_HTML },
   { id: 'privacy', title: 'Privacy Policy', html: PRIVACY_HTML },
   { id: 'terms', title: 'Terms & Conditions', html: TERMS_HTML },
 ];

@@ -182,7 +182,7 @@ body {
 }
 
 /* ---------- Section labels ---------- */
-/* Site footer: legal links (Imprint / Privacy Policy). Recedes — small, faint, centred. */
+/* Site footer: legal links (Impressum / Privacy Policy). Recedes — small, faint, centred. */
 .site-footer {
   display: flex;
   justify-content: center;
@@ -695,7 +695,7 @@ body {
 }
 
 /* -----------------------------------------------------------------------------
-   Legal pages (Imprint / Privacy / Terms) — standalone hash routes.
+   Legal pages (Impressum / Privacy / Terms) — standalone hash routes.
    Readable single column; reuses the token system so light/dark match the app.
    -------------------------------------------------------------------------- */
 .legal-page {

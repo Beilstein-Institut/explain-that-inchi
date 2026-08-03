@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import type { LegalDoc } from '../lib/legalRoutes';
 
-// Standalone legal page (Imprint / Privacy / Terms), reached via a hash route.
+// Standalone legal page (Impressum / Privacy / Terms), reached via a hash route.
 // Body is a developer-authored constant string, so dangerouslySetInnerHTML is
 // safe here (no user-supplied content).
 export function LegalPage({ doc }: { doc: LegalDoc }) {

@@ -6,19 +6,24 @@
 // The wording is unchanged. These are static developer-authored strings, so
 // rendering them via dangerouslySetInnerHTML carries no injection risk.
 
-export const IMPRINT_HTML = `
-<h1>Impressum</h1>
-<p>This website is operated by the Beilstein-Institut zur Förderung der Chemischen Wissenschaften.</p>
+// Single source of truth — the same block is rendered in the imprint and the
+// privacy policy, so they can never drift apart.
+const ADDRESS_HTML = `
 <p>
   Beilstein-Institut zur Förderung der Chemischen Wissenschaften<br />
-  Trakehner Str. 7-9<br />
+  Trakehner Str. 7–9<br />
   60487 Frankfurt am Main<br />
   Germany<br />
   Phone: +49 69 716732-0<br />
   Fax: +49 69 716732-19<br />
   Email: <a href="mailto:info@beilstein-institut.de">info@beilstein-institut.de</a><br />
-  Internet: <a href="http://www.beilstein-institut.de/en" target="_blank" rel="noopener noreferrer">http://www.beilstein-institut.de</a>
-</p>
+  Website: <a href="https://www.beilstein-institut.de" target="_blank" rel="noopener noreferrer">https://www.beilstein-institut.de</a>
+</p>`;
+
+export const IMPRINT_HTML = `
+<h1>Impressum</h1>
+<p>This website is operated by the Beilstein-Institut zur Förderung der Chemischen Wissenschaften.</p>
+${ADDRESS_HTML}
 <p>
   The Beilstein-Institut is a foundation established under civil law.<br />
   Board members: Olaf Beckmann-Haag, Dr. Wendy Patterson
@@ -35,15 +40,7 @@ export const PRIVACY_HTML = `
 <h2>§ 1 Information on the collection of personal data</h2>
 <p>(1) In the following, we inform you about the processing of personal data when using this website and our services as well as about further processing procedures by us. Personal data are all data that can be related to you personally, such as name, address, e-mail address or user behavior.</p>
 <p>(2) The responsible party pursuant to Art. 4 (7) of the General Data Protection Regulation (GDPR) is the</p>
-<p>
-  Beilstein-Institut zur Förderung der Chemischen Wissenschaften,<br />
-  Trakehner Str. 7–9<br />
-  60486 Frankfurt am Main<br />
-  Germany<br />
-  Telephone: 0049 (0)69 71673 20<br />
-  Email: <a href="mailto:info@beilstein-institut.de">info@beilstein-institut.de</a><br />
-  Website: <a href="https://www.beilstein-institut.de" target="_blank" rel="noopener noreferrer">https://www.beilstein-institut.de</a>
-</p>
+${ADDRESS_HTML}
 <p>You can reach our data protection officer at <a href="mailto:datenschutz@beilstein-institut.de">datenschutz@beilstein-institut.de</a> or at our postal address with the addition "Der Datenschutzbeauftragte".</p>
 <p>(3) When you contact us by e-mail, telephone or mail, the data you provide (e-mail address, postal address, name or telephone number) will be stored by us in accordance with Art. 6 (1) lit. c GDPR in order to answer your questions.</p>
 <p>We delete the data accruing in this context after the storage is no longer necessary. If the request is assigned to a contract, we may also initially restrict processing in accordance with the contract terms and then delete it. In the case of statutory retention obligations, deletion will only take place when they expire.</p>
