@@ -32,3 +32,6 @@ memory/
 design_handoff_explain_that_inchi/
 # Claude Code local state (settings + transient agent worktrees)
 .claude/
+
+# Generated intermediate for public/og-image.png (see scripts/og-image.mjs)
+scripts/og-image.svg
