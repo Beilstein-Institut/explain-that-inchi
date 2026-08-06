@@ -75,8 +75,8 @@ body {
   align-items: flex-end;
   justify-content: space-between;
   gap: 24px;
-  padding-bottom: 16px;
-  margin-bottom: 16px;
+  padding-bottom: 6px;
+  margin-bottom: 6px;
 }
 .header h1 {
   font-family: var(--font-serif);
@@ -185,14 +185,38 @@ body {
 /* Site footer: legal links (Impressum / Privacy Policy). Recedes — small, faint, centred. */
 .site-footer {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: center;
   gap: 8px;
-  margin-top: 32px;
-  padding: 16px 2px;
-  border-top: 1px solid var(--line-soft);
+  margin-top: 8px;
+  padding: 4px 2px 12px;
   font-family: var(--font-sans);
   font-size: 12px;
   color: var(--ink-faint);
+}
+/* Attribution mark: intrinsic 507x120, sized to sit on the 12px link baseline
+   rather than read as a brand banner. */
+/* Auto margin pushes the link group to the right edge; wraps to its own line
+   on narrow viewports because the row is flex-wrap. */
+.site-footer-logo {
+  margin-right: auto;
+}
+.site-footer-logo img {
+  display: block;
+  width: 140px;
+  height: auto;
+  opacity: 0.75;
+  transition: opacity 120ms ease;
+}
+.site-footer-logo:hover img,
+.site-footer-logo:focus-visible img {
+  opacity: 1;
+}
+.site-footer-logo:focus-visible {
+  outline: 2px solid var(--c-formula);
+  outline-offset: 4px;
+  border-radius: 2px;
 }
 .site-footer a {
   color: var(--ink-faint);
