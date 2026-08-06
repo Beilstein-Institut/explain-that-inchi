@@ -17,14 +17,14 @@ describe('LegalPage', () => {
   it('renders section headings from the doc body (formatting preserved)', () => {
     render(<LegalPage doc={privacy} />);
     expect(
-      screen.getByRole('heading', { level: 2, name: '§ 3 Cookies' }),
+      screen.getByRole('heading', { level: 2, name: '§ 3 Cookies and local storage' }),
     ).toBeInTheDocument();
   });
 
   it('renders body text so it is readable', () => {
     render(<LegalPage doc={privacy} />);
     expect(
-      screen.getByText(/We do not use Cookies or similar technical aids/),
+      screen.getByText(/We do not use Cookies\./),
     ).toBeInTheDocument();
   });
 
