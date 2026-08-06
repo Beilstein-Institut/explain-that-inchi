@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "src/components/Explanation.module.css"
+        ],
+        "createdAt": "2026-08-06T10:28:03.654Z",
+        "reason": "3px card stripe carries the hovered layer's colour token — it is the string-to-card link"
+      }
+    ]
+  }
+}
