@@ -6,13 +6,13 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-# Override the GitHub-Pages base path (/explain-that-inchi/) so the app serves
-# from the domain root. git is absent in the build context, so vite.config's
-# git-describe falls back to 'dev' for the commit string (handled gracefully).
-RUN npm run build -- --base=/
+# Keep the /explain-that-inchi/ base path so the container mirrors GitHub Pages.
+# git is absent in the build context, so vite.config's git-describe falls back
+# to 'dev' for the commit string (handled gracefully).
+RUN npm run build -- --base=/explain-that-inchi/
 
 # ---- serve stage: nginx with cross-origin-isolation headers ----
 FROM nginx:1.27-alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=build /app/dist /usr/share/nginx/html
+COPY --from=build /app/dist /usr/share/nginx/html/explain-that-inchi
 EXPOSE 80
