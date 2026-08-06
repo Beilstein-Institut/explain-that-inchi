@@ -11,6 +11,7 @@ import { useInchiStore } from '../store';
 import { swatchVar } from '../lib/layerInfo';
 import { formulaFragmentCounts } from '../lib/parseInchi';
 import { LayerText } from './LayerText';
+import { activateProps } from '../lib/keyboardProps';
 import styles from './InchiSection.module.css';
 
 export function InchiSection() {
@@ -18,6 +19,7 @@ export function InchiSection() {
   const layers = useInchiStore(state => state.layers);
   const hoverIdx = useInchiStore(state => state.hoverIdx);
   const pinned = useInchiStore(state => state.pinned);
+  const inchiError = useInchiStore(state => state.inchiError);
 
   const formulaLayer = layers.find(l => l.type === 'formula');
   const fragCounts = formulaLayer ? formulaFragmentCounts(formulaLayer.text) : [];
@@ -75,7 +77,7 @@ export function InchiSection() {
   const effectiveIdx = pinned ? pinned.idx : hoverIdx;
 
   return (
-    <section className={styles.inchiSection} data-tour-id="inchi-string">
+    <section className={styles.inchiSection} data-tour-id="inchi-string" aria-label="InChI string, layer by layer">
       <div
         className={styles.inchiDisplay}
         data-empty={isEmpty ? 'true' : undefined}
@@ -84,7 +86,10 @@ export function InchiSection() {
           useInchiStore.getState().setSubHover(null);
         }}
       >
-        {isEmpty ? (
+        {isEmpty && inchiError ? (
+          // A structure IS on the canvas — saying "draw a molecule" here would be a lie.
+          <span className={styles.errorHint} role="status">{inchiError}</span>
+        ) : isEmpty ? (
           <span className={styles.emptyHint}>Draw a molecule above to see its InChI.</span>
         ) : (
           <>
@@ -96,6 +101,25 @@ export function InchiSection() {
               const bgColor = `var(--c-${swatchVar(l.type)}-bg)`;
               // Phase 16: layer is pinned at layer level (no sub-token selected)
               const isLayerPinned = pinned !== null && pinned.idx === i && pinned.sub === null;
+              const enter = () => {
+                useInchiStore.getState().setHover(i);
+                useInchiStore.getState().setSubHover(null);
+                // WR-01: hover sources are mutually exclusive — entering an InChI
+                // layer clears any active key-segment hover so the precedence chain
+                // in Explanation cannot show a stale key card over a layer hover.
+                useInchiStore.getState().setKeyHoverKind(null);
+              };
+              const activate = () => {
+                // Any click while pinned only releases — the document capture
+                // listener (added in the useEffect above) already called clearPinned()
+                // before this bubble-phase handler fires, so getState().pinned is null.
+                // On Enter/Space no capture listener runs, so this toggles the pin off.
+                if (useInchiStore.getState().pinned) {
+                  useInchiStore.getState().clearPinned();
+                  return;
+                }
+                useInchiStore.getState().setPinned({ idx: i, sub: null });
+              };
               return (
                 <React.Fragment key={i}>
                   {i > 0 && <span className={styles.inchiSlash}>/</span>}
@@ -113,22 +137,18 @@ export function InchiSection() {
                       // Pass layer accent var for the pinned ring color (D-03)
                       '--layer-accent': tokenColor,
                     } as React.CSSProperties}
-                    onMouseEnter={() => {
-                      useInchiStore.getState().setHover(i);
+                    {...activateProps(activate)}
+                    aria-label={`${l.prefix ?? ''}${l.text} — ${l.type} layer`}
+                    onMouseEnter={enter}
+                    onFocus={enter}
+                    onBlur={(e) => {
+                      // Arrowing into this layer's own sub-tokens is not leaving it —
+                      // React's onBlur is focusout, so it fires on moves to children too.
+                      if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+                      useInchiStore.getState().setHover(null);
                       useInchiStore.getState().setSubHover(null);
-                      // WR-01: hover sources are mutually exclusive — entering an InChI
-                      // layer clears any active key-segment hover so the precedence chain
-                      // in Explanation cannot show a stale key card over a layer hover.
-                      useInchiStore.getState().setKeyHoverKind(null);
                     }}
-                    onClick={() => {
-                      // Any click while pinned only releases — the document capture
-                      // listener (added in the useEffect above) already called clearPinned()
-                      // before this bubble-phase handler fires, so getState().pinned is null.
-                      // This guard is belt-and-suspenders for any edge case.
-                      if (useInchiStore.getState().pinned) { return; }
-                      useInchiStore.getState().setPinned({ idx: i, sub: null });
-                    }}
+                    onClick={activate}
                   >
                     {l.prefix && <span className={styles.prefix}>{l.prefix}</span>}
                     {/* rawText={l.text} kept verbatim — passthrough invariant (spec line 148, CONTEXT D) */}

@@ -4,32 +4,41 @@
   --bg-panel: oklch(0.97 0.006 85);
   --ink: oklch(0.20 0.015 255);
   --ink-soft: oklch(0.45 0.015 255);
-  --ink-faint: oklch(0.65 0.012 255);
+  --ink-faint: oklch(0.53 0.012 255);
   --line: oklch(0.88 0.008 250);
   --line-soft: oklch(0.93 0.006 250);
 
-  /* InChI layer colors — consistent chroma/lightness, varying hue */
-  --c-version: oklch(0.55 0.02 250);
-  --c-formula: oklch(0.55 0.14 245);
-  --c-conn:    oklch(0.55 0.14 155);
-  --c-hydro:   oklch(0.62 0.14 65);
-  --c-charge:  oklch(0.55 0.14 305);
-  --c-proton:  oklch(0.55 0.14 325);
-  --c-stereo:  oklch(0.58 0.15 112);
-  --c-isotope: oklch(0.58 0.13 200);
+  /* InChI layer colors — one hue per layer, all at a matched lightness band.
+     Lightness is solved, not eyeballed: each value is the LIGHTEST L that still
+     clears 4.5:1 (WCAG AA) against the page, the panel, AND its own -bg chip,
+     which is the darkest surface the token ever sits on. Hue and chroma are
+     untouched from the handoff — only L moved, and it moved as little as the
+     ratio allowed, with a little headroom so the two-decimal value still clears it.
+     Re-solve with scripts/og-image.mjs's hex() if any background changes. */
+  --c-version: oklch(0.51 0.02 250);
+  --c-formula: oklch(0.52 0.14 245);
+  --c-conn:    oklch(0.50 0.14 155);
+  --c-hydro:   oklch(0.53 0.14 65);
+  --c-charge:  oklch(0.53 0.14 305);
+  --c-proton:  oklch(0.53 0.14 325);
+  --c-stereo:  oklch(0.52 0.15 112);
+  --c-isotope: oklch(0.49 0.13 200);
 
   /* Stereo parity colors (used in t- and b-layers) */
-  --c-stereo-plus:     oklch(0.58 0.16 25);
+  --c-stereo-plus:     oklch(0.52 0.16 25);
   --c-stereo-minus:    oklch(0.50 0.15 265);
   --c-stereo-plus-bg:  oklch(0.96 0.05 25);
   --c-stereo-minus-bg: oklch(0.95 0.05 265);
 
-  /* Hydrogen count shading (darker = more H on that atom) */
-  --c-hydro-1:      oklch(0.75 0.09 70);
-  --c-hydro-2:      oklch(0.62 0.13 65);
-  --c-hydro-3:      oklch(0.50 0.15 55);
-  --c-hydro-4:      oklch(0.38 0.15 45);
-  --c-hydro-mobile: oklch(0.55 0.10 65);
+  /* Hydrogen count shading (darker = more H on that atom). The ramp reads as a
+     group, so raising the lightest step to AA would have flattened it — instead
+     the whole ramp shifted down and the steps spread further apart, keeping the
+     signal stronger than before while every step clears 4.5:1 on its own chip. */
+  --c-hydro-1:      oklch(0.55 0.11 70);
+  --c-hydro-2:      oklch(0.48 0.13 65);
+  --c-hydro-3:      oklch(0.42 0.15 55);
+  --c-hydro-4:      oklch(0.36 0.15 45);
+  --c-hydro-mobile: oklch(0.52 0.10 65);
   --c-hydro-1-bg:   oklch(0.97 0.03 70);
   --c-hydro-2-bg:   oklch(0.95 0.05 65);
   --c-hydro-3-bg:   oklch(0.93 0.06 55);
@@ -44,16 +53,24 @@
   --c-stereo-bg:  oklch(0.96 0.05 112);
   --c-isotope-bg: oklch(0.95 0.04 200);
 
+  /* Inverted ink for the few surfaces painted with --ink (the legend tooltip).
+     Previously these were literal oklch() values inline, which drift the moment
+     --ink moves. */
+  --ink-inverse:       oklch(0.95 0.005 250);
+  --ink-inverse-soft:  oklch(0.78 0.02 250);
+  --ink-inverse-faint: oklch(0.70 0.03 250);
+  --line-inverse:      oklch(0.40 0.02 255);
+
+  /* The one alert accent: the word "public" in the feedback dialog's warning.
+     Sits on --bg-canvas at 5.6:1. */
+  --c-alert: oklch(0.52 0.19 25);
+
   --font-sans: "IBM Plex Sans", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
   --font-serif: "IBM Plex Serif", Georgia, serif;
 }
-
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
-/* Backstop: never let anything scroll the whole page sideways (e.g. the Ketcher
-   editor's wide toolbar on narrow screens). Vertical scroll is unaffected. */
-html, body { overflow-x: hidden; }
 body {
   background: var(--bg);
   color: var(--ink);
@@ -62,13 +79,11 @@ body {
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
 }
-
 .app {
   max-width: 1240px;
   margin: 0 auto;
   padding: 24px 32px 40px;
 }
-
 /* ---------- Header ---------- */
 .header {
   display: flex;
@@ -108,7 +123,7 @@ body {
    (justify-content: space-between pushes it to the right). Shares that row
    instead of opening its own band, so no vertical space is wasted. */
 .feedback-trigger {
-  height: 28px;
+  height: 32px;
   padding: 0 14px;
   border: none;
   border-radius: 999px;
@@ -133,7 +148,7 @@ body {
 /* Reset trigger: secondary-action pill, subdued style — to the left of Send feedback.
    Uses var(--line) background and var(--ink-soft) text so it recedes vs the brand accent. */
 .reset-trigger {
-  height: 28px;
+  height: 32px;
   padding: 0 14px;
   border: none;
   border-radius: 999px;
@@ -158,7 +173,7 @@ body {
 /* Help trigger: secondary-action pill, subdued style — next to Reset.
    Mirrors .reset-trigger exactly (same height, pill shape, var(--line) bg). */
 .help-trigger {
-  height: 28px;
+  height: 32px;
   padding: 0 14px;
   border: none;
   border-radius: 999px;
@@ -180,7 +195,6 @@ body {
   outline: 2px solid var(--ink-soft);
   outline-offset: 2px;
 }
-
 /* ---------- Section labels ---------- */
 /* Site footer: legal links (Impressum / Privacy Policy). Recedes — small, faint, centred. */
 .site-footer {
@@ -221,6 +235,8 @@ body {
 .site-footer a {
   color: var(--ink-faint);
   text-decoration: none;
+  /* Padding is the tap target: 12px text alone is far under WCAG 2.5.8. */
+  padding: 6px 2px;
 }
 .site-footer a:hover {
   color: var(--ink-soft);
@@ -242,44 +258,20 @@ body {
   margin: 0 0 10px;
   padding: 0 2px;
 }
+/* The label is an <h2> for document structure; it must not inherit heading metrics. */
+.section-label h2 {
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  margin: 0;
+}
 .section-label .hint { color: var(--ink-faint); font-weight: 400; text-transform: none; letter-spacing: 0.02em; }
 /* Groups the Reset and Send feedback triggers on the right side of the section-label row */
 .section-label-actions {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-/* ---------- Ketcher Panel ---------- */
-.ketcher {
-  display: grid;
-  grid-template-columns: 56px 1fr 240px;
-  background: var(--bg-canvas);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  min-height: 380px;
-}
-.ketcher .toolbar {
-  background: var(--bg-panel);
-  border-right: 1px solid var(--line);
-  padding: 10px 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  align-items: center;
-}
-.ketcher .toolbar .tool {
-  width: 38px;
-  height: 38px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  font-family: var(--font-mono);
-  font-size: 14px;
-  color: var(--ink-soft);
-  cursor: default;
-  position: relative;
 }
 .ketcher .toolbar .tool.active {
   background: var(--ink);
@@ -288,101 +280,17 @@ body {
 .ketcher .toolbar .tool:not(.active):hover {
   background: var(--line-soft);
 }
-.ketcher .toolbar .divider {
-  width: 26px;
-  height: 1px;
-  background: var(--line);
-  margin: 6px 0;
-}
-
 .canvas-wrap {
   position: relative;
   background:
     radial-gradient(circle at 12px 12px, oklch(0.92 0.008 250) 1px, transparent 1.5px) 0 0 / 24px 24px,
     var(--bg-canvas);
 }
-
 .canvas-wrap svg.molecule {
   width: 100%;
   height: 100%;
   display: block;
 }
-
-.molecule .bond {
-  stroke: var(--ink);
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  transition: stroke 200ms, stroke-width 200ms;
-}
-.molecule .bond.hl {
-  stroke-width: 4;
-}
-.molecule .bond.hl-conn { stroke: var(--c-conn); }
-.molecule .atom-bg {
-  fill: var(--bg-canvas);
-}
-.molecule .atom-label {
-  font-family: var(--font-sans);
-  font-weight: 500;
-  font-size: 15px;
-  fill: var(--ink);
-  text-anchor: middle;
-  dominant-baseline: central;
-  pointer-events: none;
-}
-.molecule .atom-num {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  text-anchor: middle;
-  dominant-baseline: central;
-  pointer-events: none;
-  transition: opacity 200ms, fill 200ms;
-}
-.molecule .ketcher-num {
-  fill: var(--ink-faint);
-  opacity: 0.55;
-}
-.molecule .canonical-num {
-  fill: var(--c-conn);
-  font-weight: 700;
-  font-size: 10px;
-}
-.molecule.hide-nums .ketcher-num { opacity: 0; }
-.molecule .h-label {
-  font-family: var(--font-sans);
-  font-size: 12px;
-  fill: var(--c-hydro);
-  text-anchor: middle;
-  dominant-baseline: central;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 250ms;
-}
-.molecule .h-label.show { opacity: 1; }
-
-.molecule .atom-halo {
-  fill: var(--halo-color, none);
-  stroke: var(--halo-color, none);
-  fill-opacity: 0;
-  stroke-opacity: 0;
-  transition: fill-opacity 200ms, stroke-opacity 200ms;
-}
-.molecule .atom-halo.on {
-  fill-opacity: 0.16;
-  stroke-opacity: 0.45;
-  stroke-width: 1.5;
-}
-.molecule .atom-halo.on-strong {
-  fill-opacity: 0.22;
-  stroke-opacity: 0.55;
-  stroke-width: 1.6;
-}
-.molecule .stereo-wedge {
-  fill: var(--ink);
-  transition: fill 200ms;
-}
-.molecule .stereo-wedge.hl { fill: var(--c-stereo); }
-
 /* ---------- Molecule selector ---------- */
 .mol-list {
   border-left: 1px solid var(--line);
@@ -429,56 +337,6 @@ body {
   color: var(--ink-faint);
   letter-spacing: 0.02em;
 }
-
-/* ---------- InChI Panel ---------- */
-.inchi-section { margin-top: 20px; }
-
-.inchi-display {
-  background: var(--bg-canvas);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 28px 32px;
-  font-family: var(--font-mono);
-  font-size: 19px;
-  line-height: 1.6;
-  letter-spacing: -0.005em;
-  overflow-wrap: anywhere;
-  word-break: break-all;
-}
-.inchi-prefix {
-  color: var(--ink-faint);
-  margin-right: 1px;
-}
-.inchi-slash {
-  color: var(--ink-faint);
-  padding: 0 1px;
-}
-.inchi-layer {
-  display: inline;
-  padding: 2px 4px;
-  margin: 0 -1px;
-  border-radius: 3px;
-  cursor: pointer;
-  transition: background 160ms, color 160ms;
-  position: relative;
-}
-.inchi-layer .prefix {
-  font-weight: 600;
-  opacity: 0.7;
-  margin-right: 1px;
-}
-.inchi-layer[data-layer="version"] { color: var(--c-version); }
-.inchi-layer[data-layer="formula"] { color: var(--c-formula); }
-.inchi-layer[data-layer="c"]       { color: var(--c-conn); }
-.inchi-layer[data-layer="h"]       { color: var(--c-hydro); }
-.inchi-layer[data-layer="q"]       { color: var(--c-charge); }
-.inchi-layer[data-layer="p"]       { color: var(--c-proton); }
-.inchi-layer[data-layer="b"],
-.inchi-layer[data-layer="t"],
-.inchi-layer[data-layer="m"],
-.inchi-layer[data-layer="s"]       { color: var(--c-stereo); }
-.inchi-layer[data-layer="i"]       { color: var(--c-isotope); }
-
 .inchi-layer.active[data-layer="version"] { background: var(--c-version-bg); }
 .inchi-layer.active[data-layer="formula"] { background: var(--c-formula-bg); }
 .inchi-layer.active[data-layer="c"]       { background: var(--c-conn-bg); }
@@ -490,202 +348,15 @@ body {
 .inchi-layer.active[data-layer="m"],
 .inchi-layer.active[data-layer="s"] { background: var(--c-stereo-bg); }
 .inchi-layer.active[data-layer="i"]       { background: var(--c-isotope-bg); }
-
-.inchi-layer.dim { opacity: 0.35; }
-
-/* Sub-token: an individually-hoverable sub-span inside a layer.
-   The whole-layer hover paints the background; the sub-token hover
-   adds a stronger ring outline so the user sees what fragment they're
-   pointing at. */
-.inchi-subtoken {
-  border-radius: 2px;
-  padding: 0 1px;
-  cursor: default;
-  transition: background 120ms, box-shadow 120ms;
-}
 .inchi-layer.active .inchi-subtoken:hover {
   background: var(--bg-canvas);
   box-shadow: inset 0 0 0 1.5px currentColor;
 }
-
-/* --- Parity coloring for t- and b-layers --- */
-.inchi-layer[data-layer="t"] .parity-plus,
-.inchi-layer[data-layer="b"] .parity-plus  { color: var(--c-stereo-plus); }
-.inchi-layer[data-layer="t"] .parity-minus,
-.inchi-layer[data-layer="b"] .parity-minus { color: var(--c-stereo-minus); }
-
-/* --- H-count shading inside the h-layer --- */
-.inchi-layer[data-layer="h"] .hydro-1 { color: var(--c-hydro-1); }
-.inchi-layer[data-layer="h"] .hydro-2 { color: var(--c-hydro-2); }
-.inchi-layer[data-layer="h"] .hydro-3 { color: var(--c-hydro-3); }
-.inchi-layer[data-layer="h"] .hydro-4 { color: var(--c-hydro-4); }
-.inchi-layer[data-layer="h"] .hydro-mobile {
-  color: var(--c-hydro-mobile);
-  font-style: italic;
-}
-
-/* ---------- Explanation Panel ---------- */
-.explain {
-  margin-top: 14px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 18px;
-}
-
-.explain .card {
-  background: var(--bg-canvas);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 22px 24px;
-  min-height: 180px;
-  position: relative;
-  overflow: hidden;
-}
-.explain .legend-card { overflow: visible; }
-.explain .card::before {
-  content: "";
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 3px;
-  background: var(--accent, var(--line));
-  transition: background 200ms;
-}
 .explain .card.active::before { background: var(--accent); }
-
-.explain .layer-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--accent, var(--ink-soft));
-  margin-bottom: 8px;
-}
-.explain .layer-tag .swatch {
-  width: 8px; height: 8px; border-radius: 2px;
-  background: var(--accent, var(--ink-faint));
-}
-.explain .layer-title {
-  font-family: var(--font-serif);
-  font-size: 26px;
-  font-weight: 500;
-  margin: 0 0 12px;
-  letter-spacing: -0.01em;
-  line-height: 1.15;
-}
-.explain .layer-body {
-  font-size: 14.5px;
-  line-height: 1.55;
-  color: var(--ink-soft);
-  margin: 0 0 14px;
-  text-wrap: pretty;
-}
-.explain .layer-eg {
-  font-family: var(--font-mono);
-  font-size: 12.5px;
-  color: var(--ink-soft);
-  background: var(--bg-panel);
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  padding: 10px 12px;
-  line-height: 1.5;
-}
-.explain .layer-eg b { color: var(--accent, var(--ink)); font-weight: 600; }
-.explain .layer-eg .lbl {
-  display: block;
-  font-family: var(--font-sans);
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-  margin-bottom: 4px;
-}
-
-.explain .legend-card {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  padding: 14px 0;
-}
-.explain .legend-card::before { display: none; }
-.legend-row {
-  display: grid;
-  grid-template-columns: 14px 28px 100px 1fr;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 22px;
-  font-size: 12.5px;
-}
-.legend-row .sw { width: 10px; height: 10px; border-radius: 2px; }
-.legend-row .key { font-family: var(--font-mono); font-weight: 600; font-size: 13px; }
-.legend-row .name { color: var(--ink); font-weight: 500; }
-.legend-row .desc { color: var(--ink-faint); font-size: 12px; line-height: 1.4; }
-.legend-row.muted .key, .legend-row.muted .name { color: var(--ink-faint); }
-.legend-row.muted .sw { opacity: 0.35; }
-.legend-row { position: relative; }
-
-/* Hover tooltip on each legend row */
-.legend-tip {
-  position: absolute;
-  right: calc(100% + 12px);
-  top: 50%;
-  transform: translateY(-50%) translateX(4px);
-  width: 300px;
-  padding: 14px 16px;
-  background: var(--ink);
-  color: oklch(0.95 0.005 250);
-  font-family: var(--font-sans);
-  font-size: 12.5px;
-  line-height: 1.55;
-  letter-spacing: 0.005em;
-  border-radius: 6px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 160ms ease, transform 160ms ease;
-  z-index: 20;
-  box-shadow: 0 12px 32px oklch(0.2 0.015 255 / 0.22);
-  text-wrap: pretty;
-}
-.legend-tip::after {
-  content: "";
-  position: absolute;
-  left: 100%;
-  top: 50%;
-  transform: translateY(-50%);
-  border: 6px solid transparent;
-  border-left-color: var(--ink);
-}
-.legend-tip .tip-label {
-  display: block;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: oklch(0.7 0.03 250);
-  margin-bottom: 6px;
-}
-.legend-tip .tip-eg {
-  display: block;
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid oklch(0.4 0.02 255);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: oklch(0.78 0.02 250);
-}
-.legend-row:hover .legend-tip {
-  opacity: 1;
-  transform: translateY(-50%) translateX(0);
-}
-
 @media (max-width: 900px) {
   .app { padding: 20px 16px 32px; }
-  .explain { grid-template-columns: 1fr; }
   .header h1 { font-size: 36px; }
   .section-label { flex-wrap: wrap; row-gap: 8px; }
-
   /* Examples reflow from a vertical sidebar into a horizontal chip strip
      below the editor (the mol-list is grid row 2 on mobile — see
      KetcherPanel.module.css). */
@@ -707,7 +378,7 @@ body {
     flex-direction: row;
     align-items: baseline;
     gap: 6px;
-    padding: 6px 12px;
+    padding: 9px 14px;
     border: 1px solid var(--line);
     border-radius: 999px;
     white-space: nowrap;
@@ -717,7 +388,6 @@ body {
     border-color: var(--ink);
   }
 }
-
 /* -----------------------------------------------------------------------------
    Legal pages (Impressum / Privacy / Terms) — standalone hash routes.
    Readable single column; reuses the token system so light/dark match the app.
@@ -739,7 +409,6 @@ body {
 }
 .legal-back:hover { color: var(--ink); text-decoration: underline; }
 .legal-back:focus-visible { outline: 2px solid var(--c-formula); outline-offset: 2px; }
-
 .legal-content h1 {
   font-family: var(--font-serif);
   font-size: 28px;
@@ -763,3 +432,24 @@ body {
 .legal-content a { color: var(--c-formula); text-decoration: underline; }
 .legal-content a:hover { color: var(--ink); }
 .legal-content a:focus-visible { outline: 2px solid var(--c-formula); outline-offset: 2px; }
+/* Suspense fallback while App's chunk loads (see main.tsx). Deliberately plain:
+   it exists for a few hundred milliseconds and must not flash a fake UI. */
+.app-loading {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 64px 32px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+/* -----------------------------------------------------------------------------
+   Reduced motion.
+   Nothing here, deliberately. Every transition left in this app is a colour or
+   background swap — the highlight feedback itself — and killing those would make
+   the tool harder to follow, not gentler. The one element that used to travel
+   (.legend-tip) was removed in UAT-13; the HelpTour spotlight jumps between steps
+   with no transition at all. If positional motion is ever added, it belongs behind
+   a `@media (prefers-reduced-motion: reduce)` block right here.
+   -------------------------------------------------------------------------- */

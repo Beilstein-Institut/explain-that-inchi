@@ -34,6 +34,7 @@ const SEGMENT_ZONE: Record<InchiKeySegmentKind, KeyHoverZone> = {
 export function InchiKeySection() {
   const inchiKey = useInchiStore(state => state.inchiKey);
   const keyHoverKind = useInchiStore(state => state.keyHoverKind);
+  const inchiError = useInchiStore(state => state.inchiError);
 
   const segments = parseInchiKey(inchiKey);
   const isEmpty = segments.length === 0;
@@ -60,7 +61,7 @@ export function InchiKeySection() {
   }
 
   return (
-    <section className={styles.inchiKeySection} data-tour-id="inchikey">
+    <section className={styles.inchiKeySection} data-tour-id="inchikey" aria-label="InChIKey, segment by segment">
       <div
         className={styles.inchiKeyDisplay}
         data-empty={isEmpty ? 'true' : undefined}
@@ -68,7 +69,11 @@ export function InchiKeySection() {
           useInchiStore.getState().setKeyHoverKind(null);
         }}
       >
-        {isEmpty ? (
+        {isEmpty && inchiError ? (
+          // The InChI strip already names the problem; repeating it here would just
+          // shout twice. This states the consequence and nothing more.
+          <span className={styles.emptyHint}>No InChIKey without an InChI.</span>
+        ) : isEmpty ? (
           <span className={styles.emptyHint}>Draw a molecule above to see its InChIKey.</span>
         ) : (
           <>
@@ -99,6 +104,16 @@ export function InchiKeySection() {
                     style={{
                       color: tokenColor,
                       ...(isActive ? { background: bgColor } : {}),
+                    }}
+                    // Key segments explain themselves on hover but have no pin or
+                    // canvas highlight (INKEY-09), so they are focusable text rather
+                    // than buttons: focus shows the card, Tab moves on.
+                    tabIndex={0}
+                    onBlur={() => useInchiStore.getState().setKeyHoverKind(null)}
+                    onFocus={() => {
+                      useInchiStore.getState().setKeyHoverKind(zone);
+                      useInchiStore.getState().setHover(null);
+                      useInchiStore.getState().setSubHover(null);
                     }}
                     onMouseEnter={() => {
                       useInchiStore.getState().setKeyHoverKind(zone);

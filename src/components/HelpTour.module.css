@@ -21,7 +21,7 @@
   padding: 20px;
   width: 320px;
   max-width: calc(100vw - 24px);
-  box-shadow: 0 4px 24px oklch(0.2 0.015 255 / 0.18);
+  box-shadow: 0 4px 24px oklch(from var(--ink) l c h / 0.18);
   z-index: 9999;
   display: flex;
   flex-direction: column;

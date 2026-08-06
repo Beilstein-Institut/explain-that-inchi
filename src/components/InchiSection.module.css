@@ -131,6 +131,19 @@
   padding: 4px 0;
 }
 
+/* Failed generation, not an empty canvas. Reads as a statement about the structure,
+   not an alarm — same size and placement as .emptyHint, but --ink-soft instead of
+   faint so it registers as information rather than a disabled placeholder. The words
+   carry the difference; no callout chrome. */
+.errorHint {
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  display: block;
+  text-align: center;
+  padding: 4px 0;
+}
+
 /* Copy-to-clipboard button (PLSH-04) */
 .copyBtn {
   position: absolute;
@@ -141,7 +154,8 @@
   border: none;
   cursor: pointer;
   color: var(--ink-faint);
-  padding: 4px;
+  /* 16px icon + 8px padding = 32px tap target (WCAG 2.5.8 asks 24). */
+  padding: 8px;
   border-radius: 3px;
   transition: color 160ms;
   line-height: 0;
@@ -200,4 +214,18 @@
   white-space: nowrap;
   pointer-events: none;
   user-select: none;
+}
+
+/* Keyboard equivalents of the hover treatments above (Tab reaches layer chunks,
+   arrows walk their sub-tokens — see lib/keyboardProps.ts). Focus has to read at
+   a glance against eight different layer colours, so it uses --ink, not the accent. */
+.inchiLayer:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+.inchiSubtoken:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+  background: var(--el-bg-color, var(--bg-canvas));
+  box-shadow: inset 0 0 0 1.5px var(--el-color, currentColor);
 }

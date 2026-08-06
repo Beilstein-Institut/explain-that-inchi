@@ -95,7 +95,9 @@ export function Explanation() {
   const reading = layer ? readingFor(layer, atomElements, fragCounts) : '';
 
   return (
-    <div className={styles.explain}>
+    // aria-live: focusing a chunk swaps this card's contents. Sighted users see the
+    // change; a screen-reader user needs it announced, or focus moves silently.
+    <div className={styles.explain} aria-live="polite">
       {/* Left explanation card — D-04a precedence: key-hover → InChI-layer → idle */}
       {keyHoverKind ? (
         /* Key-segment card (D-03: extends shared panel; no standalone surface).

@@ -9,6 +9,7 @@ import { useInchiStore } from '../store';
 import type { Layer, SubHover, CLayerToken } from '../lib/parseInchi';
 import { formulaFragmentCounts, tokenizeCLayerSeg, collectBranchPointBonds, segmentBonds } from '../lib/parseInchi';
 import { JMOL_COLORS } from '../lib/jmolColors';
+import { activateProps } from '../lib/keyboardProps';
 import styles from './InchiSection.module.css';
 
 // Inline per-element style from the Jmol color. Hydrogen renders black (Jmol
@@ -30,18 +31,27 @@ function elStyle(el: string): React.CSSProperties | undefined {
 // layerIdx: the owning layer's index in the layers array (threaded from InchiSection).
 // Per D-07: wired here so Phase 4 can act on store.subHover without adding event handlers.
 function subHoverProps(hit: SubHover, layerIdx: number) {
+  const enter = () => useInchiStore.getState().setSubHover(hit);
+  const leave = () => useInchiStore.getState().setSubHover(null);
+  const activate = (e: React.SyntheticEvent) => {
+    // stopPropagation so the layer-level handler in InchiSection does NOT also fire.
+    // The document capture listener already cleared the pin (if any) before bubbling,
+    // so getState().pinned is null by the time this bubble-phase handler runs.
+    // On Enter/Space there is no capture listener, so pinned is still set and the
+    // key toggles the pin off — same mental model, different input.
+    e.stopPropagation();
+    const s = useInchiStore.getState();
+    if (s.pinned) { s.clearPinned(); return; }
+    s.setPinned({ idx: layerIdx, sub: hit });
+  };
   return {
-    onMouseEnter: () => useInchiStore.getState().setSubHover(hit),
-    onMouseLeave: () => useInchiStore.getState().setSubHover(null),
-    onClick: (e: React.MouseEvent) => {
-      // stopPropagation so the layer-level onClick in InchiSection does NOT also fire.
-      // The document capture listener already cleared the pin (if any) before bubbling,
-      // so getState().pinned is null by the time this bubble-phase handler runs.
-      e.stopPropagation();
-      const s = useInchiStore.getState();
-      if (s.pinned) { s.clearPinned(); return; }
-      s.setPinned({ idx: layerIdx, sub: hit });
-    },
+    ...activateProps(activate, { child: true }),
+    onMouseEnter: enter,
+    onMouseLeave: leave,
+    // Focus is the keyboard's hover: same store writes, same card, same highlight.
+    onFocus: enter,
+    onBlur: leave,
+    onClick: activate,
   };
 }
 

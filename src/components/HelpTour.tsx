@@ -202,7 +202,7 @@ export function HelpTour({ open, onClose }: HelpTourProps) {
         width: targetRect.width + 8,
         height: targetRect.height + 8,
         borderRadius: '4px',
-        boxShadow: `0 0 0 ${SPREAD}px oklch(0.2 0.015 255 / 0.52)`,
+        boxShadow: `0 0 0 ${SPREAD}px oklch(from var(--ink) l c h / 0.52)`,
         pointerEvents: 'none',
         zIndex: 9998,
       }

@@ -30,9 +30,9 @@ export function KetcherPanel({
   onHelpClick,
 }: KetcherPanelProps) {
   return (
-    <section>
+    <section aria-labelledby="editor-heading">
       <div className="section-label">
-        <span>Draw a molecule to see its InChI</span>
+        <h2 id="editor-heading">Draw a molecule to see its InChI</h2>
         <div className="section-label-actions">
           {onHelpClick && (
             <button type="button" className="help-trigger" onClick={onHelpClick}>

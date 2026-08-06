@@ -44,8 +44,14 @@ interface InchiState {
   // info (incl. layers NOT present in the molecule) instead of a floating tooltip.
   // Present layers still drive the rich card via hoverIdx (higher precedence).
   legendHover: LegendHover | null;
+  // Empty and failed are different states. null with no layers = nothing drawn yet;
+  // a message = the canvas holds a structure the generator would not accept. Without
+  // this the strip told a user with a molecule on screen that they had drawn nothing.
+  inchiError: string | null;
   // Actions
   setInchiData: (inchi: string, layers: Layer[], auxMap: AuxMap, atomElements: Record<number, string>, hAtomPoolIds?: number[], inchiKey?: string) => void;
+  // Blanks every data field and records why. Pass null for a genuinely empty canvas.
+  setInchiFailure: (message: string | null) => void;
   setHover: (idx: number | null) => void;
   setSubHover: (sub: SubHover | null) => void;
   setPinned: (p: { idx: number; sub: SubHover | null } | null) => void;
@@ -70,10 +76,18 @@ export const useInchiStore = create<InchiState>()(
       pinned: null,
       keyHoverKind: null,
       legendHover: null,
+      inchiError: null,
       // CR-01: reset keyHoverKind on every data transition. setInchiData fires only
       // after a debounced structure change; at that point a stale key-hover (from an
       // emptied key or a preset swap) must be dropped so it cannot mask the panel.
-      setInchiData: (inchi, layers, auxMap, atomElements, hAtomPoolIds = [], inchiKey = '') => set({ inchi, layers, auxMap, atomElements, hAtomPoolIds, inchiKey, keyHoverKind: null, pinned: null }),
+      setInchiData: (inchi, layers, auxMap, atomElements, hAtomPoolIds = [], inchiKey = '') => set({ inchi, layers, auxMap, atomElements, hAtomPoolIds, inchiKey, keyHoverKind: null, pinned: null, inchiError: null }),
+      // Same blanking as a data transition, plus the reason. One code path for both
+      // failure modes (generator rejection, unparseable result) so they cannot drift.
+      setInchiFailure: (message) => set({
+        inchi: '', layers: [], auxMap: {}, atomElements: {}, hAtomPoolIds: [], inchiKey: '',
+        hoverIdx: null, subHover: null, pinned: null, keyHoverKind: null, legendHover: null,
+        inchiError: message,
+      }),
       // Gate: while pinned is non-null, setHover/setSubHover are no-ops (single enforcement point).
       setHover: (idx) => { if (get().pinned) return; set({ hoverIdx: idx }); },
       setSubHover: (sub) => { if (get().pinned) return; set({ subHover: sub }); },
@@ -95,6 +109,7 @@ export const useInchiStore = create<InchiState>()(
         pinned: null,
         keyHoverKind: null,
         legendHover: null,
+        inchiError: null,
       }),
     }),
 );

@@ -52,3 +52,9 @@
 /* UAT-13: legend tooltip removed — hover info now renders in the explanation
    card (see Explanation.tsx legend-hover branch). The .legendTip / .tipLabel /
    .tipEg rules were deleted along with it. */
+
+/* Legend rows are focusable: focus shows the layer card exactly as hover does. */
+.legendRow:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: -2px;
+}

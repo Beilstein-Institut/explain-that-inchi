@@ -133,7 +133,7 @@ export function FeedbackDialog({ dialogRef, onSubmit, contextPreview }: Feedback
       {/* Inline public-issue note (D-06) */}
       <p className={styles.publicNote}>
         Submitting opens a{' '}
-        <strong style={{ color: '#ff0d0d' }}>public</strong>
+        <strong style={{ color: 'var(--c-alert)' }}>public</strong>
         {' '}GitHub issue and requires a GitHub account.
       </p>
 

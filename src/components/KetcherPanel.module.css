@@ -36,7 +36,7 @@
 .loadingOverlay {
   position: absolute;
   inset: 0;
-  background: oklch(0.985 0.005 85 / 0.85);
+  background: oklch(from var(--bg) l c h / 0.85);
   display: flex;
   align-items: center;
   justify-content: center;

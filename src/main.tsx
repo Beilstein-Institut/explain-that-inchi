@@ -11,15 +11,23 @@ import '@fontsource/ibm-plex-mono/600.css';
 import '@fontsource/ibm-plex-serif/400.css';
 import '@fontsource/ibm-plex-serif/400-italic.css';
 import '@fontsource/ibm-plex-serif/500.css';
-import 'ketcher-react/dist/index.css';
 import './styles.css';
-import App from './App';
 import { Root } from './components/Root';
+
+// App is lazy so the legal routes (#imprint/#privacy/#terms) never download it.
+// Root already keeps Ketcher dormant on those routes, but a static import still
+// shipped the whole editor + WASM glue to a reader who only wanted the Impressum.
+// Creating the element is not rendering it: the import fires when Root renders
+// children, which it does not do on a legal route.
+// ketcher-react's stylesheet rides along in App's chunk for the same reason.
+const App = React.lazy(() => import('./App'));
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <Root>
-      <App />
+      <React.Suspense fallback={<div className="app-loading">Loading the editor…</div>}>
+        <App />
+      </React.Suspense>
     </Root>
   </React.StrictMode>,
 );

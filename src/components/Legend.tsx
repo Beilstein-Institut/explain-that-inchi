@@ -59,12 +59,24 @@ export function Legend({ activeType }: LegendProps) {
             key={l.type}
             className={[styles.legendRow, !present ? styles.muted : ''].filter(Boolean).join(' ')}
             style={isActive ? { background: `var(--c-${swatchVar(l.type)}-bg)` } : undefined}
+            // Focusable text, not a button: focus shows the layer's card exactly as
+            // hover does, and there is nothing further to activate.
+            tabIndex={0}
             onMouseEnter={() => {
               setSubHover(null);
               setLegendHover({ type: l.type, eg: l.eg });
               if (present && layerIdx !== undefined) setHover(layerIdx);
             }}
+            onFocus={() => {
+              setSubHover(null);
+              setLegendHover({ type: l.type, eg: l.eg });
+              if (present && layerIdx !== undefined) setHover(layerIdx);
+            }}
             onMouseLeave={() => {
+              setLegendHover(null);
+              if (present && layerIdx !== undefined) setHover(null);
+            }}
+            onBlur={() => {
               setLegendHover(null);
               if (present && layerIdx !== undefined) setHover(null);
             }}

@@ -1,5 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { flushSync } from 'react-dom';
+// Editor stylesheet lives here, not in main.tsx, so it ships in App's lazy chunk
+// instead of on every legal-page visit.
+import 'ketcher-react/dist/index.css';
 import { StandaloneStructServiceProvider } from 'ketcher-standalone';
 import type { Ketcher } from 'ketcher-core';
 import { Header } from './components/Header';
@@ -178,16 +181,23 @@ export default function App() {
           ]);
           // Discard if a newer draw event fired while this WASM call was in flight
           if (thisGen !== generationRef.current) return;
+          // Both failure paths below blank the data. Whether that reads as "nothing
+          // drawn yet" or "this structure was refused" depends entirely on whether
+          // atoms are on the canvas — so ask the canvas, don't guess from the string.
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const hasAtoms = (ketcher.editor as any).render.ctab.molecule.atoms.size > 0;
+          const FAILED = 'No InChI could be generated for this structure — check for unusual valences or unsupported atoms.';
+
           // D-02: rejected InChI blanks both inchi and inchiKey — asymmetric treatment
           if (inchiResult.status === 'rejected') {
-            useInchiStore.getState().setInchiData('', [], {}, {}, [], '');
+            useInchiStore.getState().setInchiFailure(hasAtoms ? FAILED : null);
             return;
           }
           const raw = inchiResult.value;
           const result = parseInchiWithAux(raw);
           // D-12/D-13: empty canvas guard — no formula layer means empty or disconnected
           if (result.layers.length < 2) {
-            useInchiStore.getState().setInchiData('', [], {}, {}, [], '');
+            useInchiStore.getState().setInchiFailure(hasAtoms ? FAILED : null);
             return;
           }
           // parseInchiWithAux returns canonical → 0-based mol-file rank (from AuxInfo N: field).
@@ -247,7 +257,7 @@ export default function App() {
   }, [isReady]); // ketcherRef is a ref — not a React dependency
 
   return (
-    <div className="app">
+    <main className="app">
       <Header />
       <FeedbackDialog
         dialogRef={dialogRef}
@@ -270,6 +280,6 @@ export default function App() {
       <InchiKeySection />
       <Explanation />
       <SiteFooter />
-    </div>
+    </main>
   );
 }

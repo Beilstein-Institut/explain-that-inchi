@@ -28,7 +28,7 @@
 
 /* Backdrop scrim — no token exists; using approved literal from UI-SPEC */
 dialog.feedbackDialog::backdrop {
-  background: oklch(0.2 0.015 255 / 0.32);
+  background: oklch(from var(--ink) l c h / 0.32);
 }
 
 /* Dialog title */

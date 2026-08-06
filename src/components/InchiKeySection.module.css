@@ -83,7 +83,7 @@
   border: none;
   cursor: pointer;
   color: var(--ink-faint);
-  padding: 4px;
+  padding: 8px;
   border-radius: 3px;
   transition: color 160ms;
   line-height: 0;
@@ -116,4 +116,10 @@
   color: var(--c-formula);
   white-space: nowrap;
   pointer-events: none;
+}
+
+/* Key segments are focusable text (INKEY-09: no pin, no canvas highlight). */
+.inchiLayer:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
 }
