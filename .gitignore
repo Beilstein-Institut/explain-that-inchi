@@ -35,3 +35,9 @@ design_handoff_explain_that_inchi/
 
 # Generated intermediate for public/og-image.png (see scripts/og-image.mjs)
 scripts/og-image.svg
+
+# CodeGraph index (local, rebuilt from source)
+.codegraph/
+
+# Local-only git hooks
+.github/hooks/
