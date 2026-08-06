@@ -3,7 +3,9 @@ import tseslint from 'typescript-eslint';
 import reactHooks from 'eslint-plugin-react-hooks';
 
 export default tseslint.config(
-  { ignores: ['dist', 'public/coi-serviceworker.js'] },
+  // scripts/ are hand-run Node tools, not app code — they use Node globals the
+  // browser config doesn't define.
+  { ignores: ['dist', 'public/coi-serviceworker.js', 'scripts'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   reactHooks.configs.flat.recommended,
