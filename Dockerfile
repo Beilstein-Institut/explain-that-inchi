@@ -11,6 +11,13 @@ COPY . .
 # to 'dev' for the commit string (handled gracefully).
 RUN npm run build -- --base=/explain-that-inchi/
 
+# Precompress text assets so nginx's gzip_static can serve them with no runtime
+# CPU. -9 because this runs once at build; -k keeps the originals for clients
+# that do not send Accept-Encoding: gzip. .wasm is excluded on purpose (see
+# nginx.conf) — it is served uncompressed to keep streaming compilation intact.
+RUN find /app/dist -type f \( -name '*.js' -o -name '*.css' -o -name '*.svg' \) \
+      -exec gzip -9 -k {} +
+
 # ---- serve stage: nginx with cross-origin-isolation headers ----
 FROM nginx:1.27-alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf
