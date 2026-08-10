@@ -11,13 +11,54 @@
   "context": "default",
   "context_reason": "Milestone v1.6 shipped; no active phase. This session was six ad-hoc quick tasks driven by a deployment move and a DPO review of the privacy policy.",
   "completed_tasks": [
-    {"id": 3, "name": "Drop §3(3) GitHub Pages Service Worker paragraph", "status": "done", "commit": "872b1ff"},
-    {"id": 4, "name": "Point canonical/og/docs URLs at cheminfo.beilstein.org", "status": "done", "commit": "6fa9b03"},
-    {"id": 5, "name": "nginx gzip_static + immutable cache headers", "status": "done", "commit": "67f065d"},
-    {"id": 6, "name": "Remove footer Licenses link; add Beilstein logo to legal pages", "status": "done", "commit": "4a53e0c"},
-    {"id": 7, "name": "Consistent title rule across legal pages", "status": "done", "commit": "fc79994"},
-    {"id": 8, "name": "Apply DPO review to privacy policy", "status": "done", "commit": "9415e96"},
-    {"id": "og", "name": "Regenerate OG image with new domain", "status": "done", "commit": "989d189"}
+    {
+      "id": 3,
+      "name": "Drop §3(3) GitHub Pages Service Worker paragraph",
+      "status": "done",
+      "commit": "872b1ff"
+    },
+    {
+      "id": 4,
+      "name": "Point canonical/og/docs URLs at cheminfo.beilstein.org",
+      "status": "done",
+      "commit": "6fa9b03"
+    },
+    {
+      "id": 5,
+      "name": "nginx gzip_static + immutable cache headers",
+      "status": "done",
+      "commit": "67f065d"
+    },
+    {
+      "id": 6,
+      "name": "Remove footer Licenses link; add Beilstein logo to legal pages",
+      "status": "done",
+      "commit": "4a53e0c"
+    },
+    {
+      "id": 7,
+      "name": "Consistent title rule across legal pages",
+      "status": "done",
+      "commit": "fc79994"
+    },
+    {
+      "id": 8,
+      "name": "Apply DPO review to privacy policy",
+      "status": "done",
+      "commit": "9415e96"
+    },
+    {
+      "id": "og",
+      "name": "Regenerate OG image with new domain",
+      "status": "done",
+      "commit": "989d189"
+    },
+    {
+      "id": 9,
+      "name": "Auto-wipe Ketcher localStorage on pagehide; privacy §3(2)/§2(4) rewritten to match",
+      "status": "done",
+      "commit": "3b45e34"
+    }
   ],
   "remaining_tasks": [],
   "blockers": [],
@@ -50,15 +91,40 @@
     }
   ],
   "decisions": [
-    {"decision": "Deleted § 3 (3) rather than rewriting it", "rationale": "nginx sets COOP/COEP at the origin and the proxy passes both through (verified via curl), so coi-serviceworker.js returns early at line 110 and never registers. The paragraph described a code path that cannot execute on this deployment."},
-    {"decision": "Precompress at image build with gzip -9 + gzip_static, rather than runtime gzip alone", "rationale": "The largest chunk is 21 MB minified and content-hashed, so its bytes never change. Runtime-gzipping it per cold request costs ~1-2s CPU each time for an identical result. Runtime gzip stays on as a fallback for anything without a .gz sibling."},
-    {"decision": "Excluded application/wasm from compression", "rationale": "Keeps WASM streaming compilation undisturbed. The two Indigo files are served as-is."},
-    {"decision": "Repeated COOP/COEP inside every new nginx location block", "rationale": "nginx add_header does not inherit into a block that declares its own. Omitting them would silently strip cross-origin isolation from JS and WASM and break SharedArrayBuffer, i.e. break InChI computation."},
-    {"decision": "Moved the title rule from h2 border-top to h1 border-bottom", "rationale": "The h2 rule was a section separator; a rule appeared under the title only on Privacy, where an h2 directly follows the h1. Giving the h1 its own rule makes all three docs open identically and decouples the look from how a document happens to start."},
-    {"decision": "Kept the footer Licenses removal without losing attribution", "rationale": "TERMS_HTML carries a 'Third-party components' section in-app, and THIRD-PARTY-NOTICES.md remains at the repo root, so MIT/BSD notice obligations still have an in-app path."},
-    {"decision": "Did not add Playwright as a project dependency for OG image rasterizing", "rationale": "Once-a-year task. Rendered via the already-cached Playwright chromium and a throwaway script in scratchpad; documented the requirement in the index.html comment instead."}
+    {
+      "decision": "Deleted § 3 (3) rather than rewriting it",
+      "rationale": "nginx sets COOP/COEP at the origin and the proxy passes both through (verified via curl), so coi-serviceworker.js returns early at line 110 and never registers. The paragraph described a code path that cannot execute on this deployment."
+    },
+    {
+      "decision": "Precompress at image build with gzip -9 + gzip_static, rather than runtime gzip alone",
+      "rationale": "The largest chunk is 21 MB minified and content-hashed, so its bytes never change. Runtime-gzipping it per cold request costs ~1-2s CPU each time for an identical result. Runtime gzip stays on as a fallback for anything without a .gz sibling."
+    },
+    {
+      "decision": "Excluded application/wasm from compression",
+      "rationale": "Keeps WASM streaming compilation undisturbed. The two Indigo files are served as-is."
+    },
+    {
+      "decision": "Repeated COOP/COEP inside every new nginx location block",
+      "rationale": "nginx add_header does not inherit into a block that declares its own. Omitting them would silently strip cross-origin isolation from JS and WASM and break SharedArrayBuffer, i.e. break InChI computation."
+    },
+    {
+      "decision": "Moved the title rule from h2 border-top to h1 border-bottom",
+      "rationale": "The h2 rule was a section separator; a rule appeared under the title only on Privacy, where an h2 directly follows the h1. Giving the h1 its own rule makes all three docs open identically and decouples the look from how a document happens to start."
+    },
+    {
+      "decision": "Kept the footer Licenses removal without losing attribution",
+      "rationale": "TERMS_HTML carries a 'Third-party components' section in-app, and THIRD-PARTY-NOTICES.md remains at the repo root, so MIT/BSD notice obligations still have an in-app path."
+    },
+    {
+      "decision": "Did not add Playwright as a project dependency for OG image rasterizing",
+      "rationale": "Once-a-year task. Rendered via the already-cached Playwright chromium and a throwaway script in scratchpad; documented the requirement in the index.html comment instead."
+    },
+    {
+      "decision": "Auto-delete editor localStorage on leaving, sweeping by 'ketcher' prefix",
+      "rationale": "User chose maximum data minimisation over persistence after being shown the trade-off. Prefix sweep rather than a key list because Ketcher renames keys across versions and a stale list would leave data behind that the privacy policy claims is deleted. Accepted cost: saved favourite structures do not survive a visit."
+    }
   ],
   "uncommitted_files": [],
   "next_action": "Rebuild and redeploy the container so the nginx compression and cache-header changes reach users, then re-run the compression check through the proxy against a real deployed asset name.",
-  "context_notes": "Session started as a verification question about the privacy policy's data-retention claims and expanded into the deployment move from GitHub Pages to cheminfo.beilstein.org (nginx behind an upstream proxy, temporarily password-gated). Everything is committed and pushed to both remotes at 51a1e82; working tree clean. Nothing is mid-flight — all remaining items are deploy-time or human actions, not code."
+  "context_notes": "Session started as a verification question about the privacy policy's data-retention claims and expanded into the deployment move from GitHub Pages to cheminfo.beilstein.org (nginx behind an upstream proxy, temporarily password-gated). Everything is committed and pushed to both remotes at 51a1e82; working tree clean. Nothing is mid-flight — all remaining items are deploy-time or human actions, not code. Session then resumed to add the auto-wipe (3b45e34); privacy § 3 (2) now promises deletion on leaving, backed by clearEditorStorage.test.ts."
 }
