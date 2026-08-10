@@ -5,7 +5,7 @@ milestone_name: Connection-layer cards
 current_phase: 19
 status: milestone_shipped
 stopped_at: Shipped v1.5 + v1.6 (Phases 17–19 tagged)
-last_updated: "2026-08-10T12:17:01.337Z"
+last_updated: "2026-08-10T12:52:19.272Z"
 last_activity: 2026-06-30
 last_activity_desc: Phase 19 complete
 progress:
@@ -62,6 +62,7 @@ See: .planning/PROJECT.md (updated 2026-06-30)
 | 3 | Drop §3(3) GitHub Pages Service Worker paragraph from legal content | 2026-08-10 | 872b1ff | — |
 | 4 | Point canonical/og/docs URLs at cheminfo.beilstein.org | 2026-08-10 | 6fa9b03 | — |
 | 5 | nginx gzip_static + immutable cache headers | 2026-08-10 | 67f065d | — |
+| 6 | Remove footer Licenses link; add Beilstein logo to legal pages | 2026-08-10 | 4a53e0c | — |
 
 ## Deferred Items
 
