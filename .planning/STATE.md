@@ -2,18 +2,17 @@
 gsd_state_version: 1.0
 milestone: v1.6
 milestone_name: Connection-layer cards
-current_phase: null
+current_phase: 19
 status: milestone_shipped
 stopped_at: Shipped v1.5 + v1.6 (Phases 17–19 tagged)
-last_updated: "2026-07-27T00:00:00.000Z"
-last_activity: 2026-07-24
-last_activity_desc: "Jmol CPK element colors merged (non-GSD commits f413a96)"
+last_updated: "2026-08-10T11:32:54.377Z"
+last_activity: 2026-06-30
+last_activity_desc: Phase 19 complete
 progress:
-  total_phases: 0
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_phases: 6
+  completed_phases: 6
+  total_plans: 11
+  completed_plans: 11
 current_phase_name: null
 ---
 
@@ -60,6 +59,7 @@ See: .planning/PROJECT.md (updated 2026-06-30)
 |---|-------------|------|--------|-----------|
 | 260630-mpc | Docker support (multi-stage Dockerfile + nginx COOP/COEP + docker-compose, zero-config deploy) | 2026-06-30 | f9dd176 | [260630-mpc-add-docker-support-multi-stage-dockerfil](./quick/260630-mpc-add-docker-support-multi-stage-dockerfil/) |
 | 260713-mob | Fix mobile layout — full-width canvas at ≤900px, lighter .app padding, wrapping section-label actions, and example molecules as a chip strip below the editor (CSS-only) | 2026-07-13 | bc8dfe7 | — |
+| 3 | Drop §3(3) GitHub Pages Service Worker paragraph from legal content | 2026-08-10 | 872b1ff | — |
 
 ## Deferred Items
 
