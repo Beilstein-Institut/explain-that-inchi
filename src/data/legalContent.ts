@@ -68,7 +68,6 @@ Data that require further storage for evidentiary purposes are exempt from delet
 <h2>§ 3 Cookies and local storage</h2>
 <p>(1) We do not use Cookies. We do not use tracking, analytics or advertising technologies of any kind.</p>
 <p>(2) The embedded molecule editor (Ketcher) stores technically necessary settings in your browser's local storage, for example display options such as bond length and zoom level, and any structures you mark as favourites. This data remains on your device, is never transmitted to our servers or to third parties, and contains no personal data. It is used solely to make the editor work as expected. You can delete it at any time via your browser's settings for site data.</p>
-<p>(3) When this website is served from GitHub Pages, a Service Worker is registered in your browser. It serves the single purpose of setting the security headers (Cross-Origin-Opener-Policy and Cross-Origin-Embedder-Policy) that the browser requires before the WebAssembly component computing the InChI may run. It performs no tracking and transmits no data.</p>
 
 <h2>§ 4 Your rights</h2>
 <p>(1) You have the following rights with regard to the personal data concerning you:</p>
