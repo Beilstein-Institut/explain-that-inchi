@@ -59,9 +59,12 @@ describe('legal content is adapted to Explain that InChI', () => {
     expect(PRIVACY_HTML).toMatch(/discarded when you reload or close it/);
   });
 
-  it('Privacy gives the retention period and deletion route for editor storage', () => {
-    expect(PRIVACY_HTML).toMatch(/no expiry date and is not deleted automatically/);
-    expect(PRIVACY_HTML).toMatch(/until you delete it yourself/);
+  // Backs registerEditorStorageWipe(): the policy promises the editor's storage
+  // is gone when the visitor leaves. If that wipe is ever removed, this claim
+  // becomes false — see clearEditorStorage.test.ts for the behaviour itself.
+  it('Privacy states editor storage is wiped on leaving, and gives a manual route too', () => {
+    expect(PRIVACY_HTML).toMatch(/deleted automatically as soon as you leave/);
+    expect(PRIVACY_HTML).toMatch(/nothing remains stored on your device between visits/);
     expect(PRIVACY_HTML).toMatch(/settings for site data/);
   });
 

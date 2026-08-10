@@ -13,6 +13,12 @@ import '@fontsource/ibm-plex-serif/400-italic.css';
 import '@fontsource/ibm-plex-serif/500.css';
 import './styles.css';
 import { Root } from './components/Root';
+import { registerEditorStorageWipe } from './lib/clearEditorStorage';
+
+// Registered here, not in App: a visitor who only opens a legal route never
+// mounts App, and any editor data left by an earlier visit should still be
+// cleared when they leave.
+registerEditorStorageWipe();
 
 // App is lazy so the legal routes (#imprint/#privacy/#terms) never download it.
 // Root already keeps Ketcher dormant on those routes, but a static import still
