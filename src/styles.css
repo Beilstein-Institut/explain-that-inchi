@@ -432,6 +432,8 @@ body {
   font-weight: 500;
   color: var(--ink);
   margin: 0 0 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line-soft);
 }
 .legal-content h2 {
   font-family: var(--font-serif);
@@ -441,6 +443,14 @@ body {
   margin: 32px 0 8px;
   padding-top: 8px;
   border-top: 1px solid var(--line-soft);
+}
+/* Privacy opens with an h2 straight after the h1, which would stack the h1's
+   rule and the h2's separator 24px apart. The title rule wins; the section
+   separator is redundant when there is no preceding section to separate. */
+.legal-content h1 + h2 {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
 }
 .legal-content p { margin: 0 0 14px; color: var(--ink-soft); }
 .legal-content ul, .legal-content ol { margin: 0 0 14px; padding-left: 24px; color: var(--ink-soft); }
