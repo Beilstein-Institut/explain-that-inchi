@@ -2,7 +2,7 @@
 
 > Draw a molecule — get an interactive, plain-English breakdown of its InChI string.
 
-**[Live demo →](https://beilstein-institut.github.io/explain-that-inchi/)**
+**[Live demo →](https://cheminfo.beilstein.org/explain-that-inchi/)**
 
 ---
 

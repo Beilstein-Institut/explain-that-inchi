@@ -81,7 +81,7 @@ Voice: plain English, chemically precise, explanatory rather than promotional.
 
 ## Evidence on Hand
 
-- Live deployment: https://beilstein-institut.github.io/explain-that-inchi/
+- Live deployment: https://cheminfo.beilstein.org/explain-that-inchi/
 - 20 real preset molecules in `src/data/molecules.ts`.
 - Legal/imprint/privacy copy in `src/data/legalContent.ts`; `THIRD-PARTY-NOTICES.md`;
   MIT licence.

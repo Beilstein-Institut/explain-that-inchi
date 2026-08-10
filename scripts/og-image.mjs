@@ -116,7 +116,7 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.
   <text x="${CARD.x + CARD.w - PAD}" y="${y1}" text-anchor="end" font-family="IBM Plex Sans" font-size="19" fill="${C.inkFaint}">caffeine</text>
 
   <image x="72" y="558" width="176" height="41.7" xlink:href="data:image/png;base64,${logo}"/>
-  <text x="1128" y="586" text-anchor="end" font-family="IBM Plex Mono" font-size="17" fill="${C.inkFaint}">beilstein-institut.github.io/explain-that-inchi</text>
+  <text x="1128" y="586" text-anchor="end" font-family="IBM Plex Mono" font-size="17" fill="${C.inkFaint}">cheminfo.beilstein.org/explain-that-inchi</text>
 </svg>`;
 
 writeFileSync(new URL('./og-image.svg', import.meta.url), svg);
