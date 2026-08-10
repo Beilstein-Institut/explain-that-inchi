@@ -400,6 +400,23 @@ body {
   color: var(--ink);
   line-height: 1.6;
 }
+/* Publisher mark at the head of each legal document. Sized above the 140px
+   footer attribution: here it identifies the issuing body rather than sitting
+   as a quiet credit, so it carries full opacity. */
+.legal-masthead {
+  display: block;
+  margin-bottom: 20px;
+}
+.legal-masthead img {
+  display: block;
+  width: 150px;
+  height: auto;
+}
+.legal-masthead:focus-visible {
+  outline: 2px solid var(--c-formula);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
 .legal-back {
   display: inline-block;
   margin-bottom: 24px;

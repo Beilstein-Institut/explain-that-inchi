@@ -43,6 +43,12 @@ describe('LegalPage', () => {
     ).toBeInTheDocument();
   });
 
+  it.each(LEGAL_DOCS)('identifies the Beilstein-Institut on $title', (doc) => {
+    render(<LegalPage doc={doc} />);
+    const mark = screen.getByRole('link', { name: 'Beilstein-Institut' });
+    expect(mark).toHaveAttribute('href', 'https://www.beilstein-institut.de/en/');
+  });
+
   it('provides a back link to the main app', () => {
     render(<LegalPage doc={privacy} />);
     const back = screen.getByRole('link', { name: /back to explain that inchi/i });

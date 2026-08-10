@@ -1,5 +1,7 @@
 // Site footer. Impressum / Privacy / Terms are in-app hash routes (see Root +
-// LegalPage); Licenses stays an external link to the generated notices file.
+// LegalPage). Third-party attribution is not linked here — it lives in the
+// Terms doc's "Third-party components" section, with the full generated notices
+// in THIRD-PARTY-NOTICES.md at the repo root.
 import logoUrl from '../assets/beilstein-institut-logo-wide.png';
 
 export function SiteFooter() {
@@ -18,14 +20,6 @@ export function SiteFooter() {
       <a href="#privacy">Privacy Policy</a>
       <span aria-hidden="true">·</span>
       <a href="#terms">Terms &amp; Conditions</a>
-      <span aria-hidden="true">·</span>
-      <a
-        href="https://github.com/Beilstein-Institut/explain-that-inchi/blob/master/THIRD-PARTY-NOTICES.md"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        Licenses
-      </a>
     </footer>
   );
 }

@@ -27,12 +27,9 @@ describe('SiteFooter', () => {
     );
   });
 
-  it('keeps the Licenses link pointing at THIRD-PARTY-NOTICES', () => {
+  it('does not link out to the licences notices', () => {
     render(<SiteFooter />);
-    expect(screen.getByRole('link', { name: 'Licenses' })).toHaveAttribute(
-      'href',
-      expect.stringContaining('THIRD-PARTY-NOTICES.md'),
-    );
+    expect(screen.queryByRole('link', { name: 'Licenses' })).toBeNull();
   });
 
   it('opens the legal pages in the same tab (no target=_blank)', () => {
