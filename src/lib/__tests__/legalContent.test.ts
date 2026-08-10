@@ -48,6 +48,28 @@ describe('legal content is adapted to Explain that InChI', () => {
     expect(PRIVACY_HTML).toMatch(/processed entirely within your browser/);
   });
 
+  // The retention statements below are the DPO-reviewed answers to "how long is
+  // it kept, and how does the user delete it". They are only true because the
+  // app persists nothing itself (no localStorage/sessionStorage/IndexedDB writes
+  // in src/, no zustand persist middleware) and Ketcher's own keys carry no TTL.
+  // If that ever changes, these assertions must fail rather than the docs quietly
+  // becoming wrong.
+  it('Privacy states drawn structures are not persisted on the device', () => {
+    expect(PRIVACY_HTML).toMatch(/only in your browser's memory/);
+    expect(PRIVACY_HTML).toMatch(/discarded when you reload or close it/);
+  });
+
+  it('Privacy gives the retention period and deletion route for editor storage', () => {
+    expect(PRIVACY_HTML).toMatch(/no expiry date and is not deleted automatically/);
+    expect(PRIVACY_HTML).toMatch(/until you delete it yourself/);
+    expect(PRIVACY_HTML).toMatch(/settings for site data/);
+  });
+
+  // § 3 (1) promises no analytics; § 5 must not imply analysis happens anyway.
+  it('Privacy does not claim data-analysis processing that the app never does', () => {
+    expect(PRIVACY_HTML).not.toMatch(/data analysis purposes/);
+  });
+
   it('no doc carries stale product/tech tokens', () => {
     for (const html of [IMPRINT_HTML, PRIVACY_HTML, TERMS_HTML]) {
       for (const stale of STALE_PRODUCT_TOKENS) {

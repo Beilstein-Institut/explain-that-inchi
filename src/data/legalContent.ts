@@ -63,11 +63,11 @@ ${ADDRESS_HTML}
 <p>(2) We use this data collected and stored in log files for stability and security reasons and delete them within 2 weeks.<br />
 Data that require further storage for evidentiary purposes are exempt from deletion until the respective incident has been finally clarified. The collection of data for the provision of the website and the storage of the data in log files is absolutely necessary for the operation of the website. Therefore, the user has no right to object.</p>
 <p>(3) Data processing is carried out on the basis of our legal obligation to guarantee IT security in accordance with Art. 6 (1) lit. c in conjunction with Art. 32 GDPR and in accordance with Art. 6 (1) lit. f GDPR, as otherwise we would not be able to provide our offered services in a functional manner. Your visit to our website is based on your autonomous decision. This wish can only be fulfilled by means of the described data processing.</p>
-<p>(4) Explain that InChI is a static web application. Any molecule you draw and the identifiers derived from it (InChI, InChIKey, molecular formula) are processed entirely within your browser; they are never transmitted to, or stored on, our servers.</p>
+<p>(4) Explain that InChI is a static web application. Any molecule you draw and the identifiers derived from it (InChI, InChIKey, molecular formula) are processed entirely within your browser; they are never transmitted to, or stored on, our servers. They are also not stored on your device: the structure exists only in your browser's memory for as long as the page is open, and is discarded when you reload or close it. An exception applies only to structures you deliberately save to the editor's library, which are covered by § 3 (2).</p>
 
 <h2>§ 3 Cookies and local storage</h2>
 <p>(1) We do not use Cookies. We do not use tracking, analytics or advertising technologies of any kind.</p>
-<p>(2) The embedded molecule editor (Ketcher) stores technically necessary settings in your browser's local storage, for example display options such as bond length and zoom level, and any structures you mark as favourites. This data remains on your device, is never transmitted to our servers or to third parties, and contains no personal data. It is used solely to make the editor work as expected. You can delete it at any time via your browser's settings for site data.</p>
+<p>(2) The embedded molecule editor (Ketcher) stores technically necessary settings in your browser's local storage, for example display options such as bond length and zoom level, and any structures you mark as favourites. This data is never transmitted to our servers or to third parties and contains no personal data. It is used solely to make the editor work as expected. It carries no expiry date and is not deleted automatically: it remains stored on your device until you delete it yourself. You can do so at any time via your browser's settings for site data (for example "Clear browsing data" or "Cookies and site data" in Chrome, Edge and Firefox), which removes it for this website.</p>
 
 <h2>§ 4 Your rights</h2>
 <p>(1) You have the following rights with regard to the personal data concerning you:</p>
@@ -81,9 +81,8 @@ Data that require further storage for evidentiary purposes are exempt from delet
 <p>(2) You also have the right to complain to the competent data protection supervisory authority about the processing of your personal data by us, for example the Hessian Commissioner for Data Protection and Freedom of Information.</p>
 
 <h2>§ 5 Objection to or revocation of the processing of your data</h2>
-<p>(1) Insofar as we base the processing of your personal data on the legal basis of the exercise of a legitimate interest pursuant to Art. 6 (1) lit. f GDPR, you may object to the processing. This is the case if the processing is not necessary, in particular, for the fulfillment of a contract with you. When exercising such an objection, we ask you to explain the reasons why we should not process your personal data in the way we have done. In the event of your objection, we will review the situation and either discontinue or adjust the data processing or show you our compelling legitimate grounds on the basis of which we will continue the processing.</p>
-<p>(2) Of course, you can object to the processing of your personal data for data analysis purposes at any time.</p>
-<p>Version 07.07.2026</p>
+<p>Insofar as we base the processing of your personal data on the legal basis of the exercise of a legitimate interest pursuant to Art. 6 (1) lit. f GDPR, you may object to the processing. This is the case if the processing is not necessary, in particular, for the fulfillment of a contract with you. When exercising such an objection, we ask you to explain the reasons why we should not process your personal data in the way we have done. In the event of your objection, we will review the situation and either discontinue or adjust the data processing or show you our compelling legitimate grounds on the basis of which we will continue the processing.</p>
+<p>Version 10.08.2026</p>
 `;
 
 export const TERMS_HTML = `
