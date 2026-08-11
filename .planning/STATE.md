@@ -65,7 +65,7 @@ See: .planning/PROJECT.md (updated 2026-06-30)
 | 6 | Remove footer Licenses link; add Beilstein logo to legal pages | 2026-08-10 | 4a53e0c | — |
 | 7 | Consistent title rule across legal pages | 2026-08-10 | fc79994 | — |
 | 8 | Apply DPO review to privacy policy | 2026-08-10 | 9415e96 | — |
-| 260811-b69 | Client-side data removal on leave: widened on-leave wipe (localStorage/sessionStorage/IndexedDB/CacheStorage/SW, `clearEditorStorage.ts` → `leaveWipe.ts`), nginx `__leave` Clear-Site-Data endpoint, opt-in "Leave no trace on exit" footer toggle, privacy § 3 (3)/(4) | 2026-08-11 | e097453 | [260811-b69-client-side-data-removal-on-leave-harden](./quick/260811-b69-client-side-data-removal-on-leave-harden/) |
+| 260811-b69 | Client-side data removal on leave: widened on-leave wipe (localStorage/sessionStorage/IndexedDB/CacheStorage/SW, `clearEditorStorage.ts` → `leaveWipe.ts`), nginx `__leave` Clear-Site-Data endpoint fired unconditionally on `pagehide`, privacy § 3 (3)/(4). Shipped first with an opt-in footer toggle; removed in 7866ad1 — the purge is not switchable | 2026-08-11 | 7866ad1 | [260811-b69-client-side-data-removal-on-leave-harden](./quick/260811-b69-client-side-data-removal-on-leave-harden/) |
 | 260811-b69 | Harden client-side data removal on leave — full localStorage/sessionStorage wipe, guarded IndexedDB/Cache sweeps, COI-gated SW unregister, opt-in Clear-Site-Data leave endpoint + footer toggle, honest privacy §3(3)(4) | 2026-08-11 | e097453 | [260811-b69-client-side-data-removal-on-leave-harden](./quick/260811-b69-client-side-data-removal-on-leave-harden/) |
 
 ## Deferred Items
