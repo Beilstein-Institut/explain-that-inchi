@@ -6,8 +6,9 @@
 // holds Ketcher's own keys ('ketcher-opts', 'ketcher_editor_saved_settings',
 // and 'ketcher-tmpls' after a favourite) and nothing else; sessionStorage,
 // IndexedDB, Cookies and Service Worker registrations are all empty. The
-// dominant footprint is the ~29 MB HTTP cache, which no script can touch —
-// only the Clear-Site-Data response header can, hence the opt-in beacon below.
+// dominant footprint is the HTTP cache (49 MB of built assets, of which 18 MB
+// is deliberately-uncompressed WASM), which no script can touch — only the
+// Clear-Site-Data response header can, hence the beacon below.
 //
 // The IndexedDB and Cache Storage sweeps therefore clear nothing today. They
 // are a guard against a future dependency introducing a store, replacing the
@@ -78,7 +79,11 @@ export function wipeSiteData(): void {
  *
  * Accepted cost: pagehide cannot distinguish a reload from a close
  * (`event.persisted` only signals bfcache), so every reload purges the cache
- * and re-downloads roughly 29 MB. Data minimisation was chosen over that.
+ * and re-downloads the whole bundle. Data minimisation was chosen over that.
+ *
+ * Blast radius: the endpoint answers with Clear-Site-Data, which the spec
+ * scopes to the ORIGIN, not to this path. Leaving this app therefore clears
+ * cache and storage for everything on cheminfo.beilstein.org.
  */
 export function registerLeaveWipe(): () => void {
   const onPagehide = () => {
