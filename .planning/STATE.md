@@ -7,7 +7,7 @@ status: milestone_shipped
 stopped_at: Shipped v1.5 + v1.6 (Phases 17–19 tagged)
 last_updated: "2026-08-10T13:12:47.082Z"
 last_activity: 2026-08-11
-last_activity_desc: "Completed quick task 260811-kvl: seven presets so the picker covers all 11 InChI layers"
+last_activity_desc: "Completed quick task 260811-mxg: LIMITATIONS.md + in-app Limitations dialog"
 progress:
   total_phases: 6
   completed_phases: 6
@@ -69,6 +69,7 @@ See: .planning/PROJECT.md (updated 2026-06-30)
 | 260811-f1u | Legal-content gaps: declare vendored coi-serviceworker v0.1.7 (MIT) in `TERMS_HTML` + `THIRD-PARTY-NOTICES.md`; privacy § 3 (4) now states `Clear-Site-Data` is origin-scoped (covers all of cheminfo.beilstein.org, not just this app) | 2026-08-11 | ed89385 | [260811-f1u-add-coi-serviceworker-to-third-party-not](./quick/260811-f1u-add-coi-serviceworker-to-third-party-not/) |
 | 260811-jar | Persistent site footer: `SiteFooter` moved from `App` into `Root` so it renders on the legal hash routes too; `LegalPage` masthead dropped (would be the same logo twice); `.site-footer` given its own max-width/inset reproducing the old `.app`-nested geometry at both breakpoints | 2026-08-11 | 5d9639d | [260811-jar-make-site-footer-persistent-across-all-p](./quick/260811-jar-make-site-footer-persistent-across-all-p/) |
 | 260811-kvl | Layer-coverage presets: fumaric/maleic acid (`b`, differing in one character), choline (`q`), acetate (`p`), chloroform-d (`i`), sodium acetate (`q`+`p`, first multi-component preset), prostaglandin E₂ (`b`/`t`/`m`/`s`) — picker now reaches all 11 layer types, was 7. InChI measured through indigo WASM; live Ketcher round-trip NOT yet driven (see SUMMARY) | 2026-08-11 | 8633a20 | [260811-kvl-add-seven-presets-covering-the-q-p-b-i-l](./quick/260811-kvl-add-seven-presets-covering-the-q-p-b-i-l/) |
+| 260811-mxg | Limitations: new `LIMITATIONS.md` (grouped by the layer imposing each limit — InChI coverage, standard/non-standard split, Ketcher, auxMap, InChIKey hash, browser-only) + in-app Limitations dialog with the 5 strongest entries (`limitationsContent.ts`, source-tagged) + trigger button left of Send feedback. Dialog CSS composes FeedbackDialog's surface | 2026-08-11 | d49ef9e | [260811-mxg-limitations-md-plus-an-in-app-limitation](./quick/260811-mxg-limitations-md-plus-an-in-app-limitation/) |
 | 260811-b69 | Harden client-side data removal on leave — full localStorage/sessionStorage wipe, guarded IndexedDB/Cache sweeps, COI-gated SW unregister, opt-in Clear-Site-Data leave endpoint + footer toggle, honest privacy §3(3)(4) | 2026-08-11 | e097453 | [260811-b69-client-side-data-removal-on-leave-harden](./quick/260811-b69-client-side-data-removal-on-leave-harden/) |
 
 ## Deferred Items
@@ -108,7 +109,7 @@ Items acknowledged and deferred at v1.3 milestone close on 2026-06-19 (same v1.0
 Phase: 19
 Plan: Not started
 Status: Ready to execute
-Last activity: 2026-08-11 — Completed quick task 260811-kvl: layer-coverage presets
+Last activity: 2026-08-11 — Completed quick task 260811-mxg: LIMITATIONS.md + Limitations dialog
 
 ## Operator Next Steps
 
