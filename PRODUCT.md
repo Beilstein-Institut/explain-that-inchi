@@ -64,8 +64,9 @@ browser via Ketcher's WASM InChI — no backend, no upload of the user's structu
 - Stack (fixed): Vite 8 + React 18 + TypeScript, Zustand 5, CSS Modules over a
   ~60-token `oklch()` custom-property system in `src/styles.css`. No Tailwind — it
   would duplicate the token system. React 18, not 19.
-- Static build only; no backend, no SSR. Deployed to GitHub Pages via Actions;
-  `coi-serviceworker.js` polyfills the COOP/COEP headers SharedArrayBuffer needs.
+- Static build only; no backend, no SSR. Served by nginx in Docker at
+  cheminfo.beilstein.org; nginx sets the COOP/COEP headers SharedArrayBuffer needs,
+  so the bundled `coi-serviceworker.js` fallback never registers.
 - 446 unit/integration tests; fixtures must be **real** InChI strings — fabricated
   fixtures once kept 333 tests green over a broken feature.
 

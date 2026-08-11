@@ -39,7 +39,7 @@ Open [http://localhost:5173/explain-that-inchi/](http://localhost:5173/explain-t
 npm run build
 ```
 
-Output goes to `dist/`. The build copies the Ketcher WASM library and `coi-serviceworker.js`, which polyfills the `Cross-Origin-Opener-Policy` / `Cross-Origin-Embedder-Policy` headers required for SharedArrayBuffer on GitHub Pages.
+Output goes to `dist/`. The build copies the Ketcher WASM library and `coi-serviceworker.js`, a fallback that polyfills the `Cross-Origin-Opener-Policy` / `Cross-Origin-Embedder-Policy` headers SharedArrayBuffer requires when the host cannot set them itself. In the deployed setup nginx sets them, so it never registers.
 
 ### Tests
 
@@ -53,9 +53,11 @@ npm test
 
 ## Deployment
 
-The app is deployed to GitHub Pages from the `gh-pages` branch via GitHub Actions (`.github/workflows/deploy.yml`). Any push to `master` triggers a production build and deploy.
+The app is served at <https://cheminfo.beilstein.org/explain-that-inchi/> by nginx in Docker — build the image from the `Dockerfile` (or run `docker compose up --build`) and deploy it. There is no CI deployment; publishing is a manual image build and redeploy.
 
-For other static hosts (Netlify, Vercel, etc.) no special configuration is needed — the COEP/COOP headers required by Ketcher's WASM worker can be set at the host level instead of via the service worker.
+`nginx.conf` sets the `Cross-Origin-Opener-Policy` / `Cross-Origin-Embedder-Policy` headers that Ketcher's WASM worker needs for SharedArrayBuffer. Because those arrive from the origin, the bundled `coi-serviceworker.js` fallback returns early and never registers.
+
+On a static host that cannot set headers (GitHub Pages and similar), the service worker would take over instead — but note that `nginx.conf` also provides the `/explain-that-inchi/__leave` endpoint behind the on-leave cache purge, which such a host cannot replicate.
 
 ---
 
