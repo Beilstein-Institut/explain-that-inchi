@@ -65,6 +65,21 @@ function stripVar(cssVar: string): string {
   return cssVar.replace('var(', '').replace(')', '');
 }
 
+/**
+ * True for a Ketcher atom label that is an explicit hydrogen of any isotope.
+ *
+ * Deuterium and tritium arrive as their own atom symbols, not as hydrogen with
+ * an isotope field: indigo writes `D` in the molfile for `[2H]`, so a
+ * `label === 'H'` test drops them and every consumer of hAtomPoolIds — the
+ * formula layer's H hover, the h-layer badge counts, the isotope highlight —
+ * silently ignores a deuterated position.
+ *
+ * Exact equality, never a prefix test: `Ds` is darmstadtium.
+ */
+export function isExplicitHydrogenLabel(label: string): boolean {
+  return label === 'H' || label === 'D' || label === 'T';
+}
+
 /** True for the pure-white Jmol colors (hydrogen and the superheavies). */
 export function isWhite(color: string): boolean {
   const c = color.replace(/\s/g, '').toLowerCase();

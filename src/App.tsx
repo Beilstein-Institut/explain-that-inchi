@@ -11,6 +11,7 @@ import { InchiSection } from './components/InchiSection';
 import { InchiKeySection } from './components/InchiKeySection';
 import { Explanation } from './components/Explanation';
 import { parseInchiWithAux, remapAuxToPoolIds } from './lib/parseAuxMapping';
+import { isExplicitHydrogenLabel } from './lib/highlightUtils';
 import { useInchiStore } from './store';
 import { useKetcherHighlights } from './hooks/useKetcherHighlights';
 import { MOLECULES } from './data/molecules';
@@ -205,12 +206,15 @@ export default function App() {
           const poolIds: number[] = [];
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (ketcher.editor as any).render.ctab.molecule.atoms.forEach((_: unknown, id: number) => poolIds.push(id));
-          // Collect explicit H atom pool IDs from Ketcher render struct (INCHI-05)
+          // Collect explicit H atom pool IDs from Ketcher render struct (INCHI-05).
+          // isExplicitHydrogenLabel, not label === 'H': deuterium and tritium come
+          // through as their own labels ('D', 'T'), and this one pool feeds every
+          // hydrogen-aware highlight in the app.
           const hAtomPoolIds: number[] = [];
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (ketcher.editor as any).render.ctab.molecule.atoms.forEach(
             (atom: { label: string }, id: number) => {
-              if (atom.label === 'H') hAtomPoolIds.push(id);
+              if (isExplicitHydrogenLabel(atom.label)) hAtomPoolIds.push(id);
             }
           );
           // Build live-atom coordinates for coordinate-based canonical→poolId remap.

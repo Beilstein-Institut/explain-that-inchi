@@ -13,7 +13,7 @@
 // src/data/molecules.ts — never hand-written.
 
 import { describe, it, expect, vi } from 'vitest';
-import { buildHighlightSpecs } from '../highlightUtils';
+import { buildHighlightSpecs, isExplicitHydrogenLabel } from '../highlightUtils';
 import type { StructLike } from '../highlightUtils';
 import { parseInchi, parseIsotopeEntries } from '../parseInchi';
 import type { AuxMap } from '../parseInchi';
@@ -90,6 +90,29 @@ describe('parseIsotopeEntries', () => {
   it('returns nothing for the empty text of an isotopic-mobile-H layer', () => {
     // Heavy water is 'InChI=1S/H2O/h1H2/i/hD2' — the i layer carries no numbers.
     expect(parseIsotopeEntries('')).toEqual([]);
+  });
+});
+
+describe('isExplicitHydrogenLabel', () => {
+  // The pool of explicit-hydrogen atoms was collected with `label === 'H'`, so a
+  // deuterium was never in it: indigo writes the molfile atom symbol as 'D', not
+  // as 'H' with an isotope field (verified by converting '[2H]C(Cl)(Cl)Cl' to
+  // molfile). That silently affected every consumer of hAtomPoolIds — the
+  // formula layer's H hover and the h-layer badge count as well as the i layer.
+  it('accepts a plain hydrogen', () => {
+    expect(isExplicitHydrogenLabel('H')).toBe(true);
+  });
+
+  it('accepts deuterium and tritium, which Ketcher labels D and T', () => {
+    expect(isExplicitHydrogenLabel('D')).toBe(true);
+    expect(isExplicitHydrogenLabel('T')).toBe(true);
+  });
+
+  it('rejects other elements, including ones whose symbol starts with D or T', () => {
+    // Ds is darmstadtium — a prefix test instead of equality would swallow it.
+    for (const el of ['C', 'Cl', 'He', 'Ho', 'Ds', 'Ta', 'Te', 'Hg']) {
+      expect(isExplicitHydrogenLabel(el)).toBe(false);
+    }
   });
 });
 
