@@ -16,6 +16,8 @@ interface KetcherPanelProps {
   onResetClick?: () => void;
   /** Opens the guided Help tour. Rendered next to Reset on the section-label row. */
   onHelpClick?: () => void;
+  /** Opens the Limitations dialog. Rendered immediately left of Send feedback. */
+  onLimitationsClick?: () => void;
 }
 
 export function KetcherPanel({
@@ -28,6 +30,7 @@ export function KetcherPanel({
   onFeedbackClick,
   onResetClick,
   onHelpClick,
+  onLimitationsClick,
 }: KetcherPanelProps) {
   return (
     <section aria-labelledby="editor-heading">
@@ -42,6 +45,11 @@ export function KetcherPanel({
           {onResetClick && (
             <button type="button" className="reset-trigger" onClick={onResetClick}>
               Reset
+            </button>
+          )}
+          {onLimitationsClick && (
+            <button type="button" className="limitations-trigger" onClick={onLimitationsClick}>
+              Limitations
             </button>
           )}
           {onFeedbackClick && (

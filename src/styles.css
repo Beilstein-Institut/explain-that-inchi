@@ -148,8 +148,11 @@ body {
   outline-offset: 2px;
 }
 /* Reset trigger: secondary-action pill, subdued style — to the left of Send feedback.
-   Uses var(--line) background and var(--ink-soft) text so it recedes vs the brand accent. */
-.reset-trigger {
+   Uses var(--line) background and var(--ink-soft) text so it recedes vs the brand accent.
+   .limitations-trigger shares the rule: same weight of action (opens a read-only
+   panel), so it gets the same subdued pill rather than competing with Send feedback. */
+.reset-trigger,
+.limitations-trigger {
   height: 32px;
   padding: 0 14px;
   border: none;
@@ -165,10 +168,12 @@ body {
   white-space: nowrap;
   transition: background 120ms;
 }
-.reset-trigger:hover {
+.reset-trigger:hover,
+.limitations-trigger:hover {
   background: oklch(from var(--line) calc(l - 0.04) c h);
 }
-.reset-trigger:focus-visible {
+.reset-trigger:focus-visible,
+.limitations-trigger:focus-visible {
   outline: 2px solid var(--ink-soft);
   outline-offset: 2px;
 }

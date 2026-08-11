@@ -18,6 +18,7 @@ import { MOLECULES } from './data/molecules';
 import { handleMolSelectLogic } from './lib/handleMolSelectLogic';
 import { FeedbackDialog } from './components/FeedbackDialog';
 import { HelpTour } from './components/HelpTour';
+import { LimitationsDialog } from './components/LimitationsDialog';
 import { buildFeedbackUrl } from './lib/buildFeedbackUrl';
 import type { FeedbackCategory, FeedbackContext, BuildFeedbackUrlResult } from './lib/buildFeedbackUrl';
 
@@ -44,6 +45,9 @@ export default function App() {
   const isSettingMoleculeRef = useRef(false);
   // Ref to the native <dialog> element — passed to FeedbackDialog; showModal()/close() called on it
   const dialogRef = useRef<HTMLDialogElement>(null);
+  // Separate ref: the Limitations dialog is static content with no state to prime,
+  // so it opens directly rather than through a handler like handleFeedbackOpen.
+  const limitationsDialogRef = useRef<HTMLDialogElement>(null);
 
   // Bridge hover state → Ketcher canvas highlights (Phase 4)
   useKetcherHighlights(ketcherRef, isReady, isHighlightingRef);
@@ -268,6 +272,7 @@ export default function App() {
         contextPreview={contextPreview}
       />
       <HelpTour open={tourOpen} onClose={() => setTourOpen(false)} />
+      <LimitationsDialog dialogRef={limitationsDialogRef} />
       <KetcherPanel
         isReady={isReady}
         onInit={handleInit}
@@ -276,6 +281,7 @@ export default function App() {
         onMolSelect={handleMolSelect}
         isLoading={isLoading}
         onFeedbackClick={handleFeedbackOpen}
+        onLimitationsClick={() => limitationsDialogRef.current?.showModal()}
         onResetClick={handleReset}
         onHelpClick={handleHelpClick}
       />
