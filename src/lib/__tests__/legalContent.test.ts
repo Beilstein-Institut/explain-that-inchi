@@ -35,6 +35,13 @@ describe('legal content is adapted to Explain that InChI', () => {
     expect(TERMS_HTML).toMatch(/MIT/);
   });
 
+  // Vendored in public/, so package-lock.json does not cover it — the only
+  // places it can be declared are this list and THIRD-PARTY-NOTICES.md.
+  it('Terms declares the vendored coi-serviceworker', () => {
+    expect(TERMS_HTML).toMatch(/coi-serviceworker/);
+    expect(TERMS_HTML).toMatch(/Zuidhof/);
+  });
+
   it('Terms describes the actual purpose (draw a molecule, understand its InChI)', () => {
     expect(TERMS_HTML).toMatch(/Everybody is free to use Explain that InChI/);
   });
@@ -84,6 +91,13 @@ describe('legal content is adapted to Explain that InChI', () => {
     expect(PRIVACY_HTML).toMatch(/it always asks your browser to clear its cached files/);
     expect(PRIVACY_HTML).toMatch(/not an option and cannot be switched off/);
     expect(PRIVACY_HTML).not.toMatch(/Leave no trace on exit/);
+  });
+
+  // Clear-Site-Data is scoped to the origin, not to /explain-that-inchi/ — see
+  // the blast-radius note in leaveWipe.ts. The policy must not imply otherwise.
+  it('Privacy states the purge is origin-scoped, not app-scoped', () => {
+    expect(PRIVACY_HTML).toMatch(/works per origin and not per application/);
+    expect(PRIVACY_HTML).toMatch(/cheminfo\.beilstein\.org/);
   });
 
   it('Privacy states the reload and Safari limitations of the purge', () => {
