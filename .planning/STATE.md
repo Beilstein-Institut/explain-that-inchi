@@ -7,7 +7,7 @@ status: milestone_shipped
 stopped_at: Shipped v1.5 + v1.6 (Phases 17–19 tagged)
 last_updated: "2026-08-10T13:12:47.082Z"
 last_activity: 2026-08-11
-last_activity_desc: "Completed quick task 260811-b69: client-side data removal on leave"
+last_activity_desc: "Completed quick task 260811-f1u: legal-content gaps (coi-serviceworker attribution, origin-scoped purge wording)"
 progress:
   total_phases: 6
   completed_phases: 6
@@ -66,6 +66,7 @@ See: .planning/PROJECT.md (updated 2026-06-30)
 | 7 | Consistent title rule across legal pages | 2026-08-10 | fc79994 | — |
 | 8 | Apply DPO review to privacy policy | 2026-08-10 | 9415e96 | — |
 | 260811-b69 | Client-side data removal on leave: widened on-leave wipe (localStorage/sessionStorage/IndexedDB/CacheStorage/SW, `clearEditorStorage.ts` → `leaveWipe.ts`), nginx `__leave` Clear-Site-Data endpoint fired unconditionally on `pagehide`, privacy § 3 (3)/(4). Shipped first with an opt-in footer toggle; removed in 7866ad1 — the purge is not switchable | 2026-08-11 | 7866ad1 | [260811-b69-client-side-data-removal-on-leave-harden](./quick/260811-b69-client-side-data-removal-on-leave-harden/) |
+| 260811-f1u | Legal-content gaps: declare vendored coi-serviceworker v0.1.7 (MIT) in `TERMS_HTML` + `THIRD-PARTY-NOTICES.md`; privacy § 3 (4) now states `Clear-Site-Data` is origin-scoped (covers all of cheminfo.beilstein.org, not just this app) | 2026-08-11 | ed89385 | [260811-f1u-add-coi-serviceworker-to-third-party-not](./quick/260811-f1u-add-coi-serviceworker-to-third-party-not/) |
 | 260811-b69 | Harden client-side data removal on leave — full localStorage/sessionStorage wipe, guarded IndexedDB/Cache sweeps, COI-gated SW unregister, opt-in Clear-Site-Data leave endpoint + footer toggle, honest privacy §3(3)(4) | 2026-08-11 | e097453 | [260811-b69-client-side-data-removal-on-leave-harden](./quick/260811-b69-client-side-data-removal-on-leave-harden/) |
 
 ## Deferred Items
@@ -117,7 +118,8 @@ Last session: 2026-08-11
 Stopped at: Quick task 260811-b69 complete — on-leave wipe widened, opt-in Clear-Site-Data leave endpoint live-verified (204 + all three headers), privacy §3 rewritten. 546 tests green. NOT pushed; both remotes still awaiting the operator.
 
 Stopped at: Session resumed — no active milestone. Work landed outside GSD since 2026-07-13: Jmol CPK element colors (map + hex passthrough + white-atom ring + dead --c-el-* cleanup), in-app Imprint/Privacy/Terms pages, refined connection/hydrogen layer explanations (PR #3). HEAD f413a96, both remotes synced, tree clean. Stale HANDOFF.json + .continue-here.md consumed and deleted. Awaiting next milestone scope.
-Resume file: None
+Stopped at: Session resumed 2026-08-11 — HANDOFF.json read; no active milestone, no incomplete plans. Blocking item: rebuild + redeploy the container, then curl `__leave` through the proxy.
+Resume file: .planning/.continue-here.md (from the 260811-b69 session)
 
 ## Performance Metrics
 
