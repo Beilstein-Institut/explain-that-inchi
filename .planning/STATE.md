@@ -6,8 +6,8 @@ current_phase: 19
 status: milestone_shipped
 stopped_at: Shipped v1.5 + v1.6 (Phases 17–19 tagged)
 last_updated: "2026-08-10T13:12:47.082Z"
-last_activity: 2026-06-30
-last_activity_desc: Phase 19 complete
+last_activity: 2026-08-11
+last_activity_desc: "Completed quick task 260811-b69: client-side data removal on leave"
 progress:
   total_phases: 6
   completed_phases: 6
@@ -65,6 +65,8 @@ See: .planning/PROJECT.md (updated 2026-06-30)
 | 6 | Remove footer Licenses link; add Beilstein logo to legal pages | 2026-08-10 | 4a53e0c | — |
 | 7 | Consistent title rule across legal pages | 2026-08-10 | fc79994 | — |
 | 8 | Apply DPO review to privacy policy | 2026-08-10 | 9415e96 | — |
+| 260811-b69 | Client-side data removal on leave: widened on-leave wipe (localStorage/sessionStorage/IndexedDB/CacheStorage/SW, `clearEditorStorage.ts` → `leaveWipe.ts`), nginx `__leave` Clear-Site-Data endpoint, opt-in "Leave no trace on exit" footer toggle, privacy § 3 (3)/(4) | 2026-08-11 | e097453 | [260811-b69-client-side-data-removal-on-leave-harden](./quick/260811-b69-client-side-data-removal-on-leave-harden/) |
+| 260811-b69 | Harden client-side data removal on leave — full localStorage/sessionStorage wipe, guarded IndexedDB/Cache sweeps, COI-gated SW unregister, opt-in Clear-Site-Data leave endpoint + footer toggle, honest privacy §3(3)(4) | 2026-08-11 | e097453 | [260811-b69-client-side-data-removal-on-leave-harden](./quick/260811-b69-client-side-data-removal-on-leave-harden/) |
 
 ## Deferred Items
 
@@ -111,7 +113,9 @@ Last activity: 2026-06-30 — Phase 19 complete
 
 ## Session Continuity
 
-Last session: 2026-07-27
+Last session: 2026-08-11
+Stopped at: Quick task 260811-b69 complete — on-leave wipe widened, opt-in Clear-Site-Data leave endpoint live-verified (204 + all three headers), privacy §3 rewritten. 546 tests green. NOT pushed; both remotes still awaiting the operator.
+
 Stopped at: Session resumed — no active milestone. Work landed outside GSD since 2026-07-13: Jmol CPK element colors (map + hex passthrough + white-atom ring + dead --c-el-* cleanup), in-app Imprint/Privacy/Terms pages, refined connection/hydrogen layer explanations (PR #3). HEAD f413a96, both remotes synced, tree clean. Stale HANDOFF.json + .continue-here.md consumed and deleted. Awaiting next milestone scope.
 Resume file: None
 
