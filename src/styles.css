@@ -82,7 +82,9 @@ body {
 .app {
   max-width: 1240px;
   margin: 0 auto;
-  padding: 24px 32px 40px;
+  /* No bottom padding: .site-footer is a sibling now (see Root) and carries the
+     page's closing space itself, so the 8px gap above it stays what it was. */
+  padding: 24px 32px 0;
 }
 /* ---------- Header ---------- */
 .header {
@@ -196,15 +198,19 @@ body {
   outline-offset: 2px;
 }
 /* ---------- Section labels ---------- */
-/* Site footer: legal links (Impressum / Privacy Policy). Recedes — small, faint, centred. */
+/* Site footer: legal links (Impressum / Privacy Policy). Recedes — small, faint, centred.
+   Rendered by Root on every route, so it carries its own width and inset rather
+   than inheriting .app's: the 34px side padding reproduces .app's 32px plus the
+   footer's own 2px, and the 52px bottom is .app's old 40px plus the footer's 12px. */
 .site-footer {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin-top: 8px;
-  padding: 4px 2px 12px;
+  max-width: 1240px;
+  margin: 8px auto 0;
+  padding: 4px 34px 52px;
   font-family: var(--font-sans);
   font-size: 12px;
   color: var(--ink-faint);
@@ -354,7 +360,9 @@ body {
 }
 .explain .card.active::before { background: var(--accent); }
 @media (max-width: 900px) {
-  .app { padding: 20px 16px 32px; }
+  .app { padding: 20px 16px 0; }
+  /* Same arithmetic as the desktop rule: 16 + 2 inset, 32 + 12 below. */
+  .site-footer { padding: 4px 18px 44px; }
   .header h1 { font-size: 36px; }
   .section-label { flex-wrap: wrap; row-gap: 8px; }
   /* Examples reflow from a vertical sidebar into a horizontal chip strip
@@ -399,23 +407,6 @@ body {
   font-family: var(--font-sans);
   color: var(--ink);
   line-height: 1.6;
-}
-/* Publisher mark at the head of each legal document. Sized above the 140px
-   footer attribution: here it identifies the issuing body rather than sitting
-   as a quiet credit, so it carries full opacity. */
-.legal-masthead {
-  display: block;
-  margin-bottom: 20px;
-}
-.legal-masthead img {
-  display: block;
-  width: 150px;
-  height: auto;
-}
-.legal-masthead:focus-visible {
-  outline: 2px solid var(--c-formula);
-  outline-offset: 4px;
-  border-radius: 2px;
 }
 .legal-back {
   display: inline-block;

@@ -43,10 +43,11 @@ describe('LegalPage', () => {
     ).toBeInTheDocument();
   });
 
-  it.each(LEGAL_DOCS)('identifies the Beilstein-Institut on $title', (doc) => {
+  // The Beilstein-Institut mark is no longer a masthead on the page itself —
+  // SiteFooter renders on every route, so the assertion lives in Root.test.tsx.
+  it.each(LEGAL_DOCS)('carries no second publisher mark on $title', (doc) => {
     render(<LegalPage doc={doc} />);
-    const mark = screen.getByRole('link', { name: 'Beilstein-Institut' });
-    expect(mark).toHaveAttribute('href', 'https://www.beilstein-institut.de/en/');
+    expect(screen.queryByRole('link', { name: 'Beilstein-Institut' })).toBeNull();
   });
 
   it('provides a back link to the main app', () => {

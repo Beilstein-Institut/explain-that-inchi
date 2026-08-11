@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, within } from '@testing-library/react';
 import { Root } from '../Root';
 
 const MainApp = () => <div>MAIN APP</div>;
@@ -52,5 +52,51 @@ describe('Root hash router', () => {
 
     setHash('');
     expect(screen.getByText('MAIN APP')).toBeInTheDocument();
+  });
+
+  // The footer is a sibling of the route switch, not part of either branch.
+  // These are the assertions that would fail if it slipped back inside App:
+  // the legal documents are only reachable from each other through it, and it
+  // is the only Beilstein-Institut identification they now carry.
+  describe('site footer', () => {
+    it.each(['', '#imprint', '#privacy', '#terms'])(
+      'renders the legal links at hash "%s"',
+      (hash) => {
+        window.location.hash = hash;
+        render(<Root><MainApp /></Root>);
+        // Scoped to the footer landmark: the legal documents link to each other
+        // in their own body text, so an unscoped query is ambiguous there.
+        const footer = within(screen.getByRole('contentinfo'));
+        expect(footer.getByRole('link', { name: 'Impressum' })).toHaveAttribute(
+          'href',
+          '#imprint',
+        );
+        expect(footer.getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute(
+          'href',
+          '#privacy',
+        );
+        expect(footer.getByRole('link', { name: 'Terms & Conditions' })).toHaveAttribute(
+          'href',
+          '#terms',
+        );
+      },
+    );
+
+    it.each(['', '#privacy'])('identifies the Beilstein-Institut at hash "%s"', (hash) => {
+      window.location.hash = hash;
+      render(<Root><MainApp /></Root>);
+      const mark = within(screen.getByRole('contentinfo')).getByRole('link', {
+        name: 'Beilstein-Institut',
+      });
+      expect(mark).toHaveAttribute('href', 'https://www.beilstein-institut.de/en/');
+    });
+
+    it('survives a route change without unmounting the links', () => {
+      render(<Root><MainApp /></Root>);
+      setHash('#terms');
+      expect(
+        within(screen.getByRole('contentinfo')).getByRole('link', { name: 'Impressum' }),
+      ).toBeInTheDocument();
+    });
   });
 });
