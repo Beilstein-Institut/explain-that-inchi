@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "timestamp": "2026-08-10T13:18:36.901Z",
+  "timestamp": "2026-08-11T08:09:08.158Z",
   "phase": null,
   "phase_name": null,
   "phase_dir": null,
@@ -9,55 +9,43 @@
   "total_tasks": null,
   "status": "paused",
   "context": "default",
-  "context_reason": "Milestone v1.6 shipped; no active phase. This session was six ad-hoc quick tasks driven by a deployment move and a DPO review of the privacy policy.",
+  "context_reason": "Milestone v1.6 shipped; no active phase. This session ran quick task 260811-b69 (client-side data removal on leave), then a /doctor setup audit, then deleted the GitHub Pages deployment.",
   "completed_tasks": [
     {
-      "id": 3,
-      "name": "Drop §3(3) GitHub Pages Service Worker paragraph",
+      "id": "b69-1",
+      "name": "Widen the on-leave wipe; clearEditorStorage.ts -> leaveWipe.ts",
       "status": "done",
-      "commit": "872b1ff"
+      "commit": "02535ca"
     },
     {
-      "id": 4,
-      "name": "Point canonical/og/docs URLs at cheminfo.beilstein.org",
+      "id": "b69-2",
+      "name": "nginx __leave Clear-Site-Data endpoint + opt-in footer toggle",
       "status": "done",
-      "commit": "6fa9b03"
+      "commit": "7e4eae8"
     },
     {
-      "id": 5,
-      "name": "nginx gzip_static + immutable cache headers",
+      "id": "b69-3",
+      "name": "Privacy policy 3(3)/(4): cache, history and Safari limits",
       "status": "done",
-      "commit": "67f065d"
+      "commit": "e097453"
     },
     {
-      "id": 6,
-      "name": "Remove footer Licenses link; add Beilstein logo to legal pages",
+      "id": "b69-4",
+      "name": "Remove the opt-in toggle; purge is now unconditional",
       "status": "done",
-      "commit": "4a53e0c"
+      "commit": "7866ad1"
     },
     {
-      "id": 7,
-      "name": "Consistent title rule across legal pages",
+      "id": "doctor",
+      "name": "Setup audit: settings cleanup, CLAUDE.md trim, stale-comment fixes",
       "status": "done",
-      "commit": "fc79994"
+      "commit": "939876f"
     },
     {
-      "id": 8,
-      "name": "Apply DPO review to privacy policy",
+      "id": "pages",
+      "name": "Delete the GitHub Pages workflow; cheminfo is the only URL",
       "status": "done",
-      "commit": "9415e96"
-    },
-    {
-      "id": "og",
-      "name": "Regenerate OG image with new domain",
-      "status": "done",
-      "commit": "989d189"
-    },
-    {
-      "id": 9,
-      "name": "Auto-wipe Ketcher localStorage on pagehide; privacy §3(2)/§2(4) rewritten to match",
-      "status": "done",
-      "commit": "3b45e34"
+      "commit": "df4121d"
     }
   ],
   "remaining_tasks": [],
@@ -66,65 +54,57 @@
   "human_actions_pending": [
     {
       "action": "Rebuild and redeploy the container",
-      "context": "The nginx.conf and Dockerfile changes (gzip_static precompression, immutable cache headers) only take effect on a fresh image build. The deployed bundle is still the old uncompressed one — a 29 MB JS asset with no Cache-Control.",
+      "context": "The live site still has neither the on-leave wipe nor the /explain-that-inchi/__leave endpoint. The image builds clean and was smoke-tested locally (COOP/COEP on every route, 204 + Clear-Site-Data on __leave, gzip_static serving 51 KB for the main asset with immutable cache headers). Carried over from the previous session and still the top item.",
       "blocking": true
     },
     {
-      "action": "Verify compression and cache headers through the upstream proxy after deploy",
-      "context": "All measurements were taken against the container on localhost:5174. If the proxy strips Accept-Encoding or injects its own Cache-Control, none of the gains reach users. Command: curl -sI -u eti -H 'Accept-Encoding: gzip' https://cheminfo.beilstein.org/explain-that-inchi/<asset-from-deployed-index> | grep -iE '^(HTTP|content-length|content-type|content-encoding|cache-control)'",
+      "action": "Curl __leave through the upstream proxy after deploying",
+      "context": "The proxy's HTTP Basic gate may 401 the beacon. A 401 carries no Clear-Site-Data header, so the cache purge silently does nothing and privacy 3(4) becomes false in production. This is the only link in the chain never tested outside a local container. Command: curl -sI -u eti -X POST https://cheminfo.beilstein.org/explain-that-inchi/__leave | grep -iE '^(HTTP|clear-site-data)'",
+      "blocking": false
+    },
+    {
+      "action": "Take the GitHub Pages site down",
+      "context": "Deleting .github/workflows/deploy.yml only stopped future publishes. The gh-pages branch still exists on origin and GitHub still serves it, so a stale copy of the app is live with no __leave endpoint. Disable Pages in Settings -> Pages, then: git push origin --delete gh-pages. Left undone deliberately — outward-facing and hard to reverse.",
+      "blocking": false
+    },
+    {
+      "action": "Decide the Clear-Site-Data origin blast radius",
+      "context": "Clear-Site-Data is scoped to the ORIGIN, not to /explain-that-inchi/. Every leave clears cache AND storage for all of cheminfo.beilstein.org. Safe only if no other application on that host stores browser state. No path-scoped variant exists; the fixes are a dedicated subdomain or dropping the purge. Warning is written into nginx.conf and leaveWipe.ts but no behaviour was changed.",
       "blocking": false
     },
     {
       "action": "Confirm log rotation is <= 14 days on the host",
-      "context": "Privacy policy § 2 (2) promises log deletion within 2 weeks. Nothing in the repo enforces this — nginx.conf defines no access_log directive, so it inherits the base image default and retention is a logrotate concern on the server. The claim is unbacked until someone confirms it.",
-      "blocking": false
-    },
-    {
-      "action": "Report back to the DPO/reviewer on two points",
-      "context": "Their feedback was written against a pre-872b1ff version. (a) § 3 (3) no longer exists — it described a Service Worker that never registers now that COOP/COEP come from the origin. (b) The § 2 (4) comment appears aimed at § 3 (2); § 2 (4) never described local storage. Next review round should be against current text.",
-      "blocking": false
-    },
-    {
-      "action": "Remove the temporary password protection when ready to launch",
-      "context": "Site is gated at an upstream proxy. Until it is removed, og:image/canonical will not unfurl in Slack/Teams/social and search engines cannot index — scrapers receive 401. This is expected, not a bug in the URL swap.",
+      "context": "Privacy 2(2) promises log deletion within 2 weeks. nginx.conf defines no access_log directive, so retention is a logrotate concern on the server. Unbacked claim, carried from the previous session.",
       "blocking": false
     }
   ],
   "decisions": [
     {
-      "decision": "Deleted § 3 (3) rather than rewriting it",
-      "rationale": "nginx sets COOP/COEP at the origin and the proxy passes both through (verified via curl), so coi-serviceworker.js returns early at line 110 and never registers. The paragraph described a code path that cannot execute on this deployment."
+      "decision": "The cache purge is unconditional; no opt-in toggle",
+      "rationale": "Shipped first as a footer checkbox, then removed at the user's instruction. A setting that defaults to keeping the data is one almost nobody changes, and the privacy policy would then describe the minority case. Accepted cost: every reload re-downloads the whole bundle."
     },
     {
-      "decision": "Precompress at image build with gzip -9 + gzip_static, rather than runtime gzip alone",
-      "rationale": "The largest chunk is 21 MB minified and content-hashed, so its bytes never change. Runtime-gzipping it per cold request costs ~1-2s CPU each time for an identical result. Runtime gzip stays on as a fallback for anything without a .gz sibling."
+      "decision": "Deleted the GitHub Pages workflow rather than fixing the code for both targets",
+      "rationale": "Pages was a second live deployment nginx.conf did not govern. It had no __leave endpoint (purge silently no-op) and, because cross-origin isolation came from coi-serviceworker there, window.crossOriginIsolated was true BECAUSE the worker was registered — so the unregister guard would have torn down the very worker providing isolation on every visit. One target removes both bugs without a code change."
     },
     {
-      "decision": "Excluded application/wasm from compression",
-      "rationale": "Keeps WASM streaming compilation undisturbed. The two Indigo files are served as-is."
+      "decision": "Kept public/coi-serviceworker.js as an inert fallback",
+      "rationale": "nginx sets COOP/COEP at the origin so it returns early and never registers. Harmless, and it is the safety net if the app is ever served from a host that cannot set headers."
     },
     {
-      "decision": "Repeated COOP/COEP inside every new nginx location block",
-      "rationale": "nginx add_header does not inherit into a block that declares its own. Omitting them would silently strip cross-origin isolation from JS and WASM and break SharedArrayBuffer, i.e. break InChI computation."
+      "decision": "Privacy 3(4) states no megabyte figure",
+      "rationale": "The inherited '29 MB' was never measured and went into a legal document. Built output is 49.2 MB uncompressed, 18.4 MB of it deliberately-uncompressed WASM, and the over-the-wire figure depends on the gzip_static siblings in the image. Text now says 'several tens of megabytes'."
     },
     {
-      "decision": "Moved the title rule from h2 border-top to h1 border-bottom",
-      "rationale": "The h2 rule was a section separator; a rule appeared under the title only on Privacy, where an h2 directly follows the h1. Giving the h1 its own rule makes all three docs open identically and decouples the look from how a document happens to start."
+      "decision": "Left .planning/PROJECT.md and research/STACK.md untrimmed",
+      "rationale": "They are research and decision archives; gutting a record to fix a plumbing problem is the wrong trade. Consequence: the CLAUDE.md trim is NOT durable — GSD regenerates the Project and Technology Stack sections from these sources, so a future /gsd-docs-update will restore them."
     },
     {
-      "decision": "Kept the footer Licenses removal without losing attribution",
-      "rationale": "TERMS_HTML carries a 'Third-party components' section in-app, and THIRD-PARTY-NOTICES.md remains at the repo root, so MIT/BSD notice obligations still have an in-app path."
-    },
-    {
-      "decision": "Did not add Playwright as a project dependency for OG image rasterizing",
-      "rationale": "Once-a-year task. Rendered via the already-cached Playwright chromium and a throwaway script in scratchpad; documented the requirement in the index.html comment instead."
-    },
-    {
-      "decision": "Auto-delete editor localStorage on leaving, sweeping by 'ketcher' prefix",
-      "rationale": "User chose maximum data minimisation over persistence after being shown the trade-off. Prefix sweep rather than a key list because Ketcher renames keys across versions and a stale list would leave data behind that the privacy policy claims is deleted. Accepted cost: saved favourite structures do not survive a visit."
+      "decision": "Did not write 51 skillOverrides for unused gsd-* skills",
+      "rationale": "GSD ships /gsd-surface as its own cluster manager; individual overrides would drift against it. ~1226 est. tokens/session still available by running that command."
     }
   ],
   "uncommitted_files": [],
-  "next_action": "Rebuild and redeploy the container so the nginx compression and cache-header changes reach users, then re-run the compression check through the proxy against a real deployed asset name.",
-  "context_notes": "Session started as a verification question about the privacy policy's data-retention claims and expanded into the deployment move from GitHub Pages to cheminfo.beilstein.org (nginx behind an upstream proxy, temporarily password-gated). Everything is committed and pushed to both remotes at 51a1e82; working tree clean. Nothing is mid-flight — all remaining items are deploy-time or human actions, not code. Session then resumed to add the auto-wipe (3b45e34); privacy § 3 (2) now promises deletion on leaving, backed by clearEditorStorage.test.ts."
+  "next_action": "Rebuild and redeploy the container (docker compose up --build), then curl __leave through the proxy to confirm the 401 gate is not swallowing the Clear-Site-Data header.",
+  "context_notes": "Started as 'how do I measure what is left on the client after leaving', became a measurement exercise and then a feature. Everything claimed here was measured against a real browser profile and a real nginx container, not reasoned from config — three conclusions were wrong on first pass and only caught that way (see the anti-pattern table in .continue-here.md). Repo is clean, both remotes at df4121d, 539 tests green, tsc clean. One open technical question survives: Clear-Site-Data 'cache' evicted the HTTP cache but the compiled-JS Code Cache still referenced the origin afterwards, byte-identical to the never-left baseline — program code rather than user data, but the claim 'nothing remains' would be an overclaim and the policy text is worded accordingly."
 }
