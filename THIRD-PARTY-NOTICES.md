@@ -136,6 +136,23 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
 ---
 
+## coi-serviceworker — MIT License
+
+Cross-origin-isolation fallback: registers a service worker that adds COOP/COEP
+response headers when the server cannot. It is vendored as a single file in
+`public/coi-serviceworker.js` rather than installed from npm, so — unlike every
+other component here — it does not appear in `package-lock.json`.
+
+- coi-serviceworker v0.1.7
+- Copyright © Guido Zuidhof and contributors
+- https://github.com/gzuidhof/coi-serviceworker
+
+The MIT permission notice ships inside the distributed file itself, as its first
+line. The standard MIT text is reproduced under "MIT License" in the in-app
+Terms &amp; Conditions page.
+
+---
+
 ## MIT / ISC / BSD components
 
 The majority of dependencies (React, Zustand, react-transition-group,
