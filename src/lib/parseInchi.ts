@@ -316,6 +316,30 @@ export function parseStereoAtoms(text: string): number[] {
   return nums;
 }
 
+/**
+ * Extracts the entries of an isotope (i) layer.
+ *
+ * The number is always a HEAVY-atom canonical index, never a hydrogen's — there
+ * is no canonical number for an implicit H. Two designations follow it:
+ *
+ *   `1D` / `1D3` / `2T`  — that atom's hydrogens are D/T. The isotope sits on the
+ *                          attached hydrogen, so hIsotope is true.
+ *   `1+1` / `5-1`        — that atom's own mass differs from the natural average
+ *                          (e.g. ¹³C is `+1`). The atom IS the isotope.
+ *
+ * The count in `D3` is deliberately dropped: callers highlight the atom, and no
+ * card states a number. Parse it separately if that changes.
+ *
+ * Returns [] for the empty text of an isotopic-mobile-H layer (`/i/hD2`), where
+ * the deuterium is spread over the h layer's mobile set and no atom is named.
+ */
+export function parseIsotopeEntries(text: string): { atom: number; hIsotope: boolean }[] {
+  return [...text.matchAll(/(\d+)([DT]\d*|[+-]\d+)/g)].map(m => ({
+    atom: parseInt(m[1], 10),
+    hIsotope: m[2][0] === 'D' || m[2][0] === 'T',
+  }));
+}
+
 // ---------------------------------------------------------------------------
 // Enrichment (new — not in design handoff JS; required per D-06/D-07/D-08/D-09)
 // ---------------------------------------------------------------------------
@@ -497,8 +521,19 @@ function enrichLayers(layers: Layer[]): Layer[] {
         });
         return { ...layer, atoms: allAtoms.sort((a, b) => a - b) };
       }
+      case 'i': {
+        // Same per-fragment offsetting as h/t/b — the i layer is fragment-separated too.
+        const fragmentTexts = expandLayerText(layer.text);
+        const allAtoms: number[] = [];
+        let cumulativeOffset = 0;
+        fragmentTexts.forEach((fragText, fi) => {
+          parseIsotopeEntries(fragText).forEach(e => allAtoms.push(e.atom + cumulativeOffset));
+          cumulativeOffset += fragCounts[fi] ?? 0;
+        });
+        return { ...layer, atoms: allAtoms.sort((a, b) => a - b) };
+      }
       default:
-        return layer; // version, m, s, q, p, i — atoms: [], bonds: []
+        return layer; // version, m, s, q, p — atoms: [], bonds: []
     }
   });
 }

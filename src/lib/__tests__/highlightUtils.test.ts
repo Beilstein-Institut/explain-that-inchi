@@ -456,10 +456,18 @@ describe('buildHighlightSpecs', () => {
       expect(specs).toEqual([]);
     });
 
-    it('i layer: returns empty array []', () => {
+    // Was 'returns empty array []' — that assertion encoded the Phase 4 decision
+    // to treat i as non-spatial, which is why hovering /i1D highlighted nothing.
+    // The i layer indexes heavy atoms; see isotopeHighlight.test.ts for the full
+    // behaviour against real chloroform-d and ethanol-d5 output.
+    it('i layer: highlights the atom named by the isotope entry', () => {
       const struct = makeMockStruct();
+      // iLayer text is '2D' → canonical 2 → pool 1. No explicit H in this
+      // fixture (hAtomPoolIds is []), so only the heavy atom comes back.
       const specs = buildHighlightSpecs(iLayer, null, auxMap, atomElements, [], allLayers, struct, resolveVarFn);
-      expect(specs).toEqual([]);
+      expect(specs).toEqual([
+        { atoms: [1], bonds: [], rgroupAttachmentPoints: [], color: '--c-isotope' },
+      ]);
     });
   });
 

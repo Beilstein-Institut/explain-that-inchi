@@ -338,8 +338,10 @@ export function useKetcherHighlights(
         cleanHBadges(svgRoot);
         return;
       }
-      // Non-spatial layers: clear canvas, update explanation card only (D-01)
-      if (['version', 'i'].includes(layer.type)) {
+      // Non-spatial layers: clear canvas, update explanation card only (D-01).
+      // Keep this list in sync with buildHighlightSpecs' guard — a type listed
+      // here never reaches the builder, so a case added there stays dead.
+      if (layer.type === 'version') {
         highlightEditor.highlights.clear();
         const svgRoot = editorAny.render.paper.canvas as Element;
         cleanHBadges(svgRoot);

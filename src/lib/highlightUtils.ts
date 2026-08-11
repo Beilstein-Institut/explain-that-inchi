@@ -8,6 +8,7 @@ import {
   parseHydrogenAtoms,
   parseMobileHydrogens,
   parseStereoAtoms,
+  parseIsotopeEntries,
   formulaFragmentCounts,
   expandLayerText,
 } from './parseInchi';
@@ -96,8 +97,10 @@ export function buildHighlightSpecs(
     return buildSubHoverSpecs(subHover, auxMap, atomElements, hAtomPoolIds, layer, struct, resolveVarFn);
   }
 
-  // NON-SPATIAL layers — no canvas highlight (D-01)
-  if (['version', 'i'].includes(layer.type)) {
+  // NON-SPATIAL layers — no canvas highlight (D-01).
+  // Only 'version' qualifies: '1S' names no atom. 'i' was listed here too until
+  // chloroform-d made it reachable — it indexes heavy atoms like h and t do.
+  if (layer.type === 'version') {
     return [];
   }
 
@@ -359,6 +362,45 @@ export function buildHighlightSpecs(
         specs.push({ atoms: minusAtoms, bonds: minusBonds, rgroupAttachmentPoints: [], color: resolveVarFn('--c-stereo-minus') });
       }
       return specs;
+    }
+
+    case 'i': {
+      // The numbers are heavy-atom canonicals. For a D/T entry the isotope is on
+      // that atom's hydrogen, so when Ketcher holds the H explicitly (a preset
+      // written as [2H] does) the H is highlighted alongside its heavy atom —
+      // it is the atom that is actually isotopic. A mass-offset entry (13C, '+1')
+      // pulls in no hydrogen: the numbered atom itself is the isotope.
+      const formulaLayerI = layers.find(l => l.type === 'formula');
+      const fragmentAtomCountsI = formulaLayerI ? formulaFragmentCounts(formulaLayerI.text) : [];
+      const fragmentTextsI = expandLayerText(layer.text);
+      const kAtoms: number[] = [];
+      const bearsLabelledH: number[] = [];
+      let cumulativeOffsetI = 0;
+      fragmentTextsI.forEach((fragText, fi) => {
+        for (const { atom, hIsotope } of parseIsotopeEntries(fragText)) {
+          const kId = auxMap[atom + cumulativeOffsetI];
+          if (kId === undefined) continue;
+          kAtoms.push(kId);
+          if (hIsotope) bearsLabelledH.push(kId);
+        }
+        cumulativeOffsetI += fragmentAtomCountsI[fi] ?? 0;
+      });
+
+      if (bearsLabelledH.length > 0 && hAtomPoolIds.length > 0) {
+        struct.bonds.forEach(bond => {
+          const hEnd = hAtomPoolIds.includes(bond.begin)
+            ? bond.begin
+            : hAtomPoolIds.includes(bond.end)
+              ? bond.end
+              : undefined;
+          if (hEnd === undefined) return;
+          const heavy = bond.begin === hEnd ? bond.end : bond.begin;
+          if (bearsLabelledH.includes(heavy)) kAtoms.push(hEnd);
+        });
+      }
+
+      if (kAtoms.length === 0) return []; // '/i/hD2' names no atom — stay silent
+      return [{ atoms: kAtoms, bonds: [], rgroupAttachmentPoints: [], color: resolveVarFn('--c-isotope') }];
     }
 
     case 'm':
