@@ -40,6 +40,32 @@ describe('MOLECULES preset data', () => {
     expect(find('naloxone').smiles).toBe('C=CCN1CC[C@]23[C@@H]4C(=O)CC[C@]2([C@H]1CC5=C3C(=C(C=C5)O)O4)O');
   });
 
+  // The seven layer-coverage presets. Without them the picker reaches only 7 of
+  // the 11 layer types, so q/p/b/i have no clickable example anywhere in the app.
+  // The InChI cannot be asserted here (no indigo WASM under jsdom), so this pins
+  // the SMILES that produce it — each string was measured through the WASM, and
+  // the resulting InChI is recorded in .planning/quick/260811-kvl-*/. Editing a
+  // SMILES below silently changes which layer the preset demonstrates.
+  it('keeps the layer-coverage SMILES exact', () => {
+    const find = (id: string) => MOLECULES.find(m => m.id === id)!;
+    expect(find('fumaric').smiles).toBe('OC(=O)/C=C/C(=O)O');            // /b2-1+ (E)
+    expect(find('maleic').smiles).toBe('OC(=O)\\C=C/C(=O)O');            // /b2-1- (Z)
+    expect(find('choline').smiles).toBe('C[N+](C)(C)CCO');               // /q+1
+    expect(find('acetate').smiles).toBe('CC(=O)[O-]');                   // /p-1
+    expect(find('chloroformD').smiles).toBe('[2H]C(Cl)(Cl)Cl');          // /i1D
+    expect(find('sodiumAcetate').smiles).toBe('CC(=O)[O-].[Na+]');       // /q;+1 /p-1
+    expect(find('pge2').smiles).toBe(
+      'CCCCC[C@@H](O)/C=C/[C@H]1[C@@H](O)CC(=O)[C@@H]1C/C=C\\CCCC(=O)O', // /b /t /m /s
+    );
+  });
+
+  it('keeps fumaric and maleic acid adjacent', () => {
+    const ids = MOLECULES.map(m => m.id);
+    // Their InChIs differ in one character (/b2-1+ vs /b2-1-). Side by side in
+    // the chip strip they teach the b layer; separated they are just two acids.
+    expect(ids.indexOf('maleic') - ids.indexOf('fumaric')).toBe(1);
+  });
+
   it('MoleculePreset type has correct shape', () => {
     const mol: MoleculePreset = MOLECULES[0];
     const keys = Object.keys(mol);

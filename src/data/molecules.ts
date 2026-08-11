@@ -50,4 +50,29 @@ export const MOLECULES: MoleculePreset[] = [
   { id: 'sildenafil',     name: 'Sildenafil',       formula: 'C₂₂H₃₀N₆O₄S',   smiles: 'CCCC1=NN(C2=C1N=C(NC2=O)C3=C(C=CC(=C3)S(=O)(=O)N4CCN(CC4)C)OCC)C'              },
   { id: 'methotrexate',   name: 'Methotrexate',     formula: 'C₂₀H₂₂N₈O₅',    smiles: 'CN(CC1=CN=C2C(=N1)C(=NC(=N2)N)N)C3=CC=C(C=C3)C(=O)N[C@@H](CCC(=O)O)C(=O)O'     },
   { id: 'dexamethasone',  name: 'Dexamethasone',    formula: 'C₂₂H₂₉FO₅',     smiles: 'C[C@@H]1C[C@H]2[C@@H]3CCC4=CC(=O)C=C[C@@]4([C@]3([C@H](C[C@@]2([C@]1(C(=O)CO)O)C)O)F)C' },
+  // Layer coverage. The 30 presets above produce only 7 of the 11 layer types
+  // (version/formula/c/h/t/m/s), which left four legend rows permanently greyed
+  // out. These seven exist to make q, p, b and i reachable from the picker —
+  // each InChI below was measured through the indigo WASM, not written by hand.
+  // Do not prune them as curiosities: they are the only examples of their layer.
+  //
+  // Fumaric and maleic acid differ in exactly one character of their InChI
+  // (/b2-1+ vs /b2-1-). Keep them adjacent — the pair is what makes the
+  // double-bond stereo layer legible at all.
+  { id: 'fumaric',        name: 'Fumaric acid',     formula: 'C₄H₄O₄',         smiles: 'OC(=O)/C=C/C(=O)O'                                                              },
+  { id: 'maleic',         name: 'Maleic acid',      formula: 'C₄H₄O₄',         smiles: 'OC(=O)\\C=C/C(=O)O'                                                             },
+  // Charge that is NOT a proton count → /q+1.
+  { id: 'choline',        name: 'Choline',          formula: 'C₅H₁₄NO⁺',       smiles: 'C[N+](C)(C)CCO'                                                                 },
+  // Charge that IS a proton count → /p-1. The formula chip is the species
+  // formula; the InChI normalizes to the neutral parent (C2H4O2), which is
+  // precisely what the p layer records.
+  { id: 'acetate',        name: 'Acetate',          formula: 'C₂H₃O₂⁻',        smiles: 'CC(=O)[O-]'                                                                     },
+  // Simplest possible isotope layer: one atom, one label → /i1D.
+  { id: 'chloroformD',    name: 'Chloroform-d',     formula: 'CDCl₃',           smiles: '[2H]C(Cl)(Cl)Cl'                                                                },
+  // q and p together, and the only multi-component preset: '.' in the formula,
+  // ';' separators inside every layer.
+  { id: 'sodiumAcetate',  name: 'Sodium acetate',   formula: 'C₂H₃NaO₂',       smiles: 'CC(=O)[O-].[Na+]'                                                               },
+  // All four stereo layers at once, including two double bonds of opposite
+  // geometry in one b layer (/b7-4-,13-12+).
+  { id: 'pge2',           name: 'Prostaglandin E₂', formula: 'C₂₀H₃₂O₅',      smiles: 'CCCCC[C@@H](O)/C=C/[C@H]1[C@@H](O)CC(=O)[C@@H]1C/C=C\\CCCC(=O)O'                 },
 ];
