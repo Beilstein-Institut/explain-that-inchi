@@ -3,13 +3,7 @@
 // pure. This one needs localStorage and window, so it opts in per-file rather
 // than pulling every lib test into a DOM.
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import {
-  LEAVE_NO_TRACE_KEY,
-  isLeaveNoTrace,
-  setLeaveNoTrace,
-  wipeSiteData,
-  registerLeaveWipe,
-} from '../leaveWipe';
+import { wipeSiteData, registerLeaveWipe } from '../leaveWipe';
 
 // The privacy policy (§ 3 (2)–(4)) promises the site's browser storage is gone
 // once the visitor leaves. These tests are what make that promise true.
@@ -66,16 +60,6 @@ describe('wipeSiteData', () => {
     wipeSiteData();
 
     expect(sessionStorage.length).toBe(0);
-  });
-
-  it('keeps the opt-in flag through the sessionStorage wipe', () => {
-    setLeaveNoTrace(true);
-    sessionStorage.setItem('anything', 'x');
-
-    wipeSiteData();
-
-    expect(sessionStorage.getItem('anything')).toBeNull();
-    expect(isLeaveNoTrace()).toBe(true);
   });
 
   it('is a no-op on empty stores', () => {
@@ -154,28 +138,20 @@ describe('wipeSiteData', () => {
   });
 });
 
-describe('setLeaveNoTrace / isLeaveNoTrace', () => {
-  beforeEach(clearStores);
-  afterEach(clearStores);
-
-  it('is off by default', () => {
-    expect(isLeaveNoTrace()).toBe(false);
-  });
-
-  it('reflects what was last written', () => {
-    setLeaveNoTrace(true);
-    expect(isLeaveNoTrace()).toBe(true);
-    expect(sessionStorage.getItem(LEAVE_NO_TRACE_KEY)).not.toBeNull();
-
-    setLeaveNoTrace(false);
-    expect(isLeaveNoTrace()).toBe(false);
-    expect(sessionStorage.getItem(LEAVE_NO_TRACE_KEY)).toBeNull();
-  });
-});
-
 describe('registerLeaveWipe', () => {
-  beforeEach(clearStores);
-  afterEach(clearStores);
+  // The beacon now fires on every pagehide, so happy-dom's real sendBeacon
+  // would attempt a network request in tests that only care about the wipe.
+  // Neutralise it by default; the beacon tests stub their own spy over this.
+  let undoBeacon: () => void;
+
+  beforeEach(() => {
+    clearStores();
+    undoBeacon = stub(navigator, 'sendBeacon', () => true);
+  });
+  afterEach(() => {
+    undoBeacon();
+    clearStores();
+  });
 
   it('wipes storage when the page hides', () => {
     const unsubscribe = registerLeaveWipe();
@@ -197,26 +173,16 @@ describe('registerLeaveWipe', () => {
     expect(localStorage.getItem('ketcher-opts')).toBe('{}');
   });
 
-  it('sends no beacon when the opt-in is off', () => {
-    const sendBeacon = vi.fn();
-    const undo = stub(navigator, 'sendBeacon', sendBeacon);
-    const unsubscribe = registerLeaveWipe();
-
-    window.dispatchEvent(new Event('pagehide'));
-
-    expect(sendBeacon).not.toHaveBeenCalled();
-    unsubscribe();
-    undo();
-  });
-
   // The URL must be derived from BASE_URL, never hardcoded: the app is built
   // with base=/explain-that-inchi/ but BASE_URL is '/' under vitest, so a
   // hardcoded deploy path fails right here.
-  it('beacons the leave endpoint under BASE_URL when the opt-in is on', () => {
+  //
+  // Unconditional by design — there is no opt-in to gate it. If this ever grows
+  // a condition, the privacy policy's § 3 (4) claim stops being true.
+  it('always beacons the leave endpoint under BASE_URL when the page hides', () => {
     const sendBeacon = vi.fn();
     const undo = stub(navigator, 'sendBeacon', sendBeacon);
     const unsubscribe = registerLeaveWipe();
-    setLeaveNoTrace(true);
 
     window.dispatchEvent(new Event('pagehide'));
 
@@ -231,7 +197,6 @@ describe('registerLeaveWipe', () => {
     const sendBeacon = vi.fn();
     const undo = stub(navigator, 'sendBeacon', sendBeacon);
     const unsubscribe = registerLeaveWipe();
-    setLeaveNoTrace(true);
     unsubscribe();
 
     window.dispatchEvent(new Event('pagehide'));
@@ -243,7 +208,6 @@ describe('registerLeaveWipe', () => {
   it('wipes even when sendBeacon is unavailable', () => {
     const undo = stub(navigator, 'sendBeacon', undefined);
     const unsubscribe = registerLeaveWipe();
-    setLeaveNoTrace(true);
     localStorage.setItem('ketcher-opts', '{}');
 
     expect(() => window.dispatchEvent(new Event('pagehide'))).not.toThrow();

@@ -15,26 +15,8 @@
 // Ketcher upgrade.
 
 /**
- * sessionStorage key for the opt-in cache purge. Per-visit by construction:
- * sessionStorage dies with the tab, so the setting cannot leak into a later
- * visit even though it survives `wipeSiteData()`.
- */
-export const LEAVE_NO_TRACE_KEY = 'eti-leave-no-trace';
-
-/** Whether the visitor asked for the browser cache to be purged on leaving. */
-export function isLeaveNoTrace(): boolean {
-  return window.sessionStorage.getItem(LEAVE_NO_TRACE_KEY) === '1';
-}
-
-/** Records the opt-in choice for this visit. */
-export function setLeaveNoTrace(on: boolean): void {
-  if (on) window.sessionStorage.setItem(LEAVE_NO_TRACE_KEY, '1');
-  else window.sessionStorage.removeItem(LEAVE_NO_TRACE_KEY);
-}
-
-/**
  * Clears every browser store this page can reach. The app persists nothing of
- * its own, so there is no key worth preserving beyond the opt-in flag.
+ * its own, so there is no key worth preserving.
  *
  * The asynchronous sweeps are fired without awaiting and swallow their own
  * errors: pagehide gives no time to await, and a rejected sweep must not stop
@@ -42,12 +24,7 @@ export function setLeaveNoTrace(on: boolean): void {
  */
 export function wipeSiteData(): void {
   window.localStorage.clear();
-
-  // Read-clear-restore. Clearing wholesale and putting one key back is both
-  // shorter and stronger than enumerating what to remove.
-  const flag = window.sessionStorage.getItem(LEAVE_NO_TRACE_KEY);
   window.sessionStorage.clear();
-  if (flag !== null) window.sessionStorage.setItem(LEAVE_NO_TRACE_KEY, flag);
 
   // Property access, never a bare `indexedDB` / `caches` identifier: `caches`
   // is undefined on insecure origins, and a bare read there is a ReferenceError
@@ -86,25 +63,27 @@ export function wipeSiteData(): void {
 }
 
 /**
- * Wipes site data when the page goes away, and — only if the visitor opted in —
- * beacons the leave endpoint first so the server can answer with
- * Clear-Site-Data and purge the HTTP cache. Returns an unsubscribe.
+ * Wipes site data when the page goes away, and beacons the leave endpoint first
+ * so the server can answer with Clear-Site-Data and purge the HTTP cache.
+ * Returns an unsubscribe.
+ *
+ * Both halves are unconditional. There is deliberately no opt-in: a setting
+ * that defaults to "keep the data" is a setting almost nobody changes, and the
+ * privacy policy would then describe the minority case.
  *
  * 'pagehide' rather than 'beforeunload': beforeunload never fires reliably on
  * mobile and disqualifies the page from the back/forward cache. Firing on a
  * bfcache hide is harmless — a restored page keeps its in-memory editor state,
  * and Ketcher rewrites its settings as it runs.
  *
- * Accepted wart: pagehide cannot distinguish a reload from a close
- * (`event.persisted` only signals bfcache), so reloading with the opt-in on
- * purges the cache and re-downloads roughly 29 MB. A Clear-Site-Data "storage"
- * purge may also take the opt-in flag with it, which is fine — the setting is
- * per-visit anyway.
+ * Accepted cost: pagehide cannot distinguish a reload from a close
+ * (`event.persisted` only signals bfcache), so every reload purges the cache
+ * and re-downloads roughly 29 MB. Data minimisation was chosen over that.
  */
 export function registerLeaveWipe(): () => void {
   const onPagehide = () => {
     // Beacon first: it is the fragile half, and the wipe cannot fail.
-    if (isLeaveNoTrace() && typeof navigator.sendBeacon === 'function') {
+    if (typeof navigator.sendBeacon === 'function') {
       // Vite normalises BASE_URL to a trailing slash, so no join helper is
       // needed and no deploy path is hardcoded.
       navigator.sendBeacon(`${import.meta.env.BASE_URL}__leave`);

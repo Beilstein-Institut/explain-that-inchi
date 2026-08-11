@@ -73,19 +73,20 @@ describe('legal content is adapted to Explain that InChI', () => {
   // § 3 (3)–(4) are the honest limits of registerLeaveWipe(). Pinned against
   // distinctive phrases, not whole paragraphs, so a copy edit does not break
   // them but a silently dropped claim does.
-  it('Privacy admits the HTTP cache and browsing history survive leaving', () => {
+  it('Privacy admits the browsing history survives and is beyond the site s reach', () => {
     expect(PRIVACY_HTML).toMatch(/records the visit in your browsing history/);
-    expect(PRIVACY_HTML).toMatch(/Neither is removed when you leave/);
     expect(PRIVACY_HTML).toMatch(/can never delete your browsing history/);
   });
 
-  it('Privacy describes the opt-in cache purge as off by default and per-visit', () => {
-    expect(PRIVACY_HTML).toMatch(/Leave no trace on exit/);
-    expect(PRIVACY_HTML).toMatch(/switched off by default and applies to the current visit only/);
-    expect(PRIVACY_HTML).toMatch(/clear its cached files and its stored data/);
+  // Pinned as unconditional. registerLeaveWipe() beacons on every pagehide with
+  // no opt-in; if a toggle is ever reintroduced, this claim becomes false.
+  it('Privacy describes the cache purge as always-on and not switchable', () => {
+    expect(PRIVACY_HTML).toMatch(/it always asks your browser to clear its cached files/);
+    expect(PRIVACY_HTML).toMatch(/not an option and cannot be switched off/);
+    expect(PRIVACY_HTML).not.toMatch(/Leave no trace on exit/);
   });
 
-  it('Privacy states the reload and Safari limitations of the opt-in', () => {
+  it('Privacy states the reload and Safari limitations of the purge', () => {
     expect(PRIVACY_HTML).toMatch(/cannot tell a reload apart from closing the page/);
     expect(PRIVACY_HTML).toMatch(/Safari does not support the mechanism/);
     expect(PRIVACY_HTML).toMatch(/Clear-Site-Data/);

@@ -232,24 +232,6 @@ body {
   outline-offset: 4px;
   border-radius: 2px;
 }
-/* Opt-in cache purge. Sits in the wrapping flex row, so at narrow widths it
-   wraps onto its own line rather than needing a media query. */
-.site-footer-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--ink-faint);
-  cursor: pointer;
-  /* Padding is the tap target, same reasoning as .site-footer a below. */
-  padding: 6px 2px;
-}
-.site-footer-toggle:hover {
-  color: var(--ink-soft);
-}
-.site-footer-toggle input {
-  cursor: pointer;
-  margin: 0;
-}
 .site-footer a {
   color: var(--ink-faint);
   text-decoration: none;
