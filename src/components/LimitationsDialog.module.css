@@ -1,0 +1,107 @@
+/* LimitationsDialog CSS Module
+   The dialog surface, title, intro and action row are composed from
+   FeedbackDialog.module.css rather than restated — one modal look, one place to
+   change it. Only the limitation list is new here.
+   ::backdrop cannot be composed (it is not a class), so it is redeclared with
+   the same approved literal FeedbackDialog uses.
+*/
+
+.limitationsDialog {
+  composes: feedbackDialog from './FeedbackDialog.module.css';
+}
+.limitationsDialog[open] {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  /* Longer than the feedback form, so it scrolls inside the viewport rather than
+     overflowing it. max-height on the dialog + overflow on the list keeps the
+     title and the Close button in view while the entries scroll. */
+  max-height: min(85vh, 760px);
+}
+dialog.limitationsDialog::backdrop {
+  background: oklch(from var(--ink) l c h / 0.32);
+}
+
+.dialogTitle {
+  composes: dialogTitle from './FeedbackDialog.module.css';
+}
+.dialogIntro {
+  composes: dialogIntro from './FeedbackDialog.module.css';
+}
+.actionRow {
+  composes: actionRow from './FeedbackDialog.module.css';
+}
+.closeBtn {
+  composes: cancelBtn from './FeedbackDialog.module.css';
+}
+
+/* ---------- The list ---------- */
+
+.limitationList {
+  list-style: none;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+  /* Not 0: a focus ring on a scrolled entry would be clipped by the container. */
+  padding: 2px;
+}
+
+.limitationItem {
+  /* A left rule rather than a full card: these are reference notes, not alerts,
+     and five bordered boxes in a column would read as five warnings. */
+  border-left: 2px solid var(--line);
+  padding-left: 12px;
+}
+
+.limitationHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 4px;
+}
+
+.limitationTitle {
+  font-family: var(--font-sans);
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* The responsible layer — Ketcher, InChI, RInChI. Set in mono so it reads as a
+   name rather than prose, which is the whole point: it says where to complain. */
+.limitationSource {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--ink-faint);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 1px 8px;
+  white-space: nowrap;
+}
+
+.limitationBody {
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+.moreNote {
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-faint);
+  margin: 0;
+}
+
+.filename {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink-soft);
+}
