@@ -64,8 +64,35 @@ describe('legal content is adapted to Explain that InChI', () => {
   // false — see leaveWipe.test.ts for the behaviour itself.
   it('Privacy states editor storage is wiped on leaving, and gives a manual route too', () => {
     expect(PRIVACY_HTML).toMatch(/deleted automatically as soon as you leave/);
-    expect(PRIVACY_HTML).toMatch(/nothing remains stored on your device between visits/);
+    // Narrowed deliberately: § 3 (3) says the HTTP cache and history DO remain,
+    // so the claim may only cover the storage § 3 (2) is about.
+    expect(PRIVACY_HTML).toMatch(/none of this data remains stored on your device between visits/);
     expect(PRIVACY_HTML).toMatch(/settings for site data/);
+  });
+
+  // § 3 (3)–(4) are the honest limits of registerLeaveWipe(). Pinned against
+  // distinctive phrases, not whole paragraphs, so a copy edit does not break
+  // them but a silently dropped claim does.
+  it('Privacy admits the HTTP cache and browsing history survive leaving', () => {
+    expect(PRIVACY_HTML).toMatch(/records the visit in your browsing history/);
+    expect(PRIVACY_HTML).toMatch(/Neither is removed when you leave/);
+    expect(PRIVACY_HTML).toMatch(/can never delete your browsing history/);
+  });
+
+  it('Privacy describes the opt-in cache purge as off by default and per-visit', () => {
+    expect(PRIVACY_HTML).toMatch(/Leave no trace on exit/);
+    expect(PRIVACY_HTML).toMatch(/switched off by default and applies to the current visit only/);
+    expect(PRIVACY_HTML).toMatch(/clear its cached files and its stored data/);
+  });
+
+  it('Privacy states the reload and Safari limitations of the opt-in', () => {
+    expect(PRIVACY_HTML).toMatch(/cannot tell a reload apart from closing the page/);
+    expect(PRIVACY_HTML).toMatch(/Safari does not support the mechanism/);
+    expect(PRIVACY_HTML).toMatch(/Clear-Site-Data/);
+  });
+
+  it('Privacy carries the current version date', () => {
+    expect(PRIVACY_HTML).toMatch(/Version 11\.08\.2026/);
   });
 
   // § 3 (1) promises no analytics; § 5 must not imply analysis happens anyway.

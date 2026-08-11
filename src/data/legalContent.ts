@@ -67,7 +67,9 @@ Data that require further storage for evidentiary purposes are exempt from delet
 
 <h2>§ 3 Cookies and local storage</h2>
 <p>(1) We do not use Cookies. We do not use tracking, analytics or advertising technologies of any kind.</p>
-<p>(2) The embedded molecule editor (Ketcher) stores technically necessary settings in your browser's local storage, for example display options such as bond length and zoom level, and any structures you mark as favourites. This data is never transmitted to our servers or to third parties and contains no personal data. It is used solely to make the editor work as expected. It is deleted automatically as soon as you leave the website — when you close the tab or navigate away — so nothing remains stored on your device between visits. Independently of this, you can delete it yourself at any time via your browser's settings for site data (for example "Clear browsing data" or "Cookies and site data" in Chrome, Edge and Firefox).</p>
+<p>(2) The embedded molecule editor (Ketcher) stores technically necessary settings in your browser's local storage, for example display options such as bond length and zoom level, and any structures you mark as favourites. This data is never transmitted to our servers or to third parties and contains no personal data. It is used solely to make the editor work as expected. It is deleted automatically as soon as you leave the website — when you close the tab or navigate away — so none of this data remains stored on your device between visits. Independently of this, you can delete it yourself at any time via your browser's settings for site data (for example "Clear browsing data" or "Cookies and site data" in Chrome, Edge and Firefox).</p>
+<p>(3) Two things are not covered by that deletion. Your browser keeps a copy of the application's own program files in its HTTP cache so that a repeat visit loads quickly, and it records the visit in your browsing history. Neither is removed when you leave the website. A website can never delete your browsing history — only you can, from within your browser. Both the cached files and the history can be cleared at any time through your browser's own settings.</p>
+<p>(4) The footer of this website offers the option "Leave no trace on exit". It is switched off by default and applies to the current visit only. When you switch it on, the website asks your browser, at the moment you leave, to clear its cached files and its stored data for this website. Two limitations apply. First, the browser cannot tell a reload apart from closing the page, so reloading while the option is switched on discards the cached program files and downloads them again — roughly 29 MB. Second, Safari does not support the mechanism this uses (the Clear-Site-Data HTTP header), so the option has no effect in that browser. Your browsing history is never affected by this option.</p>
 
 <h2>§ 4 Your rights</h2>
 <p>(1) You have the following rights with regard to the personal data concerning you:</p>
@@ -82,7 +84,7 @@ Data that require further storage for evidentiary purposes are exempt from delet
 
 <h2>§ 5 Objection to or revocation of the processing of your data</h2>
 <p>Insofar as we base the processing of your personal data on the legal basis of the exercise of a legitimate interest pursuant to Art. 6 (1) lit. f GDPR, you may object to the processing. This is the case if the processing is not necessary, in particular, for the fulfillment of a contract with you. When exercising such an objection, we ask you to explain the reasons why we should not process your personal data in the way we have done. In the event of your objection, we will review the situation and either discontinue or adjust the data processing or show you our compelling legitimate grounds on the basis of which we will continue the processing.</p>
-<p>Version 10.08.2026</p>
+<p>Version 11.08.2026</p>
 `;
 
 export const TERMS_HTML = `
