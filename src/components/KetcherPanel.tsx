@@ -1,7 +1,6 @@
 import { Editor } from 'ketcher-react';
 import type { Ketcher, StructServiceProvider } from 'ketcher-core';
 import { MOLECULES } from '../data/molecules';
-import { swatchVar, LAYER_KEY, LAYER_INFO } from '../lib/layerInfo';
 import styles from './KetcherPanel.module.css';
 
 interface KetcherPanelProps {
@@ -91,23 +90,7 @@ export function KetcherPanel({
               disabled={isLoading}
             >
               <span className="mol-name">{m.name}</span>
-              <span className="mol-meta">
-                <span className="mol-formula">{m.formula}</span>
-                {/* The one layer this preset is the example of. Same colour as
-                    its legend row and its chunk of the string below. */}
-                {m.layer && (
-                  <span
-                    className="mol-layer"
-                    style={{
-                      color: `var(--c-${swatchVar(m.layer)})`,
-                      background: `var(--c-${swatchVar(m.layer)}-bg)`,
-                    }}
-                    title={`Shows the ${LAYER_INFO[m.layer].title.toLowerCase()} layer`}
-                  >
-                    {LAYER_KEY[m.layer]}
-                  </span>
-                )}
-              </span>
+              <span className="mol-formula">{m.formula}</span>
             </button>
           ))}
         </div>

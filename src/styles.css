@@ -342,31 +342,11 @@ body {
   font-weight: 500;
   color: var(--ink);
 }
-/* Formula on the left, layer chip pushed to the right edge of the row, so the
-   chips line up into a readable column down the sidebar. */
-.mol-item .mol-meta {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-}
 .mol-item .mol-formula {
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--ink-faint);
   letter-spacing: 0.02em;
-}
-/* Layer chip — colour and text come from the layer itself (see KetcherPanel),
-   so it matches the legend row and the string chunk it points at. */
-.mol-item .mol-layer {
-  flex: 0 0 auto;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: 0.02em;
-  padding: 3px 5px;
-  border-radius: 3px;
 }
 .inchi-layer.active[data-layer="version"] { background: var(--c-version-bg); }
 .inchi-layer.active[data-layer="formula"] { background: var(--c-formula-bg); }

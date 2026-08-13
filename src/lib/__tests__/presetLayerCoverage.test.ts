@@ -12,15 +12,8 @@
 import { describe, it, expect } from 'vitest';
 import { parseInchi, expandLayerText } from '../parseInchi';
 import { buildAtomElements } from '../parseAuxMapping';
-import { MOLECULES } from '../../data/molecules';
 import type { LayerType } from '../parseInchi';
 
-const METHANE        = 'InChI=1S/CH4/h1H4';
-const ETHANOL        = 'InChI=1S/C2H6O/c1-2-3/h3H,2H2,1H3';
-const BENZENE        = 'InChI=1S/C6H6/c1-2-4-6-5-3-1/h1-6H';
-const CAFFEINE       = 'InChI=1S/C8H10N4O2/c1-10-4-9-6-5(10)7(13)12(3)8(14)11(6)2/h4H,1-3H3';
-const ALANINE        = 'InChI=1S/C3H7NO2/c1-2(4)3(5)6/h2H,4H2,1H3,(H,5,6)/t2-/m0/s1';
-const NICOTINE       = 'InChI=1S/C10H14N2/c1-12-7-3-5-10(12)9-4-2-6-11-8-9/h2,4,6,8,10H,3,5,7H2,1H3/t10-/m0/s1';
 const FUMARIC        = 'InChI=1S/C4H4O4/c5-3(6)1-2-4(7)8/h1-2H,(H,5,6)(H,7,8)/b2-1+';
 const MALEIC         = 'InChI=1S/C4H4O4/c5-3(6)1-2-4(7)8/h1-2H,(H,5,6)(H,7,8)/b2-1-';
 const CHOLINE        = 'InChI=1S/C5H14NO/c1-6(2,3)4-5-7/h7H,4-5H2,1-3H3/q+1';
@@ -54,52 +47,6 @@ describe('preset layer coverage', () => {
     for (const inchi of ALL_FIXTURES) {
       for (const l of parseInchi(inchi)) expect(l.text).not.toBe('');
     }
-  });
-});
-
-// Every preset that carries a layer chip, against the InChI it actually
-// produces. A chip is a promise — "click me to see this layer" — and the only
-// way it can lie is if the molecule does not contain the layer at all, which is
-// invisible in the picker and only shows once a user clicks and finds nothing.
-// Same provenance rule as above: measured through indigo-ketcher WASM from the
-// SMILES in molecules.ts, never hand-written.
-const CHIPPED: Record<string, string> = {
-  methane: METHANE,
-  ethanol: ETHANOL,
-  benzene: BENZENE,
-  caffeine: CAFFEINE,
-  alanine: ALANINE,
-  nicotine: NICOTINE,
-  fumaric: FUMARIC,
-  choline: CHOLINE,
-  acetate: ACETATE,
-  chloroformD: CHLOROFORM_D,
-  pge2: PGE2,
-};
-
-describe('preset layer chips', () => {
-  it('gives every chip a fixture, and every fixture a chip', () => {
-    // Guards the trap in the tests below: a preset that gained a chip without a
-    // measured InChI here would otherwise be silently skipped by the loop.
-    const chipped = MOLECULES.filter(m => m.layer).map(m => m.id).sort();
-    expect(chipped).toEqual(Object.keys(CHIPPED).sort());
-  });
-
-  it('never chips a layer the molecule does not actually have', () => {
-    for (const m of MOLECULES) {
-      if (!m.layer) continue;
-      expect(typesOf(CHIPPED[m.id])).toContain(m.layer);
-    }
-  });
-
-  it('claims each of the 11 layer types exactly once', () => {
-    // The whole point of the chips: no duplicates, no gaps. Adding a second
-    // preset for a popular layer (or forgetting one) fails here.
-    const claimed = MOLECULES.map(m => m.layer).filter(Boolean) as LayerType[];
-    expect(claimed.length).toBe(new Set(claimed).size);
-    expect([...claimed].sort()).toEqual(
-      ['b', 'c', 'formula', 'h', 'i', 'm', 'p', 'q', 's', 't', 'version'],
-    );
   });
 });
 

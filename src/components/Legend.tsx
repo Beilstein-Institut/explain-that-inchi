@@ -4,7 +4,7 @@
 // Reads layers from Zustand store to compute which layer types are present.
 
 import { useInchiStore } from '../store';
-import { swatchVar, LAYER_KEY } from '../lib/layerInfo';
+import { swatchVar } from '../lib/layerInfo';
 import type { LayerType } from '../lib/parseInchi';
 import styles from './Legend.module.css';
 import expStyles from './Explanation.module.css';
@@ -13,33 +13,26 @@ const { setHover, setSubHover, setLegendHover } = useInchiStore.getState();
 
 interface LegendLayerDef {
   type: LayerType;
+  key: string;
   name: string;
   desc: string;
   eg: string;
 }
 
-// Verbatim from app.jsx lines 415-427, except the key column: that now comes
-// from LAYER_KEY (layerInfo.ts) so the Legend and the picker's layer chips
-// cannot name the same layer differently. The '…' suffix on the nine letter
-// layers is presentation — it says "prefix plus content", which is true here
-// and not on a chip.
+// Verbatim from app.jsx lines 415-427
 const ALL_LAYERS: LegendLayerDef[] = [
-  { type: 'version', name: 'Version',            desc: 'Which InChI specification',      eg: '1S' },
-  { type: 'formula', name: 'Formula',            desc: 'Atoms by element & count',       eg: 'C8H10N4O2' },
-  { type: 'c',       name: 'Connection',     desc: 'Heavy-atom skeleton',             eg: 'c1-2(4)3-5' },
-  { type: 'h',       name: 'Hydrogen',       desc: 'H count per atom + mobile H',    eg: 'h2H,1H3,(H,3,4)' },
-  { type: 'q',       name: 'Charge',         desc: 'Net formal charge',               eg: 'q+1' },
-  { type: 'p',       name: 'Proton',         desc: 'Proton balance',                  eg: 'p+1' },
-  { type: 'b',       name: 'Double-bond stereo', desc: 'E/Z geometry',               eg: 'b6-9+' },
-  { type: 't',       name: 'Tetrahedral',    desc: 'sp³ stereocenters',         eg: 't2-,4+' },
-  { type: 'm',       name: 'Enantiomer',     desc: 'Mirror-image flag',               eg: 'm0 or m1' },
-  { type: 's',       name: 'Stereo flag',    desc: 'Absolute / relative / racemic',  eg: 's1' },
-  { type: 'i',       name: 'Isotope',        desc: 'Non-natural isotopes',            eg: 'i2D,5+1' },
+  { type: 'version', key: '1S',   name: 'Version',            desc: 'Which InChI specification',      eg: '1S' },
+  { type: 'formula', key: 'Hill', name: 'Formula',            desc: 'Atoms by element & count',       eg: 'C8H10N4O2' },
+  { type: 'c',       key: 'c…', name: 'Connection',     desc: 'Heavy-atom skeleton',             eg: 'c1-2(4)3-5' },
+  { type: 'h',       key: 'h…', name: 'Hydrogen',       desc: 'H count per atom + mobile H',    eg: 'h2H,1H3,(H,3,4)' },
+  { type: 'q',       key: 'q…', name: 'Charge',         desc: 'Net formal charge',               eg: 'q+1' },
+  { type: 'p',       key: 'p…', name: 'Proton',         desc: 'Proton balance',                  eg: 'p+1' },
+  { type: 'b',       key: 'b…', name: 'Double-bond stereo', desc: 'E/Z geometry',               eg: 'b6-9+' },
+  { type: 't',       key: 't…', name: 'Tetrahedral',    desc: 'sp³ stereocenters',         eg: 't2-,4+' },
+  { type: 'm',       key: 'm…', name: 'Enantiomer',     desc: 'Mirror-image flag',               eg: 'm0 or m1' },
+  { type: 's',       key: 's…', name: 'Stereo flag',    desc: 'Absolute / relative / racemic',  eg: 's1' },
+  { type: 'i',       key: 'i…', name: 'Isotope',        desc: 'Non-natural isotopes',            eg: 'i2D,5+1' },
 ];
-
-/** Legend key column: 'c' → 'c…', but '1S' and 'Hill' stay as they are. */
-const legendKey = (type: LayerType) =>
-  LAYER_KEY[type].length === 1 ? `${LAYER_KEY[type]}…` : LAYER_KEY[type];
 
 interface LegendProps {
   activeType: LayerType | undefined;
@@ -93,7 +86,7 @@ export function Legend({ activeType }: LegendProps) {
               className={styles.key}
               style={{ color: present ? color : 'var(--ink-faint)' }}
             >
-              {legendKey(l.type)}
+              {l.key}
             </span>
             <span className={styles.name} style={!present ? { color: 'var(--ink-faint)' } : undefined}>
               {l.name}
