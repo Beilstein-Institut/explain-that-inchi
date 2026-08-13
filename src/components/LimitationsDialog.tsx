@@ -36,7 +36,15 @@ export function LimitationsDialog({ dialogRef }: LimitationsDialogProps) {
 
       <p className={styles.moreNote}>
         A full list of limitations is in{' '}
-        <code className={styles.filename}>LIMITATIONS.md</code> in the repository.
+        <a
+          className={styles.repoLink}
+          href="https://github.com/Beilstein-Institut/explain-that-inchi/blob/master/LIMITATIONS.md"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <code className={styles.filename}>LIMITATIONS.md</code>
+        </a>{' '}
+        in the repository.
       </p>
 
       <div className={styles.actionRow}>

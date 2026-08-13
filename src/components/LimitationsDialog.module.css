@@ -102,3 +102,23 @@ dialog.limitationsDialog::backdrop {
   font-size: 11.5px;
   color: var(--ink-soft);
 }
+
+/* The filename is the link target, so the underline has to sit on the anchor
+   and the colour has to beat .filename's own — hence `color` here rather than
+   letting the <code> inside keep var(--ink-soft). */
+.repoLink {
+  color: var(--c-formula);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.repoLink code {
+  color: inherit;
+}
+.repoLink:hover {
+  color: oklch(from var(--c-formula) calc(l - 0.06) c h);
+}
+.repoLink:focus-visible {
+  outline: 2px solid var(--c-formula);
+  outline-offset: 2px;
+  border-radius: 2px;
+}

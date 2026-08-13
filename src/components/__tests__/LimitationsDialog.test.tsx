@@ -57,6 +57,21 @@ describe('LimitationsDialog', () => {
     renderDialog();
     expect(screen.getByText('LIMITATIONS.md')).toBeInTheDocument();
   });
+
+  it('links LIMITATIONS.md to the file in the repo, opened safely', () => {
+    // A dead or wrong link here sends a reader hunting for a document that is
+    // the whole point of the closing line. Pinned to the same org the feedback
+    // link already uses — a fork's URL shipping in the app would be a bug.
+    renderDialog();
+    const link = screen.getByText('LIMITATIONS.md').closest('a');
+    expect(link).not.toBeNull();
+    expect(link!.getAttribute('href')).toBe(
+      'https://github.com/Beilstein-Institut/explain-that-inchi/blob/master/LIMITATIONS.md',
+    );
+    // target=_blank without noopener hands the opener to the new tab.
+    expect(link!.getAttribute('target')).toBe('_blank');
+    expect(link!.getAttribute('rel')).toContain('noopener');
+  });
 });
 
 describe('limitationsContent', () => {
