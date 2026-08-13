@@ -67,66 +67,84 @@ const TOTAL = STEPS.length;
 /** Viewport margin to keep callout away from edges, in pixels */
 const MARGIN = 12;
 
-/** Minimum space (px) needed above/below/beside target for the callout */
+/**
+ * First-paint estimates only. The card is sized by its own copy, and the longest
+ * step body renders around 210px tall — taller than the 180px this used to assert.
+ * Placement now measures the real card (see `size` state below) and only falls
+ * back to these for the single frame before the first measurement lands.
+ *
+ * The old code trusted 180 as fact: `pickSide` allowed 'above' whenever 192px of
+ * room existed, then the card grew upward by its true height, so any target with
+ * 192–222px above it put the card off the top of the viewport. It was still in
+ * the DOM and still passed every test — just not on screen.
+ */
 const CALLOUT_HEIGHT = 180;
 const CALLOUT_WIDTH = 320;
 
 type CalloutSide = 'above' | 'below' | 'right' | 'left';
 
-function pickSide(rect: DOMRect): CalloutSide {
+/** Measured (or estimated) callout box. */
+export interface CalloutSize { width: number; height: number; }
+/** Viewport, passed in rather than read from `window` so this stays testable. */
+export interface Viewport { width: number; height: number; }
+
+export function pickSide(rect: DOMRect, size: CalloutSize, view: Viewport): CalloutSide {
   const spaceAbove = rect.top;
-  const spaceBelow = window.innerHeight - rect.bottom;
-  const spaceRight = window.innerWidth - rect.right;
+  const spaceBelow = view.height - rect.bottom;
+  const spaceRight = view.width - rect.right;
   const spaceLeft = rect.left;
 
-  if (spaceBelow >= CALLOUT_HEIGHT + MARGIN) return 'below';
-  if (spaceAbove >= CALLOUT_HEIGHT + MARGIN) return 'above';
-  if (spaceRight >= CALLOUT_WIDTH + MARGIN) return 'right';
-  if (spaceLeft >= CALLOUT_WIDTH + MARGIN) return 'left';
-  // Fallback: prefer whichever side has more room
+  if (spaceBelow >= size.height + MARGIN) return 'below';
+  if (spaceAbove >= size.height + MARGIN) return 'above';
+  if (spaceRight >= size.width + MARGIN) return 'right';
+  if (spaceLeft >= size.width + MARGIN) return 'left';
   return spaceBelow >= spaceAbove ? 'below' : 'above';
 }
 
-/**
- * The width the callout will actually render at. The stylesheet caps it with
- * `max-width: calc(100vw - 24px)`, so on a narrow phone the box is smaller than
- * CALLOUT_WIDTH and centring against the constant put it visibly off-centre
- * before the clamp below pulled it back. Reading the same cap here keeps the
- * arithmetic and the stylesheet describing one box.
- */
-function effectiveWidth(): number {
-  return Math.min(CALLOUT_WIDTH, window.innerWidth - 2 * MARGIN);
-}
+/** Keep `v` within [min, max]; when the box exceeds the axis, prefer the near edge. */
+const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(v, Math.max(min, max)));
 
-function calloutPosition(rect: DOMRect, side: CalloutSide): React.CSSProperties {
-  const width = effectiveWidth();
-  const halfW = width / 2;
+/**
+ * Always returns `top`/`left` — never `bottom`/`right`. Anchoring the card by its
+ * far edge is what let it hang off-screen: `bottom` said where the card ended,
+ * and its height then decided where it began. With `top` the clamp can guarantee
+ * both edges are inside the viewport.
+ */
+export function calloutPosition(
+  rect: DOMRect,
+  side: CalloutSide,
+  size: CalloutSize,
+  view: Viewport,
+): React.CSSProperties {
+  const width = Math.min(size.width, view.width - 2 * MARGIN);
+  const height = size.height;
+  const maxLeft = view.width - width - MARGIN;
+  const maxTop = view.height - height - MARGIN;
+  const centredLeft = clamp(rect.left + rect.width / 2 - width / 2, MARGIN, maxLeft);
+
   switch (side) {
-    case 'below': {
-      // Center horizontally over target, clamp to viewport
-      const rawLeft = rect.left + rect.width / 2 - halfW;
-      const left = Math.max(MARGIN, Math.min(rawLeft, window.innerWidth - width - MARGIN));
-      return { top: rect.bottom + MARGIN, left };
-    }
-    case 'above': {
-      const rawLeft = rect.left + rect.width / 2 - halfW;
-      const left = Math.max(MARGIN, Math.min(rawLeft, window.innerWidth - width - MARGIN));
-      return { bottom: window.innerHeight - rect.top + MARGIN, left };
-    }
-    case 'right': {
-      const top = Math.max(MARGIN, Math.min(rect.top, window.innerHeight - CALLOUT_HEIGHT - MARGIN));
-      return { top, left: rect.right + MARGIN };
-    }
-    case 'left': {
-      const top = Math.max(MARGIN, Math.min(rect.top, window.innerHeight - CALLOUT_HEIGHT - MARGIN));
-      return { top, right: window.innerWidth - rect.left + MARGIN };
-    }
+    case 'below':
+      return { top: clamp(rect.bottom + MARGIN, MARGIN, maxTop), left: centredLeft };
+    case 'above':
+      return { top: clamp(rect.top - height - MARGIN, MARGIN, maxTop), left: centredLeft };
+    case 'right':
+      return { top: clamp(rect.top, MARGIN, maxTop), left: clamp(rect.right + MARGIN, MARGIN, maxLeft) };
+    case 'left':
+      return { top: clamp(rect.top, MARGIN, maxTop), left: clamp(rect.left - width - MARGIN, MARGIN, maxLeft) };
   }
 }
 
 export function HelpTour({ open, onClose }: HelpTourProps) {
   const [stepIndex, setStepIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
+
+  // The card's real box. Copy length decides its height, so it is measured after
+  // paint rather than assumed — the assumption is what pushed it off-screen.
+  const calloutRef = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState<CalloutSize>({
+    width: CALLOUT_WIDTH,
+    height: CALLOUT_HEIGHT,
+  });
 
   // mountedRef: guard against setState after unmount
   const mountedRef = useRef(false);
@@ -153,6 +171,22 @@ export function HelpTour({ open, onClose }: HelpTourProps) {
     if (!open) return;
     computeRect();
   }, [open, computeRect]);
+
+  // Measure the card after every step change: each step's copy is a different
+  // length, so a height measured on step 1 misplaces step 5. useLayoutEffect so
+  // the corrected position is committed before the browser paints, otherwise the
+  // card visibly jumps. The 1px guard stops a measurement that rounds to the same
+  // box from looping (setSize -> render -> measure -> setSize).
+  useLayoutEffect(() => {
+    if (!open) return;
+    const el = calloutRef.current;
+    if (!el) return;
+    const { width, height } = el.getBoundingClientRect();
+    if (!width || !height) return; // jsdom, or not laid out yet
+    if (Math.abs(width - size.width) > 1 || Math.abs(height - size.height) > 1) {
+      setSize({ width, height });
+    }
+  }, [open, stepIndex, targetRect, size.width, size.height]);
 
   // Register resize/scroll/Esc listeners only while open (T-16-04 mitigation)
   useEffect(() => {
@@ -199,8 +233,16 @@ export function HelpTour({ open, onClose }: HelpTourProps) {
     if (e.target === e.currentTarget) onClose();
   };
 
-  const side = targetRect ? pickSide(targetRect) : 'below';
-  const calloutStyle = targetRect ? calloutPosition(targetRect, side) : {};
+  const view = { width: window.innerWidth, height: window.innerHeight };
+  const side = targetRect ? pickSide(targetRect, size, view) : 'below';
+  // No target (selector missed): centre the card rather than leaving it
+  // unpositioned at the viewport origin, where it used to land under the header.
+  const calloutStyle: React.CSSProperties = targetRect
+    ? calloutPosition(targetRect, side, size, view)
+    : {
+        top: Math.max(MARGIN, (view.height - size.height) / 2),
+        left: Math.max(MARGIN, (view.width - size.width) / 2),
+      };
 
   // Spotlight cutout via clip-path or box-shadow hole technique.
   // We use a large box-shadow approach: render a positioned div over the target
@@ -236,6 +278,7 @@ export function HelpTour({ open, onClose }: HelpTourProps) {
 
       {/* Callout card */}
       <div
+        ref={calloutRef}
         className={styles.callout}
         style={{ ...calloutStyle, position: 'fixed' }}
         onClick={e => e.stopPropagation()}
