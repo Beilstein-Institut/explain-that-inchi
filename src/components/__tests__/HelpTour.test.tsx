@@ -4,7 +4,12 @@
 // Uses real InChI fixture (alanine) for any store-related assertions per project convention.
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { HelpTour } from '../HelpTour';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { globSync } from 'node:fs';
+import { HelpTour, STEPS } from '../HelpTour';
+
+const TOTAL = STEPS.length;
 
 // Real InChI fixture for L-Alanine (from molecules.ts SMILES: C[C@@H](C(=O)O)N)
 // Used for store-dependent tests to satisfy the real-fixture requirement.
@@ -22,26 +27,17 @@ describe('HelpTour — step navigation', () => {
     expect(screen.getByText('The molecule editor')).toBeInTheDocument();
   });
 
-  it('renders step counter "1 of 8" on the first step', () => {
+  it('renders the step counter on the first step', () => {
     const onClose = vi.fn();
     render(<HelpTour open={true} onClose={onClose} />);
-    expect(screen.getByText('1 of 8')).toBeInTheDocument();
+    expect(screen.getByText(`1 of ${TOTAL}`)).toBeInTheDocument();
   });
 
   it('renders all 8 step titles when navigating through all steps', () => {
     const onClose = vi.fn();
     const { rerender } = render(<HelpTour open={true} onClose={onClose} />);
 
-    const expectedTitles = [
-      'The molecule editor',
-      'Presets list',
-      'The InChI string',
-      'Hovering',
-      'Pinning (click to freeze)',
-      'The InChIKey',
-      'The legend',
-      'Reset / Help buttons',
-    ];
+    const expectedTitles = STEPS.map(s => s.title);
 
     // First step already rendered
     expect(screen.getByText(expectedTitles[0])).toBeInTheDocument();
@@ -50,7 +46,7 @@ describe('HelpTour — step navigation', () => {
       fireEvent.click(screen.getByText('Next'));
       rerender(<HelpTour open={true} onClose={onClose} />);
       expect(screen.getByText(expectedTitles[i])).toBeInTheDocument();
-      expect(screen.getByText(`${i + 1} of 8`)).toBeInTheDocument();
+      expect(screen.getByText(`${i + 1} of ${TOTAL}`)).toBeInTheDocument();
     }
   });
 
@@ -68,42 +64,42 @@ describe('HelpTour — step navigation', () => {
     // Go to step 2
     fireEvent.click(screen.getByText('Next'));
     expect(screen.getByText('Presets list')).toBeInTheDocument();
-    expect(screen.getByText('2 of 8')).toBeInTheDocument();
+    expect(screen.getByText(`2 of ${TOTAL}`)).toBeInTheDocument();
 
     // Go back to step 1
     fireEvent.click(screen.getByText('Back'));
     expect(screen.getByText('The molecule editor')).toBeInTheDocument();
-    expect(screen.getByText('1 of 8')).toBeInTheDocument();
+    expect(screen.getByText(`1 of ${TOTAL}`)).toBeInTheDocument();
   });
 
   it('shows "Finish" on the last step instead of "Next"', () => {
     const onClose = vi.fn();
     render(<HelpTour open={true} onClose={onClose} />);
 
-    // Navigate to the last step (8th)
-    for (let i = 0; i < 7; i++) {
+    // Navigate to the last step
+    for (let i = 0; i < TOTAL - 1; i++) {
       fireEvent.click(screen.getByText('Next'));
     }
 
     expect(screen.getByText('Finish')).toBeInTheDocument();
     expect(screen.queryByText('Next')).not.toBeInTheDocument();
-    expect(screen.getByText('8 of 8')).toBeInTheDocument();
+    expect(screen.getByText(`${TOTAL} of ${TOTAL}`)).toBeInTheDocument();
     expect(screen.getByText('Reset / Help buttons')).toBeInTheDocument();
   });
 
-  it('step counter updates correctly through all 8 steps', () => {
+  it('step counter updates correctly through every step', () => {
     const onClose = vi.fn();
     render(<HelpTour open={true} onClose={onClose} />);
 
-    for (let i = 1; i <= 7; i++) {
-      expect(screen.getByText(`${i} of 8`)).toBeInTheDocument();
-      if (i < 7) {
+    for (let i = 1; i <= TOTAL - 1; i++) {
+      expect(screen.getByText(`${i} of ${TOTAL}`)).toBeInTheDocument();
+      if (i < TOTAL - 1) {
         fireEvent.click(screen.getByText('Next'));
       } else {
         fireEvent.click(screen.getByText('Next'));
       }
     }
-    expect(screen.getByText('8 of 8')).toBeInTheDocument();
+    expect(screen.getByText(`${TOTAL} of ${TOTAL}`)).toBeInTheDocument();
   });
 });
 
@@ -137,8 +133,8 @@ describe('HelpTour — close paths', () => {
     const onClose = vi.fn();
     render(<HelpTour open={true} onClose={onClose} />);
 
-    // Navigate to step 8
-    for (let i = 0; i < 7; i++) {
+    // Navigate to the last step
+    for (let i = 0; i < TOTAL - 1; i++) {
       fireEvent.click(screen.getByText('Next'));
     }
 
@@ -151,7 +147,7 @@ describe('HelpTour — close paths', () => {
     const onClose = vi.fn();
     render(<HelpTour open={false} onClose={onClose} />);
     expect(screen.queryByText('The molecule editor')).not.toBeInTheDocument();
-    expect(screen.queryByText('1 of 8')).not.toBeInTheDocument();
+    expect(screen.queryByText(`1 of ${TOTAL}`)).not.toBeInTheDocument();
   });
 
   it('Esc listener is removed when component closes (no listener leak)', () => {
@@ -230,5 +226,48 @@ describe('HelpTour — empty-canvas auto-load logic (App.tsx handleHelpClick)', 
     expect(setTourOpen).toHaveBeenCalledWith(false);
     expect(setMolecule).not.toHaveBeenCalled();
     expect(resetAll).not.toHaveBeenCalled();
+  });
+});
+
+describe('tour anchors exist in the app', () => {
+  // A step whose selector matches nothing renders a card with no spotlight, at a
+  // fallback position, pointing at nothing — and every behavioural test above
+  // still passes, because they never look at the page the tour describes. That is
+  // how the explanation card went untoured: it had no anchor and no step, and
+  // nothing failed. This walks each step's selector back to real source.
+  const SRC = resolve(__dirname, '..', '..');
+  // HelpTour.tsx is excluded on purpose. It declares the selectors, so including
+  // it makes every assertion below match its own STEPS array and pass even when
+  // the anchor has been deleted from the app — verified: renaming the explanation
+  // anchor left all 27 tests green until this exclusion was added.
+  const sources = globSync('**/*.{tsx,css}', { cwd: SRC })
+    .filter((f) => !f.endsWith('HelpTour.tsx') && !f.includes('__tests__'))
+    .map((f) => readFileSync(resolve(SRC, f), 'utf8'))
+    .join('\n');
+
+  it.each(STEPS.map((s) => [s.title, s.selector]))(
+    'step "%s" targets an anchor that exists: %s',
+    (_title, selector) => {
+      const tourId = selector.match(/\[data-tour-id="([^"]+)"\]/)?.[1];
+      const className = selector.match(/^\.([\w-]+)$/)?.[1];
+      if (tourId) {
+        expect(sources).toContain(`data-tour-id="${tourId}"`);
+      } else if (className) {
+        // Global class (not a CSS module), so it appears verbatim in JSX.
+        expect(sources).toContain(className);
+      } else {
+        throw new Error(`Unrecognised selector shape, cannot verify: ${selector}`);
+      }
+    },
+  );
+
+  it('covers the four regions of the page a newcomer has to find', () => {
+    // Not every element — the ones that carry the product's whole mechanism. The
+    // explanation card was missing from this list until a user reported it.
+    const anchors = STEPS.map((s) => s.selector);
+    expect(anchors).toContain('[data-tour-id="editor"]');
+    expect(anchors).toContain('[data-tour-id="inchi-string"]');
+    expect(anchors).toContain('[data-tour-id="explanation"]');
+    expect(anchors).toContain('[data-tour-id="legend"]');
   });
 });

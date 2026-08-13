@@ -104,6 +104,7 @@ export function Explanation() {
            T-12-04: prose is React text children (no innerHTML in this branch).
            T-12-05: read-only; canvas highlight path never reached (Invariant #2). */
         <div
+          data-tour-id="explanation"
           className={[styles.card, styles.active].join(' ')}
           style={{ '--accent': KEY_ZONE_ACCENT[keyHoverKind] } as React.CSSProperties}
         >
@@ -119,6 +120,7 @@ export function Explanation() {
            Read-only (Invariant): never calls setHover/setSubHover/highlight.
            D-01: --accent inherits the parent layer's swatch (subAccent). */
         <div
+          data-tour-id="explanation"
           className={[styles.card, styles.active].join(' ')}
           style={{ '--accent': subAccent } as React.CSSProperties}
         >
@@ -129,6 +131,7 @@ export function Explanation() {
         /* Active state: a live InChI layer is hovered (InChI string or a present
            legend row) — show layer info + readingFor output (title only). */
         <div
+          data-tour-id="explanation"
           className={[styles.card, styles.active].join(' ')}
           style={{ '--accent': accentVar } as React.CSSProperties}
         >
@@ -153,6 +156,7 @@ export function Explanation() {
            canonical example snippet is shown. l.eg is a plain InChI fragment string
            (no markup) → rendered as an escaped React text child, never innerHTML. */
         <div
+          data-tour-id="explanation"
           className={[styles.card, styles.active].join(' ')}
           style={{ '--accent': legendAccent } as React.CSSProperties}
         >
@@ -171,6 +175,7 @@ export function Explanation() {
       ) : (
         /* D-10: Idle state — DEFAULT_INFO with ink-faint left border (title only) */
         <div
+          data-tour-id="explanation"
           className={styles.card}
           style={{ '--accent': 'var(--ink-faint)' } as React.CSSProperties}
         >

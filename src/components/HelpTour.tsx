@@ -11,15 +11,18 @@ export interface HelpTourProps {
   onClose: () => void;
 }
 
-interface TourStep {
+export interface TourStep {
   title: string;
   body: string;
   /** CSS selector that locates the anchor DOM element for this step */
   selector: string;
 }
 
-// 8 steps in order per spec lines 94-104
-const STEPS: TourStep[] = [
+// Tour steps in order (originally 8 per spec lines 94-104; the explanation-card
+// step was added later). Exported so tests derive the count and titles from the
+// data instead of hard-coding them — every previous step addition broke a dozen
+// '<n> of 8' assertions that were only ever restating this array.
+export const STEPS: TourStep[] = [
   {
     title: 'The molecule editor',
     body: 'Draw or edit a structure here. The InChI updates live as you draw.',
@@ -51,8 +54,16 @@ const STEPS: TourStep[] = [
     selector: '[data-tour-id="inchikey"]',
   },
   {
+    // Between the InChIKey and the legend, matching where the card sits on screen
+    // — the tour reads down the page. It is also the step that explains where the
+    // output of steps 4 and 5 actually appears, which was previously left implied.
+    title: 'The explanation card',
+    body: 'Whatever you point at is explained here — a whole layer, or a single character inside one. The text names the atoms it refers to, so you can read it against the drawing above.',
+    selector: '[data-tour-id="explanation"]',
+  },
+  {
     title: 'The legend',
-    body: 'Every layer type is listed here with its colour and a description of what chemical information it encodes.',
+    body: 'Every layer type is listed here with its colour and a description of what chemical information it encodes. Hovering a row explains that layer in the card to its left, even for layers this molecule does not have.',
     selector: '[data-tour-id="legend"]',
   },
   {
