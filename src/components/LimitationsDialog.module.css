@@ -25,9 +25,6 @@ dialog.limitationsDialog::backdrop {
 .dialogTitle {
   composes: dialogTitle from './FeedbackDialog.module.css';
 }
-.dialogIntro {
-  composes: dialogIntro from './FeedbackDialog.module.css';
-}
 .actionRow {
   composes: actionRow from './FeedbackDialog.module.css';
 }

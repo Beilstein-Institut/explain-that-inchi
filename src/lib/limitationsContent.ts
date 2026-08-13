@@ -1,4 +1,4 @@
-// The five limitations shown in the in-app Limitations dialog.
+// The limitations shown in the in-app Limitations dialog.
 //
 // These are the ones a chemist is most likely to hit and most likely to file as
 // a bug, and none of them is a defect in this tool: each is the capability
@@ -12,7 +12,7 @@ export interface LimitationEntry {
   /** Short heading — the chemistry the user tried to do. */
   title: string;
   /** Which layer imposes the limit. Rendered as a tag beside the title. */
-  source: 'InChI' | 'RInChI' | 'MInChI' | 'Ketcher' | 'Standard InChI';
+  source: 'InChI' | 'RInChI' | 'MInChI' | 'Ketcher';
   /** Two or three sentences: what fails, and why it is not a bug here. */
   body: string;
 }
@@ -22,11 +22,11 @@ export const LIMITATIONS: LimitationEntry[] = [
     title: 'Inorganics and organometallics',
     source: 'InChI',
     body:
-      'InChI disconnects metal–ligand bonds, so a coordination compound or an ' +
-      'organometallic comes out as separate fragments rather than one entity — ' +
-      'cisplatin becomes 2ClH.2H3N.Pt with its charge pushed into /q and /p. ' +
-      'The layer that would reconnect the metal (/r) exists only in non-standard ' +
-      'InChI, which this tool does not produce. Ferrocene will not explain usefully.',
+      'InChI breaks the bonds between a metal and its ligands, so a coordination ' +
+      'compound comes out as separate pieces instead of one molecule — cisplatin ' +
+      'becomes 2ClH.2H3N.Pt, which says very little about the compound. This is a ' +
+      'known gap, and current InChI development is working to close it, so expect ' +
+      'inorganics to be better supported in a future version of the standard.',
   },
   {
     title: 'Reactions',
@@ -46,16 +46,6 @@ export const LIMITATIONS: LimitationEntry[] = [
       'InChI library bundled here does have experimental polymer support, but only ' +
       'as a non-standard option, so a repeat unit drawn in Ketcher cannot be ' +
       'expressed. A dot-separated multi-component InChI is not a described mixture.',
-  },
-  {
-    title: 'The string is not your drawing',
-    source: 'Standard InChI',
-    body:
-      'Standard InChI normalizes before it names. Draw acetate and the formula ' +
-      'layer reads C2H4O2 — the neutral parent — with the charge moved into /p-1. ' +
-      'Tautomers may collapse onto one string. This tool explains the InChI it is ' +
-      'given, so it will faithfully explain something that looks wrong. The ' +
-      'tautomer-explicit view (/f) is non-standard and not shown.',
   },
   {
     title: 'What can be drawn, and what can be highlighted',

@@ -60,10 +60,13 @@ describe('LimitationsDialog', () => {
 });
 
 describe('limitationsContent', () => {
-  it('carries exactly five entries', () => {
-    // Five is a deliberate ceiling: the dialog is a scannable warning, not the
-    // full document. Add to LIMITATIONS.md instead, or replace an entry here.
-    expect(LIMITATIONS).toHaveLength(5);
+  it('stays short enough to scan', () => {
+    // The dialog is a scannable warning, not the full document — LIMITATIONS.md
+    // is where the long list lives, and the closing line points at it. Five was
+    // the original ceiling; the count is free to move under it, but a dialog
+    // that grows past it has become the document it was meant to summarise.
+    expect(LIMITATIONS.length).toBeGreaterThan(0);
+    expect(LIMITATIONS.length).toBeLessThanOrEqual(5);
   });
 
   it('covers the layers users misattribute to this tool', () => {

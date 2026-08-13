@@ -22,11 +22,6 @@ export function LimitationsDialog({ dialogRef }: LimitationsDialogProps) {
       <h2 id="limitations-dialog-title" className={styles.dialogTitle}>
         Limitations
       </h2>
-      <p className={styles.dialogIntro}>
-        Most of what this tool cannot do is set by the standards underneath it, not
-        by the tool itself. These five come up most often.
-      </p>
-
       <ul className={styles.limitationList}>
         {LIMITATIONS.map((l) => (
           <li key={l.title} className={styles.limitationItem}>
@@ -40,8 +35,7 @@ export function LimitationsDialog({ dialogRef }: LimitationsDialogProps) {
       </ul>
 
       <p className={styles.moreNote}>
-        The full list — including the standard/non-standard split, the canonical-to-canvas
-        mapping and known parser gaps — is in{' '}
+        A full list of limitations is in{' '}
         <code className={styles.filename}>LIMITATIONS.md</code> in the repository.
       </p>
 
