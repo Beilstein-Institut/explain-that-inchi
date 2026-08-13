@@ -42,10 +42,9 @@ export const LIMITATIONS: LimitationEntry[] = [
     source: 'MInChI',
     body:
       'Mixture InChI is still a draft standard, so solvates, formulated salts, ' +
-      'ratios and concentrations are outside the model. Polymers are similar: the ' +
-      'InChI library bundled here does have experimental polymer support, but only ' +
-      'as a non-standard option, so a repeat unit drawn in Ketcher cannot be ' +
-      'expressed. A dot-separated multi-component InChI is not a described mixture.',
+      'ratios and concentrations are outside the model, and a repeat unit drawn ' +
+      'in Ketcher cannot be expressed either. A dot-separated multi-component ' +
+      'InChI is not a described mixture — it names the components, not the recipe.',
   },
   {
     title: 'What can be drawn, and what can be highlighted',
@@ -54,7 +53,7 @@ export const LIMITATIONS: LimitationEntry[] = [
       'Anything the editor cannot represent never reaches the InChI engine: ' +
       'R-groups and Markush structures have no InChI at all, and Ketcher’s ' +
       'macromolecule mode is out of reach here. Highlighting has its own ceiling — ' +
-      'the canvas API tints atoms and bonds, so a hydrogen you did not draw, or a ' +
-      'whole-molecule flag like /m and /s, has nothing to point at.',
+      'the canvas API tints atoms and bonds, so a hydrogen you did not draw has ' +
+      'nothing on the canvas to point at.',
   },
 ];
