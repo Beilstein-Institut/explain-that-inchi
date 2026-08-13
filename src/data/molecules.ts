@@ -30,7 +30,7 @@ export const MOLECULES: MoleculePreset[] = [
   // p → b → t → m → s → i). Every chipped preset is here and they come first, so
   // reading the top of the picker walks the InChI left to right and matches the
   // legend row for row. Adding a chip below this block, or reordering within it,
-  // breaks that correspondence — PresetMolecules.test.ts fails if either happens.
+  // breaks that correspondence — presetLayerCoverage.test.ts fails if either does.
   // Each InChI was measured through the indigo WASM, never written by hand.
   // ---------------------------------------------------------------------------
   // Methane's InChI is `1S/CH4/h1H4` — one heavy atom, no bonds, so no c layer
@@ -68,19 +68,15 @@ export const MOLECULES: MoleculePreset[] = [
   { id: 'melatonin',      name: 'Melatonin',        formula: 'C₁₃H₁₆N₂O₂',    smiles: 'CC(=O)NCCC1=CNC2=C1C=C(C=C2)OC'                                                 },
   // Analgesics & anti-inflammatories
   { id: 'aspirin',        name: 'Aspirin',          formula: 'C₉H₈O₄',         smiles: 'CC(=O)OC1=CC=CC=C1C(=O)O'                                                       },
-  { id: 'ibuprofen',      name: 'Ibuprofen',        formula: 'C₁₃H₁₈O₂',      smiles: 'CC(C)CC1=CC=C(C=C1)C(C)C(=O)O'                                                  },
   { id: 'morphine',       name: 'Morphine',         formula: 'C₁₇H₁₉NO₃',     smiles: 'CN1CC[C@]23[C@@H]4[C@H]1CC5=C2C(=C(C=C5)O)O[C@H]3[C@H](C=C4)O'                  },
   // Cardiovascular & metabolic
-  { id: 'atorvastatin',   name: 'Atorvastatin',     formula: 'C₃₃H₃₅FN₂O₅',   smiles: 'CC(C)C1=C(C(=C(N1CC[C@H](C[C@H](CC(=O)O)O)O)C2=CC=C(C=C2)F)C3=CC=CC=C3)C(=O)NC4=CC=CC=C4' },
   { id: 'propranolol',    name: 'Propranolol',      formula: 'C₁₆H₂₁NO₂',     smiles: 'CC(C)NCC(COC1=CC=CC2=CC=CC=C21)O'                                               },
   // Antibiotics & antivirals
   { id: 'penicillinG',    name: 'Penicillin G',     formula: 'C₁₆H₁₈N₂O₄S',   smiles: 'CC1([C@@H](N2[C@H](S1)[C@@H](C2=O)NC(=O)CC3=CC=CC=C3)C(=O)O)C'                  },
   { id: 'ciprofloxacin',  name: 'Ciprofloxacin',    formula: 'C₁₇H₁₈FN₃O₃',   smiles: 'C1CC1N2C=C(C(=O)C3=CC(=C(C=C32)N4CCNCC4)F)C(=O)O'                              },
   { id: 'oseltamivir',    name: 'Oseltamivir',      formula: 'C₁₆H₂₈N₂O₄',    smiles: 'CCC(CC)O[C@@H]1C=C(C[C@@H]([C@H]1NC(=O)C)N)C(=O)OCC'                            },
   // CNS & psychiatric
-  { id: 'fluoxetine',     name: 'Fluoxetine',       formula: 'C₁₇H₁₈F₃NO',    smiles: 'CNCCC(C1=CC=CC=C1)OC2=CC=C(C=C2)C(F)(F)F'                                       },
   { id: 'diazepam',       name: 'Diazepam',         formula: 'C₁₆H₁₃ClN₂O',   smiles: 'CN1C(=O)CN=C(C2=C1C=CC(=C2)Cl)C3=CC=CC=C3'                                      },
-  { id: 'dopamine',       name: 'Dopamine',         formula: 'C₈H₁₁NO₂',      smiles: 'C1=CC(=C(C=C1CCN)O)O'                                                           },
   // Other notable drugs
   { id: 'methotrexate',   name: 'Methotrexate',     formula: 'C₂₀H₂₂N₈O₅',    smiles: 'CN(CC1=CN=C2C(=N1)C(=NC(=N2)N)N)C3=CC=C(C=C3)C(=O)N[C@@H](CCC(=O)O)C(=O)O'     },
   { id: 'dexamethasone',  name: 'Dexamethasone',    formula: 'C₂₂H₂₉FO₅',     smiles: 'C[C@@H]1C[C@H]2[C@@H]3CCC4=CC(=O)C=C[C@@]4([C@]3([C@H](C[C@@]2([C@]1(C(=O)CO)O)C)O)F)C' },
