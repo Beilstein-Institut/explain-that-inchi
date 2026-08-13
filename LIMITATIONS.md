@@ -23,9 +23,16 @@ organometallics are represented as separate fragments rather than as one
 entity. Cisplatin becomes `2ClH.2H3N.Pt` with the charge pushed into
 `/q;;;;+2/p-2` — a valid InChI that says very little about the compound.
 
-The reconnected-metal layer that partly addresses this (`/r`, the RecMet option)
-is **non-standard** InChI. This tool only produces standard InChI, so it is out
-of reach. Ferrocene and its relatives will not explain usefully.
+**This is being worked on upstream.** Integrating inorganics into InChI is
+planned; version 1.06, which this tool uses, does not support it yet. So the
+limitation is a matter of timing rather than a permanent boundary — expect it to
+improve as the standard does, and expect this tool to inherit that improvement
+only after indigo → ketcher-standalone → this app is upgraded.
+
+In the meantime, the reconnected-metal layer that partly addresses it (`/r`, the
+RecMet option) is **non-standard** InChI, and this tool only produces standard
+InChI, so it is out of reach. Ferrocene and its relatives will not explain
+usefully.
 
 ### Reactions — no RInChI
 
