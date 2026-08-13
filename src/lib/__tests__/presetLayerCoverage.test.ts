@@ -97,6 +97,20 @@ describe('preset layer chips', () => {
     }
   });
 
+  it('puts every chipped preset first, in legend order', () => {
+    // The picker's top block is meant to read as the legend does — left to right
+    // along the InChI. Two ways that silently rots: a new unchipped preset gets
+    // inserted into the block, or a chip is added at the bottom of the file where
+    // nobody sees it out of order. Both fail here.
+    const chippedCount = MOLECULES.filter(m => m.layer).length;
+    const head = MOLECULES.slice(0, chippedCount);
+    expect(head.every(m => m.layer)).toBe(true);
+    expect(MOLECULES.slice(chippedCount).some(m => m.layer)).toBe(false);
+    expect(head.map(m => m.layer)).toEqual(
+      ['version', 'formula', 'c', 'h', 'q', 'p', 'b', 't', 'm', 's', 'i'],
+    );
+  });
+
   it('claims each of the 11 layer types exactly once', () => {
     // The whole point of the chips: no duplicates, no gaps. Adding a second
     // preset for a popular layer (or forgetting one) fails here.
