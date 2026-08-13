@@ -22,12 +22,10 @@ describe('MOLECULES preset data', () => {
     expect(ids).toContain('methane');
     expect(ids).toContain('ethanol');
     expect(ids).toContain('benzene');
-    expect(ids).toContain('acetic');
     expect(ids).toContain('alanine');
     expect(ids).toContain('caffeine');
     expect(ids).toContain('nicotine');
     expect(ids).toContain('melatonin');
-    expect(ids).toContain('naloxone');
   });
 
   it('has correct embedded SMILES for stereo-sensitive molecules', () => {
@@ -36,7 +34,7 @@ describe('MOLECULES preset data', () => {
     expect(find('benzene').smiles).toBe('C1=CC=CC=C1');
     expect(find('alanine').smiles).toBe('C[C@@H](C(=O)O)N');    // L-Alanine (2S) enantiomer
     expect(find('nicotine').smiles).toBe('CN1CCC[C@H]1C2=CN=CC=C2');  // (S)-Nicotine
-    expect(find('naloxone').smiles).toBe('C=CCN1CC[C@]23[C@@H]4C(=O)CC[C@]2([C@H]1CC5=C3C(=C(C=C5)O)O4)O');
+    expect(find('morphine').smiles).toBe('CN1CC[C@]23[C@@H]4[C@H]1CC5=C2C(=C(C=C5)O)O[C@H]3[C@H](C=C4)O');
   });
 
   // The seven layer-coverage presets. Without them the picker reaches only 7 of
@@ -48,7 +46,6 @@ describe('MOLECULES preset data', () => {
   it('keeps the layer-coverage SMILES exact', () => {
     const find = (id: string) => MOLECULES.find(m => m.id === id)!;
     expect(find('fumaric').smiles).toBe('OC(=O)/C=C/C(=O)O');            // /b2-1+ (E)
-    expect(find('maleic').smiles).toBe('OC(=O)\\C=C/C(=O)O');            // /b2-1- (Z)
     expect(find('choline').smiles).toBe('C[N+](C)(C)CCO');               // /q+1
     expect(find('acetate').smiles).toBe('CC(=O)[O-]');                   // /p-1
     expect(find('chloroformD').smiles).toBe('[2H]C(Cl)(Cl)Cl');          // /i1D
@@ -56,13 +53,6 @@ describe('MOLECULES preset data', () => {
     expect(find('pge2').smiles).toBe(
       'CCCCC[C@@H](O)/C=C/[C@H]1[C@@H](O)CC(=O)[C@@H]1C/C=C\\CCCC(=O)O', // /b /t /m /s
     );
-  });
-
-  it('keeps fumaric and maleic acid adjacent', () => {
-    const ids = MOLECULES.map(m => m.id);
-    // Their InChIs differ in one character (/b2-1+ vs /b2-1-). Side by side in
-    // the chip strip they teach the b layer; separated they are just two acids.
-    expect(ids.indexOf('maleic') - ids.indexOf('fumaric')).toBe(1);
   });
 
   it('MoleculePreset type has correct shape', () => {

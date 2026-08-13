@@ -31,8 +31,13 @@ const PGE2 =
   'InChI=1S/C20H32O5/c1-2-3-6-9-15(21)12-13-17-16(18(22)14-19(17)23)10-7-4-5-8-11-20(24)25/' +
   'h4,7,12-13,15-17,19,21,23H,2-3,5-6,8-11,14H2,1H3,(H,24,25)/b7-4-,13-12+/t15-,16-,17-,19+/m1/s1';
 
+// MALEIC is deliberately NOT here: maleic acid was dropped from the picker, so
+// it is no longer a preset and does not belong in a preset-coverage set. The
+// fixture stays for the E/Z test below — it is real measured output, and the
+// one-character difference from fumaric is the sharpest parser check there is
+// for the b layer's sign.
 const ALL_FIXTURES = [
-  FUMARIC, MALEIC, CHOLINE, ACETATE, CHLOROFORM_D, SODIUM_ACETATE, PGE2,
+  FUMARIC, CHOLINE, ACETATE, CHLOROFORM_D, SODIUM_ACETATE, PGE2,
 ];
 
 const typesOf = (inchi: string): LayerType[] => parseInchi(inchi).map(l => l.type);
@@ -104,6 +109,9 @@ describe('preset layer chips', () => {
 });
 
 describe('double-bond stereo (b)', () => {
+  // Maleic acid is no longer in the picker, but this pair is kept as parser
+  // coverage: it is the only case where the entire InChI is identical up to a
+  // single sign character, so a sign bug cannot hide behind anything else.
   it('distinguishes fumaric (E) from maleic (Z) by the sign alone', () => {
     expect(layer(FUMARIC, 'b')!.text).toBe('2-1+');
     expect(layer(MALEIC, 'b')!.text).toBe('2-1-');
