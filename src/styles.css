@@ -293,8 +293,12 @@ body {
 }
 .canvas-wrap {
   position: relative;
+  /* The grid dot was the one literal colour left outside :root. Derived from
+     --line instead so it tracks the palette: --line is oklch(0.88 0.008 250)
+     and the dot wants to sit just above it, which is what the +0.04 lightness
+     step reproduces — same value as before, now with a reason. */
   background:
-    radial-gradient(circle at 12px 12px, oklch(0.92 0.008 250) 1px, transparent 1.5px) 0 0 / 24px 24px,
+    radial-gradient(circle at 12px 12px, oklch(from var(--line) calc(l + 0.04) c h) 1px, transparent 1.5px) 0 0 / 24px 24px,
     var(--bg-canvas);
 }
 .canvas-wrap svg.molecule {
@@ -409,8 +413,16 @@ body {
     flex: 0 0 auto;
     width: auto;
     flex-direction: row;
-    align-items: baseline;
+    /* center, not baseline: baseline-aligned flex items pack to the top of the
+       cross axis, so once min-height exceeds the text the label would sit against
+       the pill's upper edge. */
+    align-items: center;
     gap: 6px;
+    /* 44px is the finger target. The pill was ~35px from padding alone, which is
+       fine for a mouse and small for a thumb on a horizontally scrolling strip —
+       the one place here where a mis-tap loads the wrong molecule. min-height
+       does the work so the text keeps its own padding rhythm. */
+    min-height: 44px;
     padding: 9px 14px;
     border: 1px solid var(--line);
     border-radius: 999px;
@@ -419,6 +431,14 @@ body {
   .mol-item.active {
     background: var(--bg-panel);
     border-color: var(--ink);
+  }
+  /* Same reasoning for the action pills: 32px is a comfortable mouse target and
+     a poor thumb one. They only grow on touch-width viewports. */
+  .help-trigger,
+  .reset-trigger,
+  .limitations-trigger,
+  .feedback-trigger {
+    height: 44px;
   }
 }
 /* -----------------------------------------------------------------------------

@@ -61,7 +61,11 @@ dialog.feedbackDialog::backdrop {
 }
 
 /* Uppercase mono field / section label (verbatim .sectionLabel pattern) */
+/* Used on <p>, <legend> and <label>. The explicit `display: block` is what keeps
+   the three interchangeable — a <label> is inline by default, so without it the
+   bottom margin collapses and the field jumps up against its own name. */
 .fieldLabel {
+  display: block;
   font-family: var(--font-mono);
   font-size: 10.5px;
   letter-spacing: 0.14em;

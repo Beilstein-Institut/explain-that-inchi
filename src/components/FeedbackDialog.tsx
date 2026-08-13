@@ -113,9 +113,15 @@ export function FeedbackDialog({ dialogRef, onSubmit, contextPreview }: Feedback
         ))}
       </fieldset>
 
-      {/* Message textarea (D-04) */}
-      <p className={styles.fieldLabel}>Your message</p>
+      {/* Message textarea (D-04). A real <label htmlFor>, not a styled <p>: the
+          placeholder is not a label — it disappears the moment anyone types, and
+          a screen reader announced this field as unlabelled while the radio group
+          directly above it was correct. */}
+      <label className={styles.fieldLabel} htmlFor="feedback-message">
+        Your message
+      </label>
       <textarea
+        id="feedback-message"
         className={styles.textarea}
         placeholder="What happened, or what would help?"
         rows={4}

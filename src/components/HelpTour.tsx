@@ -87,18 +87,30 @@ function pickSide(rect: DOMRect): CalloutSide {
   return spaceBelow >= spaceAbove ? 'below' : 'above';
 }
 
+/**
+ * The width the callout will actually render at. The stylesheet caps it with
+ * `max-width: calc(100vw - 24px)`, so on a narrow phone the box is smaller than
+ * CALLOUT_WIDTH and centring against the constant put it visibly off-centre
+ * before the clamp below pulled it back. Reading the same cap here keeps the
+ * arithmetic and the stylesheet describing one box.
+ */
+function effectiveWidth(): number {
+  return Math.min(CALLOUT_WIDTH, window.innerWidth - 2 * MARGIN);
+}
+
 function calloutPosition(rect: DOMRect, side: CalloutSide): React.CSSProperties {
-  const halfW = CALLOUT_WIDTH / 2;
+  const width = effectiveWidth();
+  const halfW = width / 2;
   switch (side) {
     case 'below': {
       // Center horizontally over target, clamp to viewport
       const rawLeft = rect.left + rect.width / 2 - halfW;
-      const left = Math.max(MARGIN, Math.min(rawLeft, window.innerWidth - CALLOUT_WIDTH - MARGIN));
+      const left = Math.max(MARGIN, Math.min(rawLeft, window.innerWidth - width - MARGIN));
       return { top: rect.bottom + MARGIN, left };
     }
     case 'above': {
       const rawLeft = rect.left + rect.width / 2 - halfW;
-      const left = Math.max(MARGIN, Math.min(rawLeft, window.innerWidth - CALLOUT_WIDTH - MARGIN));
+      const left = Math.max(MARGIN, Math.min(rawLeft, window.innerWidth - width - MARGIN));
       return { bottom: window.innerHeight - rect.top + MARGIN, left };
     }
     case 'right': {

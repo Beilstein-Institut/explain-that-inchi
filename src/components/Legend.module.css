@@ -1,9 +1,15 @@
-/* Legend row — verbatim from styles.css .legend-row */
+/* Legend row — was verbatim from styles.css .legend-row; min-height added.
+   These are focusable, hoverable targets, and 6px padding on 12.5px text put
+   them around 25px — under the 24px AA target size once the border-box rounds
+   the wrong way, and well under comfortable. min-height raises the hit area
+   without changing the visual rhythm: the row's ink stays where it was, the
+   grid just centres it in a taller box. */
 .legendRow {
   display: grid;
   grid-template-columns: 14px 28px 100px 1fr;
   align-items: center;
   gap: 10px;
+  min-height: 28px;
   padding: 6px 22px;
   font-size: 12.5px;
   position: relative;

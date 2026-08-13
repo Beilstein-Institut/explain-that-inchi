@@ -98,6 +98,26 @@ describe('FeedbackDialog', () => {
     expect(textarea?.placeholder).toBe('What happened, or what would help?');
   });
 
+  it('gives the message field a real label, not just a placeholder', () => {
+    // The visible "Your message" text used to be a <p>, which looks like a label
+    // and announces as nothing — the field read as an unlabelled edit box, and
+    // the placeholder that hinted at its purpose disappears as soon as anyone
+    // types. getByLabelText resolves through the accessibility tree, so it only
+    // passes when the association is real.
+    const dialogRef = makeDialogRef();
+    const onSubmit = makeOnSubmit({ url: 'https://github.com', truncated: false, fullBody: '' });
+    const { container } = render(
+      <FeedbackDialog
+        dialogRef={dialogRef}
+        onSubmit={onSubmit}
+        contextPreview={defaultContextPreview}
+      />
+    );
+    const labelled = screen.getByLabelText('Your message');
+    expect(labelled.tagName).toBe('TEXTAREA');
+    expect(labelled).toBe(container.querySelector('textarea'));
+  });
+
   it('always-visible context preview renders supplied context values', () => {
     const dialogRef = makeDialogRef();
     const onSubmit = makeOnSubmit({ url: 'https://github.com', truncated: false, fullBody: '' });
