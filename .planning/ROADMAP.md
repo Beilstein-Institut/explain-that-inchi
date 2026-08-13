@@ -12,6 +12,44 @@
 
 > Phase 16 (Pin-to-freeze highlights + Help tour) shipped between v1.4 and v1.5; it is not part of a numbered milestone.
 
+### Post-v1.6 — unmilestoned
+
+No milestone has been open since v1.6 shipped (2026-06-30). Everything since has
+run as quick tasks, recorded in STATE.md's "Quick Tasks Completed" table rather
+than as phases. That is a deliberate mode, not drift — the work has been
+maintenance, legal/deployment hardening and UI refinement, none of it large
+enough to roadmap. It is listed here so the roadmap does not read as if the
+project stopped on 2026-06-30.
+
+Themes since v1.6: Docker/nginx deployment and the cheminfo URL; legal pages and
+the on-leave data purge; Jmol element colours; the isotope-layer highlight fix;
+`LIMITATIONS.md` and the in-app Limitations dialog; the preset picker rebuilt as
+a map of the notation (layer chips, 33 → 20 presets); and an `/impeccable audit`
+pass with its fixes.
+
+### Candidates for the next milestone
+
+Carried, in rough priority. None is scoped or committed — `/gsd-new-milestone`
+would be the place to decide.
+
+1. **First-load payload.** 21 MB raw / 7.3 MB gzip in one chunk before anything
+   is drawable. The fix is moving the lazy boundary from `App` down to
+   `KetcherPanel` so the shell and explanation render while the editor streams
+   in. Deferred deliberately: it changes the mount path of a canvas PRODUCT.md
+   calls load-bearing, and an undiagnosed mount failure is still open (below).
+2. **The undiagnosed browser mount failure** — `createRoot` twice on `#root`,
+   `RulerArea` throwing on `SVGLength`. Reported 2026-08-13, never reproduced or
+   explained; two hypotheses were tested and falsified. Blocks item 1 honestly.
+3. **Accessibility position.** PRODUCT.md records keyboard/colour equivalents as
+   undecided, but `lib/keyboardProps.ts` already implements roving keyboard
+   access. The record understates the code; adopting a standard (or explicitly
+   declining one) would settle it.
+4. **Repository visibility.** Private today, so the in-app Limitations link and
+   the Send feedback button both 404 for the public. Operator action, not code.
+5. **Dark mode.** Never committed; the oklch token system, where lightness is
+   already a solved axis, makes it unusually cheap. Explicitly declined once in
+   the 2026-08-13 audit.
+
 ## Phases
 
 <details>
@@ -117,3 +155,4 @@ Full phase details: `.planning/milestones/v1.6-ROADMAP.md`
 *Updated: 2026-06-25 — Phase 16 complete (between v1.4 and v1.5)*
 *Updated: 2026-06-29 — v1.5 (Phases 17–18) complete*
 *Updated: 2026-06-30 — v1.5 SHIPPED (tag v1.5) and v1.6 SHIPPED (Phase 19, tag v1.6); phase details archived to milestones/.*
+*Updated: 2026-08-13 — added the Post-v1.6 section. No milestone has been open since v1.6; work has run as quick tasks, and the roadmap said nothing about it. Candidates for a next milestone recorded, led by the 7.3 MB first-load payload and the undiagnosed mount failure that blocks fixing it.*

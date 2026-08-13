@@ -4,10 +4,10 @@ milestone: v1.6
 milestone_name: Connection-layer cards
 current_phase: 19
 status: milestone_shipped
-stopped_at: Shipped v1.5 + v1.6 (Phases 17–19 tagged)
-last_updated: "2026-08-10T13:12:47.082Z"
-last_activity: 2026-08-11
-last_activity_desc: "Completed quick task 260811-mxg: LIMITATIONS.md + in-app Limitations dialog"
+stopped_at: Session paused 2026-08-13 — chips + picker cull + audit + Help tour repairs; HEAD 17b0f35, both remotes synced, tree clean
+last_updated: "2026-08-13T12:20:00.000Z"
+last_activity: 2026-08-13
+last_activity_desc: "Layer chips, picker cull 33->20, PRODUCT.md refresh, /impeccable audit + fixes, Help tour repairs"
 progress:
   total_phases: 6
   completed_phases: 6
@@ -71,6 +71,8 @@ See: .planning/PROJECT.md (updated 2026-06-30)
 | 260811-kvl | Layer-coverage presets: fumaric/maleic acid (`b`, differing in one character), choline (`q`), acetate (`p`), chloroform-d (`i`), sodium acetate (`q`+`p`, first multi-component preset), prostaglandin E₂ (`b`/`t`/`m`/`s`) — picker now reaches all 11 layer types, was 7. InChI measured through indigo WASM; live Ketcher round-trip NOT yet driven (see SUMMARY) | 2026-08-11 | 8633a20 | [260811-kvl-add-seven-presets-covering-the-q-p-b-i-l](./quick/260811-kvl-add-seven-presets-covering-the-q-p-b-i-l/) |
 | 260811-mxg | Limitations: new `LIMITATIONS.md` (grouped by the layer imposing each limit — InChI coverage, standard/non-standard split, Ketcher, auxMap, InChIKey hash, browser-only) + in-app Limitations dialog with the 5 strongest entries (`limitationsContent.ts`, source-tagged) + trigger button left of Send feedback. Dialog CSS composes FeedbackDialog's surface | 2026-08-11 | d49ef9e | [260811-mxg-limitations-md-plus-an-in-app-limitation](./quick/260811-mxg-limitations-md-plus-an-in-app-limitation/) |
 | 260813-exd | Layer chips on the example molecules + picker cull + Limitations rewrite: `layer?: LayerType` on `MoleculePreset`, one chip per preset tinted with the layer swatch, each of the 11 layer types claimed exactly once and the chipped presets moved to the head of the list in legend order (version→formula→c→h→q→p→b→t→m→s→i). Presets cut 33→20 over five rounds (none chipped, so coverage held). Limitations dialog trimmed to 4 entries, plainer copy, `LIMITATIONS.md` now a real link. `LAYER_KEY` extracted to `layerInfo.ts`. Render test added for the chips. 596 tests. NOTE: browser mount failure (createRoot twice / RulerArea) reported during this task is STILL UNDIAGNOSED; chips were reverted (4b5f9dc) and restored (338d797) for a bisect that never ran | 2026-08-13 | 6461386 | [260813-exd-layer-chips-on-example-molecules-each-of](./quick/260813-exd-layer-chips-on-example-molecules-each-of/) |
+| 260813-aud | `/impeccable audit` + fixes: real `<label htmlFor>` for the feedback textarea (was a styled `<p>`, announced unlabelled); touch targets — legend rows to 28px min-height, preset and action pills to 44px on ≤900px; `.canvas-wrap` dot grid derived from `--line` (last literal colour outside `:root`); HelpTour callout centring reads one `effectiveWidth()`. Detector 0 findings. Deferred: the 7.3MB gzip first-load split | 2026-08-13 | 26acdb2 | — |
+| 260813-tour | Help tour repairs, from two user reports. (1) The description card rendered off-screen: `CALLOUT_HEIGHT = 180` was a guess, the card is ~214px, and `calloutPosition` anchored by `bottom` so the real height decided the top edge — replayed at -26px off the top and 826px in an 800px viewport. Now measured after paint and always anchored top/left. (2) No tour step for the explanation card, and no `data-tour-id` on it at all — added to all five render branches; step 7 of 9, between InChIKey and legend. `STEPS` exported so tests derive the count | 2026-08-13 | 17b0f35 | — |
 | 260811-b69 | Harden client-side data removal on leave — full localStorage/sessionStorage wipe, guarded IndexedDB/Cache sweeps, COI-gated SW unregister, opt-in Clear-Site-Data leave endpoint + footer toggle, honest privacy §3(3)(4) | 2026-08-11 | e097453 | [260811-b69-client-side-data-removal-on-leave-harden](./quick/260811-b69-client-side-data-removal-on-leave-harden/) |
 
 ## Deferred Items
@@ -103,18 +105,40 @@ Items acknowledged and deferred at v1.3 milestone close on 2026-06-19 (same v1.0
 
 ## Blockers
 
-- Phase 19 P02: awaiting live chemist accuracy gate (checkpoint:human-verify, blocking). Wiring committed 21b793b; tsc+440 tests green; highlight unchanged. Resume via /gsd-verify-work or 'approved'.
+- **Undiagnosed browser mount failure.** Reported 2026-08-13: `createRoot()` called
+  twice on `#root` (main.tsx:31), `removeChild`/`insertBefore` NotFoundError at
+  container level, ketcher's `initKetcher` then finding no container, `RulerArea`
+  throwing `SVGLength: Could not resolve relative length`. Two hypotheses tested
+  and **falsified** — stale HMR session (survived a fresh navigation) and
+  coi-serviceworker (the dev server does send COOP/COEP, so it never registers).
+  The chips were reverted (4b5f9dc) and restored (338d797) for a bisect that was
+  never run. Pre-chip tree for bisecting is `4b5f9dc`. Blocks the first-load split
+  honestly: that change touches the same mount path.
+- Not blocking, but outward-facing: the repository is private, so the in-app
+  Limitations link and the Send feedback button both 404 for the public.
+  (Phase 19's chemist accuracy gate is closed — v1.6 shipped 2026-06-30.)
 
 ## Current Position
 
 Phase: 19
 Plan: Not started
 Status: Ready to execute
-Last activity: 2026-08-13 — Completed quick task 260813-exd: layer chips, picker cull (33→20 presets), Limitations dialog rewrite
+Last activity: 2026-08-13 — Layer chips + picker cull (260813-exd), PRODUCT.md refresh, /impeccable audit + fixes, Help tour repairs. HEAD 17b0f35, both remotes synced
 
 ## Operator Next Steps
 
-- Plan Phase 17 with /gsd-plan-phase 17 (or /gsd-discuss-phase 17 first). Phase 17 is the pure copy core; Phase 18 (card wiring) depends on it and carries the live chemist verify gate.
+1. **Make the repository public** — one setting, and it fixes both broken outward
+   links at once (Limitations, Send feedback). Nothing in the repo can fix these.
+2. **Reload and confirm the Help tour**: the description card should appear, and
+   step 7 of 9 should stop on the explanation card. Both fixes are unverified in a
+   browser — there is none in this environment.
+3. **Diagnose the mount failure** (see Blockers) before anyone attempts the
+   first-load split.
+4. **Rebuild and redeploy the container.** Carried since 2026-08-11 and still
+   true: the published privacy policy describes an on-leave purge production does
+   not perform, and none of today's work is live either.
+5. `/gsd-new-milestone` if the candidates in ROADMAP.md's Post-v1.6 section are
+   worth scoping as v1.7.
 
 ## Session Continuity
 

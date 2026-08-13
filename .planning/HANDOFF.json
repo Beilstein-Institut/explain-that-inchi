@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "timestamp": "2026-08-11T08:58:25.208Z",
+  "timestamp": "2026-08-13T12:20:00.000Z",
   "phase": null,
   "phase_name": null,
   "phase_dir": null,
@@ -9,88 +9,103 @@
   "total_tasks": null,
   "status": "paused",
   "context": "default",
-  "context_reason": "Milestone v1.6 shipped; no active phase. This session reviewed the three legal pages against the code and ran quick task 260811-f1u to close the two gaps found, then pushed master to both remotes.",
+  "context_reason": "No active milestone since v1.6. This session ran as quick tasks and skill invocations: layer chips on the preset picker, a five-round cull of the picker from 33 to 20 presets, a PRODUCT.md refresh, an /impeccable audit with its fixes, and two Help tour repairs from user reports. HEAD 17b0f35, both remotes synced, tree clean, 612 tests green.",
   "completed_tasks": [
     {
-      "id": "review",
-      "name": "Audit Impressum / Privacy / Terms against the code after 7866ad1 and df4121d",
+      "id": "260813-exd",
+      "name": "Layer chips on the example molecules — one per InChI layer, chipped presets first in legend order; picker cut 33 → 20",
       "status": "done",
-      "commit": null
+      "commit": "6461386"
     },
     {
-      "id": "f1u-1",
-      "name": "Declare the vendored coi-serviceworker v0.1.7 in THIRD-PARTY-NOTICES.md",
+      "id": "product",
+      "name": "PRODUCT.md refresh via /impeccable init — mobile stance (desktop-first, best-effort), picker-as-map-of-the-notation, Limitations dialog, test count 446 → 596",
       "status": "done",
-      "commit": "cf624ac"
+      "commit": "2a096fc"
     },
     {
-      "id": "f1u-2",
-      "name": "List coi-serviceworker in TERMS_HTML; widen privacy 3(4) to the origin scope of Clear-Site-Data; two new assertions",
+      "id": "260813-aud",
+      "name": "/impeccable audit (14/20) + fixes: feedback textarea label, touch targets, tokenised dot grid, HelpTour width",
       "status": "done",
-      "commit": "ed89385"
+      "commit": "26acdb2"
     },
     {
-      "id": "f1u-docs",
-      "name": "Quick-task PLAN/SUMMARY + STATE.md row",
+      "id": "260813-tour-1",
+      "name": "Help tour description card was rendering off-screen — measured card replaces a 180px guess; always anchored top/left",
       "status": "done",
-      "commit": "0fefafa"
+      "commit": "47030d3"
     },
     {
-      "id": "push",
-      "name": "Push master to origin and cm-beilstein (df4121d..0fefafa)",
+      "id": "260813-tour-2",
+      "name": "Help tour step for the explanation card — anchor added to all five render branches; step 7 of 9",
       "status": "done",
-      "commit": "0fefafa"
+      "commit": "17b0f35"
     }
   ],
   "remaining_tasks": [],
-  "blockers": [],
+  "blockers": [
+    {
+      "id": "mount-failure",
+      "summary": "Undiagnosed browser mount failure: createRoot twice on #root, RulerArea throwing SVGLength. Two hypotheses tested and falsified. Never bisected.",
+      "blocking": "the first-load split, which touches the same mount path"
+    }
+  ],
   "async_jobs": [],
   "human_actions_pending": [
     {
-      "action": "Rebuild and redeploy the container",
-      "context": "Unchanged and still the top item, now with a legal edge: privacy 3(2) and 3(4) describe the on-leave wipe and the Clear-Site-Data purge, and the published policy text is ahead of production. The live site has neither leaveWipe nor /explain-that-inchi/__leave. Image builds clean and was smoke-tested locally in the previous session.",
+      "action": "Make the repository public",
+      "context": "github.com/Beilstein-Institut/explain-that-inchi is private — verified by fetching it anonymously. That makes the Limitations dialog's new LIMITATIONS.md link 404, and the Send feedback button has been 404ing on the live site for anyone without repo access since before this session. One setting fixes both. Nothing in the repo can.",
+      "blocking": false
+    },
+    {
+      "action": "Reload and confirm both Help tour fixes",
+      "context": "Neither is verified in a browser — there is none in this environment. Expect: the description card visible on every step, and step 7 of 9 stopping on the explanation card below the InChIKey, left of the legend. The positioning fix is proven only by unit tests over pure functions, replayed against the old implementation.",
+      "blocking": false
+    },
+    {
+      "action": "Diagnose the mount failure before attempting the first-load split",
+      "context": "Pre-chip tree for a bisect is 4b5f9dc. The failure was reported mid-session, attributed to the layer chips, and I twice claimed it was not mine from static evidence that could not distinguish the two. The chips were reverted and restored to enable a bisect that never ran, so the question is still open.",
       "blocking": true
     },
     {
+      "action": "Rebuild and redeploy the container",
+      "context": "Carried since 2026-08-11 and still true: the published privacy policy describes an on-leave purge production does not perform. None of this session's work is live either.",
+      "blocking": false
+    },
+    {
       "action": "Curl __leave through the upstream proxy after deploying",
-      "context": "The proxy's HTTP Basic gate may 401 the beacon. A 401 carries no Clear-Site-Data header, so the purge silently does nothing and privacy 3(4) is false in production. Still the only link in the chain never tested outside a local container. Command: curl -sI -u eti -X POST https://cheminfo.beilstein.org/explain-that-inchi/__leave | grep -iE '^(HTTP|clear-site-data)'",
+      "context": "The proxy's HTTP Basic gate may 401 the beacon; a 401 carries no Clear-Site-Data header, so the purge silently does nothing. Command: curl -sI -u eti -X POST https://cheminfo.beilstein.org/explain-that-inchi/__leave | grep -iE '^(HTTP|clear-site-data)'",
       "blocking": false
     },
     {
       "action": "Take the GitHub Pages site down",
-      "context": "The workflow is gone (df4121d) but the gh-pages branch still exists on origin and GitHub still serves it, so a stale copy of the app is live with no __leave endpoint and now with legal pages that no longer match what it ships. Disable Pages in Settings -> Pages, then: git push origin --delete gh-pages. Outward-facing, left for the operator.",
-      "blocking": false
-    },
-    {
-      "action": "Decide the Clear-Site-Data origin blast radius",
-      "context": "Now disclosed rather than resolved: privacy 3(4) states the purge works per origin and covers everything on cheminfo.beilstein.org. That makes the policy honest but does not make the behaviour desirable — it is safe only if no other application on that host stores browser state. No path-scoped variant exists; the fixes are a dedicated subdomain or dropping the purge.",
-      "blocking": false
-    },
-    {
-      "action": "Confirm log rotation is <= 14 days on the host",
-      "context": "Privacy 2(2) promises log deletion within 2 weeks. nginx.conf defines no access_log directive, so retention is a logrotate concern on the server. Unbacked claim, carried across three sessions now.",
+      "context": "The workflow is gone (df4121d) but the gh-pages branch still exists on origin, so a stale copy of the app is served with no __leave endpoint. Disable Pages in Settings, then: git push origin --delete gh-pages",
       "blocking": false
     }
   ],
   "decisions": [
     {
-      "decision": "coi-serviceworker is declared in both attribution surfaces rather than removed",
-      "rationale": "It is inert under nginx (returns early because COOP/COEP arrive from the origin) but is kept deliberately as the fallback for any host that cannot set headers — see the previous session's decision. Something shipped in dist/ has to be attributable, and since it is vendored rather than installed, package-lock.json could never cover it. Licence compliance already held: the distributed file carries its MIT notice on its own first line."
+      "decision": "The preset picker is a map of the notation, and that is product truth",
+      "rationale": "One worked example per InChI layer, chipped, leading the list in the order layers appear in a string. Recorded in PRODUCT.md with the reason: a layer with no example leaves an explanation card no user can reach, and a second example for a claimed layer breaks the one-to-one map. Asserted in presetLayerCoverage.test.ts against WASM-measured InChIs, not left to inspection."
     },
     {
-      "decision": "Privacy 3(4) discloses the origin scope instead of the purge being narrowed",
-      "rationale": "Clear-Site-Data is scoped by spec to the origin; there is no path-scoped variant, so the only ways to narrow it are a dedicated subdomain or no purge at all. Both are infrastructure decisions for the operator. Disclosure was the change available in text, and it is the one that makes the document true today."
+      "decision": "The 7.3MB first-load split was deferred, not skipped",
+      "rationale": "It is the single biggest user-facing win left and the fix is known — move the lazy boundary from App down to KetcherPanel. Not shipped because it changes the mount path of a canvas PRODUCT.md calls load-bearing, there is no browser here to verify the editor still mounts exactly once, and an unexplained mount failure is already open on that same path. Making an unverifiable change there on top of an undiagnosed bug is how the bug becomes permanent."
     },
     {
-      "decision": "The Impressum was left untouched",
-      "rationale": "Nothing in the recent changes touches operator identity, board members, foundation number or disclaimer."
+      "decision": "Accessibility left recorded as undecided, against the evidence of the code",
+      "rationale": "The user chose this explicitly when asked. Worth knowing it is now an understatement: lib/keyboardProps.ts gives layer chunks role=button, tab stops, Enter/Space and arrow-key roving, every onMouseEnter has a paired onFocus, and colour is not the sole carrier of layer identity. Reported in the audit rather than repaired, because repairing drift as a side effect of a design task is forbidden."
     },
     {
-      "decision": "Left the Terms sentence 'The complete dependency list with resolved versions is in package-lock.json' as-is",
-      "rationale": "coi-serviceworker is not an npm dependency, so the sentence stays true in its own terms, and the new entry carries the version inline. Rewriting the framing to hedge one vendored file would cost more clarity than it buys."
+      "decision": "Maleic acid's InChI fixture kept after the molecule was removed from the picker",
+      "rationale": "Fumaric and maleic are identical up to one sign character, which makes them the sharpest available check that the b layer's sign is parsed at all. Pulled out of ALL_FIXTURES and relabelled as parser coverage rather than deleted with the preset."
+    },
+    {
+      "decision": "prefers-reduced-motion is correctly absent",
+      "rationale": "Verified rather than assumed during the audit: all 21 transition declarations across 7 files are background/color/opacity/box-shadow. There is no transform, translate or scale to suppress. A naive audit reports this as a defect and is wrong."
     }
   ],
   "uncommitted_files": [],
-  "next_action": "Rebuild and redeploy the container (docker compose up --build), then curl __leave through the proxy to confirm the Basic-auth gate is not swallowing the Clear-Site-Data header. Nothing in the repo is pending.",
-  "context_notes": "Short session, and the whole of it was documentation-vs-code drift rather than behaviour. The three legal pages were read against the actual source (leaveWipe.ts, index.html, public/, package.json) rather than against the previous session's notes, which is how both gaps surfaced. Repo is clean, master at 0fefafa, both remotes synced, 541 tests green (539 + the 2 added), tsc clean. The standing risk is unchanged and is now sharper: the published privacy policy describes a purge that production does not perform. Everything else is operator work outside the repo."
+  "next_action": "Make the repository public (fixes two broken outward links), then reload to confirm the Help tour description card and its new step 7 of 9. Nothing in the repo is pending; tree is clean and both remotes are at 17b0f35.",
+  "context_notes": "Two process lessons worth carrying, both learned the hard way this session. First: I twice asserted the browser mount failure was not caused by my change, using a grep of my diff and a curl of the module graph — neither of which can distinguish innocent code from code that breaks at runtime. That needed a bisect or a test, and cost two rounds. Second: a guard is worthless until you try to break it. The first version of the tour-anchor test scanned all sources including HelpTour.tsx, so every assertion matched its own STEPS declaration and passed with the anchor deleted; I only found that by renaming the anchor and watching 27 tests stay green. Both failure modes look like diligence from the outside."
 }
