@@ -41,12 +41,18 @@ browser via Ketcher's WASM InChI — no backend, no upload of the user's structu
 
 ## Operating Context
 
-- Single page, desktop browser, no account, no persistence.
-- Embedded Ketcher editor as the drawing surface; a preset sidebar (Methane through
-  Atorvastatin, Morphine, Amoxicillin, etc.) loads real molecules for users who do
-  not want to draw.
+- Single page, no account, no persistence.
+- **Desktop-first; mobile is best-effort.** A ≤900px breakpoint reflows the picker
+  from a sidebar into a horizontal chip strip so the tool does not break on a phone,
+  but drawing a structure on a small screen is not a scenario design work optimizes
+  for. The breakpoint is a courtesy, not a commitment.
+- Embedded Ketcher editor as the drawing surface; a preset picker loads real
+  molecules for users who do not want to draw.
 - An 8-step guided tour ("Help") walks the whole interface; on an empty canvas the
   tour auto-loads Caffeine.
+- A "Limitations" dialog states what the tool cannot do and why, attributing each
+  limit to the layer that imposes it (InChI / RInChI / MInChI / Ketcher) rather
+  than to this tool, and links to the fuller `LIMITATIONS.md` in the repository.
 - Also runs from a Docker/nginx image serving the app under the
   `/explain-that-inchi/` subpath.
 
@@ -61,14 +67,27 @@ browser via Ketcher's WASM InChI — no backend, no upload of the user's structu
   (`getInchi`, `getInChIKey`) in one debounced (≤150 ms) tick — no JS hashing.
 - Canonical atom numbering is per-component, including `N*` duplicated fragments.
   c-layer bonds are derived from atom adjacency, not from hyphen characters.
+- **The preset picker is a map of the notation.** Every one of the 11 InChI layer
+  types has exactly one preset that is its worked example, chipped with that
+  layer's key and colour, and those presets lead the list in the order the layers
+  appear in a string. Clicking down the head of the picker walks the whole
+  notation. Neither half is decoration: a layer with no example leaves an
+  unreachable explanation card, and a second example for a claimed layer breaks
+  the one-to-one map. Both are asserted in `presetLayerCoverage.test.ts` against
+  InChIs measured through the WASM.
+- **Limitations are attributed, not apologised for.** Each entry names the standard
+  or library that imposes the limit. The point is that these are the capability
+  envelope of what the tool sits on, not defects in it.
 - Stack (fixed): Vite 8 + React 18 + TypeScript, Zustand 5, CSS Modules over a
   ~60-token `oklch()` custom-property system in `src/styles.css`. No Tailwind — it
   would duplicate the token system. React 18, not 19.
 - Static build only; no backend, no SSR. Served by nginx in Docker at
   cheminfo.beilstein.org; nginx sets the COOP/COEP headers SharedArrayBuffer needs,
   so the bundled `coi-serviceworker.js` fallback never registers.
-- 446 unit/integration tests; fixtures must be **real** InChI strings — fabricated
-  fixtures once kept 333 tests green over a broken feature.
+- 596 unit/integration tests; fixtures must be **real** InChI strings — fabricated
+  fixtures once kept 333 tests green over a broken feature. Data-shape assertions
+  are not enough on their own either: a full suite of them once passed while the
+  question on the table was whether the UI rendered at all.
 
 ## Brand Commitments
 
@@ -83,7 +102,15 @@ Voice: plain English, chemically precise, explanatory rather than promotional.
 ## Evidence on Hand
 
 - Live deployment: https://cheminfo.beilstein.org/explain-that-inchi/
-- 20 real preset molecules in `src/data/molecules.ts`.
+- 20 real preset molecules in `src/data/molecules.ts` — 11 of them the chipped
+  layer examples, 9 ordinary molecules to draw and explore.
+- `LIMITATIONS.md` at the repo root: the full limitation list, grouped by the layer
+  imposing each limit. The in-app dialog is a four-entry subset of it.
+- The repository is **private at the time of writing**, which makes the in-app
+  "Send feedback" link and the Limitations dialog's `LIMITATIONS.md` link 404 for
+  the public. Both are written against
+  `github.com/Beilstein-Institut/explain-that-inchi` and the intent is for that
+  repo to become public; until it does, the app has no working outward link.
 - Legal/imprint/privacy copy in `src/data/legalContent.ts`; `THIRD-PARTY-NOTICES.md`;
   MIT licence.
 - Assets: `public/favicon.svg` only. No logo, no photography, no illustration set.
