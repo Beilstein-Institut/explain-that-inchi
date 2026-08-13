@@ -24,7 +24,6 @@ describe('MOLECULES preset data', () => {
     expect(ids).toContain('benzene');
     expect(ids).toContain('acetic');
     expect(ids).toContain('alanine');
-    expect(ids).toContain('vanillin');
     expect(ids).toContain('caffeine');
     expect(ids).toContain('nicotine');
     expect(ids).toContain('melatonin');

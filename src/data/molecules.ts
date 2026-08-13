@@ -31,7 +31,6 @@ export const MOLECULES: MoleculePreset[] = [
   { id: 'benzene',        name: 'Benzene',          formula: 'C₆H₆',            smiles: 'C1=CC=CC=C1',                                                  layer: 'c'       },
   { id: 'acetic',         name: 'Acetic acid',      formula: 'C₂H₄O₂',         smiles: 'CC(=O)O'                                                                        },
   { id: 'alanine',        name: 'L-Alanine',        formula: 'C₃H₇NO₂',        smiles: 'C[C@@H](C(=O)O)N',                                             layer: 't'       },
-  { id: 'vanillin',       name: 'Vanillin',         formula: 'C₈H₈O₃',         smiles: 'COC1=C(C=CC(=C1)C=O)O'                                                          },
   { id: 'caffeine',       name: 'Caffeine',         formula: 'C₈H₁₀N₄O₂',     smiles: 'CN1C=NC2=C1C(=O)N(C(=O)N2C)C',                                 layer: 'formula' },
   { id: 'nicotine',       name: '(S)-Nicotine',     formula: 'C₁₀H₁₄N₂',      smiles: 'CN1CCC[C@H]1C2=CN=CC=C2',                                      layer: 'm'       },
   { id: 'melatonin',      name: 'Melatonin',        formula: 'C₁₃H₁₆N₂O₂',    smiles: 'CC(=O)NCCC1=CNC2=C1C=C(C=C2)OC'                                                 },
@@ -42,12 +41,9 @@ export const MOLECULES: MoleculePreset[] = [
   { id: 'acetaminophen',  name: 'Acetaminophen',    formula: 'C₈H₉NO₂',        smiles: 'CC(=O)NC1=CC=C(C=C1)O'                                                          },
   { id: 'morphine',       name: 'Morphine',         formula: 'C₁₇H₁₉NO₃',     smiles: 'CN1CC[C@]23[C@@H]4[C@H]1CC5=C2C(=C(C=C5)O)O[C@H]3[C@H](C=C4)O'                  },
   // Cardiovascular & metabolic
-  { id: 'metformin',      name: 'Metformin',        formula: 'C₄H₁₁N₅',        smiles: 'CN(C)C(=N)N=C(N)N'                                                              },
   { id: 'atorvastatin',   name: 'Atorvastatin',     formula: 'C₃₃H₃₅FN₂O₅',   smiles: 'CC(C)C1=C(C(=C(N1CC[C@H](C[C@H](CC(=O)O)O)O)C2=CC=C(C=C2)F)C3=CC=CC=C3)C(=O)NC4=CC=CC=C4' },
-  { id: 'warfarin',       name: 'Warfarin',         formula: 'C₁₉H₁₆O₄',      smiles: 'CC(=O)CC(C1=CC=CC=C1)C2=C(C3=CC=CC=C3OC2=O)O'                                   },
   { id: 'propranolol',    name: 'Propranolol',      formula: 'C₁₆H₂₁NO₂',     smiles: 'CC(C)NCC(COC1=CC=CC2=CC=CC=C21)O'                                               },
   // Antibiotics & antivirals
-  { id: 'amoxicillin',    name: 'Amoxicillin',      formula: 'C₁₆H₁₉N₃O₅S',   smiles: 'CC1([C@@H](N2[C@H](S1)[C@@H](C2=O)NC(=O)[C@@H](C3=CC=C(C=C3)O)N)C(=O)O)C'      },
   { id: 'penicillinG',    name: 'Penicillin G',     formula: 'C₁₆H₁₈N₂O₄S',   smiles: 'CC1([C@@H](N2[C@H](S1)[C@@H](C2=O)NC(=O)CC3=CC=CC=C3)C(=O)O)C'                  },
   { id: 'ciprofloxacin',  name: 'Ciprofloxacin',    formula: 'C₁₇H₁₈FN₃O₃',   smiles: 'C1CC1N2C=C(C(=O)C3=CC(=C(C=C32)N4CCNCC4)F)C(=O)O'                              },
   { id: 'oseltamivir',    name: 'Oseltamivir',      formula: 'C₁₆H₂₈N₂O₄',    smiles: 'CCC(CC)O[C@@H]1C=C(C[C@@H]([C@H]1NC(=O)C)N)C(=O)OCC'                            },
