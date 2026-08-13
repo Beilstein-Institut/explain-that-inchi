@@ -278,6 +278,28 @@ export function parseBondStereoEntries(text: string): BondStereoEntry[] {
 }
 
 // ---------------------------------------------------------------------------
+// LAYER_KEY — how a layer is named where it has to be identified in one or two
+// characters: the Legend's key column and the preset chips in the picker. The
+// nine letter layers are the prefix character as it appears in the InChI; the
+// two that have no prefix get the shortest thing a chemist would recognise.
+// Single source so a chip and its Legend row can never disagree.
+// ---------------------------------------------------------------------------
+
+export const LAYER_KEY: Record<LayerType, string> = {
+  version: '1S',
+  formula: 'Hill',
+  c: 'c',
+  h: 'h',
+  q: 'q',
+  p: 'p',
+  b: 'b',
+  t: 't',
+  m: 'm',
+  s: 's',
+  i: 'i',
+};
+
+// ---------------------------------------------------------------------------
 // swatchVar — ported from app.jsx lines 464-472 (not in layers-info.js)
 // Maps LayerType to CSS token suffix for color lookup.
 // ---------------------------------------------------------------------------

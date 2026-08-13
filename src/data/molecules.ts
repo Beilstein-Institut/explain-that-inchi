@@ -1,8 +1,19 @@
+import type { LayerType } from '../lib/parseInchi';
+
 export interface MoleculePreset {
   id: string;
   name: string;
   formula: string;
   smiles: string;
+  /**
+   * The one InChI layer this preset is the picker's example of, shown as a
+   * chip. Across MOLECULES each layer type is claimed AT MOST ONCE, and all 11
+   * are claimed — so the chips are a map of the legend, and clicking every
+   * chipped preset walks the whole notation. A preset carrying several layers
+   * (PGE2 has b/t/m/s) advertises only the one still unclaimed.
+   * presetLayerCoverage.test.ts pins each claim against a measured InChI.
+   */
+  layer?: LayerType;
 }
 
 /**
@@ -15,14 +26,14 @@ export interface MoleculePreset {
  */
 export const MOLECULES: MoleculePreset[] = [
   // Simple & educational
-  { id: 'methane',        name: 'Methane',         formula: 'CH₄',              smiles: 'C'                                                                              },
-  { id: 'ethanol',        name: 'Ethanol',          formula: 'C₂H₆O',           smiles: 'CCO'                                                                            },
-  { id: 'benzene',        name: 'Benzene',          formula: 'C₆H₆',            smiles: 'C1=CC=CC=C1'                                                                    },
+  { id: 'methane',        name: 'Methane',         formula: 'CH₄',              smiles: 'C',                                                            layer: 'version' },
+  { id: 'ethanol',        name: 'Ethanol',          formula: 'C₂H₆O',           smiles: 'CCO',                                                          layer: 'h'       },
+  { id: 'benzene',        name: 'Benzene',          formula: 'C₆H₆',            smiles: 'C1=CC=CC=C1',                                                  layer: 'c'       },
   { id: 'acetic',         name: 'Acetic acid',      formula: 'C₂H₄O₂',         smiles: 'CC(=O)O'                                                                        },
-  { id: 'alanine',        name: 'L-Alanine',        formula: 'C₃H₇NO₂',        smiles: 'C[C@@H](C(=O)O)N'                                                               },
+  { id: 'alanine',        name: 'L-Alanine',        formula: 'C₃H₇NO₂',        smiles: 'C[C@@H](C(=O)O)N',                                             layer: 't'       },
   { id: 'vanillin',       name: 'Vanillin',         formula: 'C₈H₈O₃',         smiles: 'COC1=C(C=CC(=C1)C=O)O'                                                          },
-  { id: 'caffeine',       name: 'Caffeine',         formula: 'C₈H₁₀N₄O₂',     smiles: 'CN1C=NC2=C1C(=O)N(C(=O)N2C)C'                                                   },
-  { id: 'nicotine',       name: '(S)-Nicotine',     formula: 'C₁₀H₁₄N₂',      smiles: 'CN1CCC[C@H]1C2=CN=CC=C2'                                                        },
+  { id: 'caffeine',       name: 'Caffeine',         formula: 'C₈H₁₀N₄O₂',     smiles: 'CN1C=NC2=C1C(=O)N(C(=O)N2C)C',                                 layer: 'formula' },
+  { id: 'nicotine',       name: '(S)-Nicotine',     formula: 'C₁₀H₁₄N₂',      smiles: 'CN1CCC[C@H]1C2=CN=CC=C2',                                      layer: 'm'       },
   { id: 'melatonin',      name: 'Melatonin',        formula: 'C₁₃H₁₆N₂O₂',    smiles: 'CC(=O)NCCC1=CNC2=C1C=C(C=C2)OC'                                                 },
   { id: 'naloxone',       name: 'Naloxone',         formula: 'C₁₉H₂₁NO₄',     smiles: 'C=CCN1CC[C@]23[C@@H]4C(=O)CC[C@]2([C@H]1CC5=C3C(=C(C=C5)O)O4)O'                 },
   // Analgesics & anti-inflammatories
@@ -59,20 +70,24 @@ export const MOLECULES: MoleculePreset[] = [
   // Fumaric and maleic acid differ in exactly one character of their InChI
   // (/b2-1+ vs /b2-1-). Keep them adjacent — the pair is what makes the
   // double-bond stereo layer legible at all.
-  { id: 'fumaric',        name: 'Fumaric acid',     formula: 'C₄H₄O₄',         smiles: 'OC(=O)/C=C/C(=O)O'                                                              },
+  // The chip goes on fumaric alone: maleic is the other half of the comparison,
+  // not a second example of the layer, and two b chips would break the rule that
+  // makes the chips a legend map.
+  { id: 'fumaric',        name: 'Fumaric acid',     formula: 'C₄H₄O₄',         smiles: 'OC(=O)/C=C/C(=O)O',                                            layer: 'b'       },
   { id: 'maleic',         name: 'Maleic acid',      formula: 'C₄H₄O₄',         smiles: 'OC(=O)\\C=C/C(=O)O'                                                             },
   // Charge that is NOT a proton count → /q+1.
-  { id: 'choline',        name: 'Choline',          formula: 'C₅H₁₄NO⁺',       smiles: 'C[N+](C)(C)CCO'                                                                 },
+  { id: 'choline',        name: 'Choline',          formula: 'C₅H₁₄NO⁺',       smiles: 'C[N+](C)(C)CCO',                                               layer: 'q'       },
   // Charge that IS a proton count → /p-1. The formula chip is the species
   // formula; the InChI normalizes to the neutral parent (C2H4O2), which is
   // precisely what the p layer records.
-  { id: 'acetate',        name: 'Acetate',          formula: 'C₂H₃O₂⁻',        smiles: 'CC(=O)[O-]'                                                                     },
+  { id: 'acetate',        name: 'Acetate',          formula: 'C₂H₃O₂⁻',        smiles: 'CC(=O)[O-]',                                                   layer: 'p'       },
   // Simplest possible isotope layer: one atom, one label → /i1D.
-  { id: 'chloroformD',    name: 'Chloroform-d',     formula: 'CDCl₃',           smiles: '[2H]C(Cl)(Cl)Cl'                                                                },
+  { id: 'chloroformD',    name: 'Chloroform-d',     formula: 'CDCl₃',           smiles: '[2H]C(Cl)(Cl)Cl',                                              layer: 'i'       },
   // q and p together, and the only multi-component preset: '.' in the formula,
   // ';' separators inside every layer.
   { id: 'sodiumAcetate',  name: 'Sodium acetate',   formula: 'C₂H₃NaO₂',       smiles: 'CC(=O)[O-].[Na+]'                                                               },
   // All four stereo layers at once, including two double bonds of opposite
-  // geometry in one b layer (/b7-4-,13-12+).
-  { id: 'pge2',           name: 'Prostaglandin E₂', formula: 'C₂₀H₃₂O₅',      smiles: 'CCCCC[C@@H](O)/C=C/[C@H]1[C@@H](O)CC(=O)[C@@H]1C/C=C\\CCCC(=O)O'                 },
+  // geometry in one b layer (/b7-4-,13-12+). It carries b/t/m as well, but those
+  // are claimed elsewhere, so the chip names the one layer nothing else shows: s.
+  { id: 'pge2',           name: 'Prostaglandin E₂', formula: 'C₂₀H₃₂O₅',      smiles: 'CCCCC[C@@H](O)/C=C/[C@H]1[C@@H](O)CC(=O)[C@@H]1C/C=C\\CCCC(=O)O', layer: 's'     },
 ];
