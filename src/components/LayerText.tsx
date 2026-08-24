@@ -289,20 +289,25 @@ function ConnectionText({ text, fragCounts, layerIdx, pinnedSub }: { text: strin
           // branchPoint (GLOBAL): the atom the branch hangs off (open token's attachLocal),
           // run through the SAME offset/canonicalFn as bondPairs (research A2 — explicit field,
           // identical on both parens). Stored on the open token so the close-paren reuses it.
-          const branchPoint: number | undefined =
-            token.attachLocal == null
-              ? undefined
-              : canonicalFn
-                ? canonicalFn(token.attachLocal).canonical
-                : token.attachLocal + offset;
-          // Store bondPairs + branchPoint on the open token for the close-paren to look up
+          const attachCanon = token.attachLocal == null
+            ? undefined
+            : canonicalFn
+              ? canonicalFn(token.attachLocal)
+              : { canonical: token.attachLocal + offset };
+          const branchPoint: number | undefined = attachCanon?.canonical;
+          // N* duplicated fragments: bondPairs are fanned across every copy, so the branch
+          // point must be too, or the highlight lights the first copy's centre atom and
+          // leaves the rest dark.
+          const branchPoints: number[] | undefined = attachCanon?.canonicals;
+          // Store bondPairs + branch point on the open token for the close-paren to look up
           (tokens[tokenIdx] as unknown as Record<string, unknown>)['_bondPairs'] = bondPairs;
           (tokens[tokenIdx] as unknown as Record<string, unknown>)['_branchPoint'] = branchPoint;
+          (tokens[tokenIdx] as unknown as Record<string, unknown>)['_branchPoints'] = branchPoints;
           if (bondPairs.length === 0) {
             // Comma-only branch — plain non-interactive span
             parts.push(<span key={key++}>{'('}</span>);
           } else {
-            const hit: SubHover = { kind: 'branch', bondPairs, branchPoint, fragmentOffset, componentIndex, fragMult };
+            const hit: SubHover = { kind: 'branch', bondPairs, branchPoint, branchPoints, fragmentOffset, componentIndex, fragMult };
             parts.push(
               <span key={key++} className={[styles.inchiSubtoken, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')}
                 {...subHoverProps(hit, layerIdx)}>
@@ -319,10 +324,12 @@ function ConnectionText({ text, fragCounts, layerIdx, pinnedSub }: { text: strin
         // field so hovering '(' or ')' shows the same card (research A2).
         const branchPoint =
           (tokens[token.openTokenIdx] as unknown as Record<string, unknown>)?.['_branchPoint'] as number | undefined;
+        const branchPoints =
+          (tokens[token.openTokenIdx] as unknown as Record<string, unknown>)?.['_branchPoints'] as number[] | undefined;
         if (bondPairs.length === 0) {
           parts.push(<span key={key++}>{')'}</span>);
         } else {
-          const hit: SubHover = { kind: 'branch', bondPairs, branchPoint, fragmentOffset, componentIndex, fragMult };
+          const hit: SubHover = { kind: 'branch', bondPairs, branchPoint, branchPoints, fragmentOffset, componentIndex, fragMult };
           parts.push(
             <span key={key++} className={[styles.inchiSubtoken, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')}
               {...subHoverProps(hit, layerIdx)}>

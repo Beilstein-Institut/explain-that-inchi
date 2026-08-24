@@ -13,8 +13,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { buildSubHoverSpecs } from '../highlightUtils';
 import type { StructLike } from '../highlightUtils';
-import type { Layer, AuxMap, CLayerToken } from '../parseInchi';
-import { tokenizeCLayerSeg, collectBranchPointBonds } from '../parseInchi';
+import type { Layer, AuxMap, CLayerToken, SubHover } from '../parseInchi';
+import { tokenizeCLayerSeg, collectBranchPointBonds, segmentBonds } from '../parseInchi';
 
 // Replicates LayerText.tsx ConnectionText open-paren bondPairs derivation (single fragment,
 // offset 0, no canonicalFn). This is the exact code path that decides whether a paren is
@@ -359,7 +359,7 @@ describe('CLYR-02 ring closure — "1-2-4-6-5-3-1" last hyphen 3→1', () => {
 // CLYR-03: branch open — whole branch's bonds
 // ---------------------------------------------------------------------------
 
-describe('CLYR-03 branch open — spec.atoms=[], spec.bonds=all branch bond IDs', () => {
+describe('CLYR-03 branch open — spec.bonds=all branch bond IDs (no branchPoint → atoms=[])', () => {
   it('bondPairs [[3,4],[4,5]] resolves two branch bonds', () => {
     const struct = makeMockStruct(bondsA);
     const specs = buildSubHoverSpecs(
@@ -406,6 +406,100 @@ describe('CLYR-03 branch open — spec.atoms=[], spec.bonds=all branch bond IDs'
       resolveVarFn,
     );
     expect(specs).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// CLYR-03: the branch-point ATOM, not just its bonds.
+//
+// Real caffeine c-layer, measured through the WASM (same string as
+// presetLayerCoverage.test.ts). Caffeine is C8H10N4O2, so canonical 1-8 are
+// carbon, 9-12 nitrogen, 13-14 oxygen — and its branches hang off both:
+// (13) off atom 7, a carbon; (3) off atom 12, a nitrogen.
+//
+// A branch hover highlights the star of bonds incident to the branch point.
+// Ketcher draws a carbon as a bare vertex where those bonds meet at a point,
+// and a heteroatom as a letter with clearance around it, so highlighting only
+// the bonds LOOKS whole on a carbon branch point and severed on a nitrogen one:
+// the atom at the centre of the star reads as a gap. The fix is element-blind —
+// highlight the branch point itself — so both cases are asserted.
+// ---------------------------------------------------------------------------
+
+const CAFFEINE_C = '1-10-4-9-6-5(10)7(13)12(3)8(14)11(6)2';
+
+// canonical 1-based → Ketcher 0-based, identity-shifted; caffeine has 14 heavy atoms.
+const auxMapCaffeine: AuxMap = Object.fromEntries(
+  Array.from({ length: 14 }, (_, i) => [i + 1, i]),
+);
+
+// Every bond in the segment, as pool-ID pairs, so findBondId resolves the real adjacency.
+const bondsCaffeine: Array<[number, number]> = segmentBonds(tokenizeCLayerSeg(CAFFEINE_C))
+  .map((b) => [auxMapCaffeine[b.leftLocal!], auxMapCaffeine[b.rightLocal!]] as [number, number]);
+
+// Mirrors ConnectionText: bondPairs from the branch point's incident bonds, and the
+// branch point itself from the open token's attachLocal.
+function deriveBranchHover(seg: string, nthBranch: number): SubHover {
+  const tokens = tokenizeCLayerSeg(seg);
+  const oi = openTokenIndex(tokens, nthBranch);
+  const open = tokens[oi];
+  if (open.type !== 'open') throw new Error('not an open token');
+  return {
+    kind: 'branch',
+    bondPairs: deriveBranchBondPairs(seg, oi),
+    branchPoint: open.attachLocal ?? undefined,
+  };
+}
+
+describe('CLYR-03 branch — the branch-point atom is highlighted with its bonds', () => {
+  it('caffeine branch (3) hangs off atom 12, a nitrogen', () => {
+    expect(deriveBranchHover(CAFFEINE_C, 2).branchPoint).toBe(12);
+  });
+
+  it('caffeine branch (13) hangs off atom 7, a carbon', () => {
+    expect(deriveBranchHover(CAFFEINE_C, 1).branchPoint).toBe(7);
+  });
+
+  it('nitrogen branch point 12 is in spec.atoms — the gap the user sees', () => {
+    const struct = makeMockStruct(bondsCaffeine);
+    const specs = buildSubHoverSpecs(
+      deriveBranchHover(CAFFEINE_C, 2),
+      auxMapCaffeine, {}, [], cLayer, struct, resolveVarFn,
+    );
+    expect(specs).toHaveLength(1);
+    expect(specs[0].atoms).toEqual([auxMapCaffeine[12]]);
+    expect(specs[0].bonds.length).toBeGreaterThan(1);
+  });
+
+  it('carbon branch point 7 is in spec.atoms too — the fix does not read the element', () => {
+    const struct = makeMockStruct(bondsCaffeine);
+    const specs = buildSubHoverSpecs(
+      deriveBranchHover(CAFFEINE_C, 1),
+      auxMapCaffeine, {}, [], cLayer, struct, resolveVarFn,
+    );
+    expect(specs).toHaveLength(1);
+    expect(specs[0].atoms).toEqual([auxMapCaffeine[7]]);
+  });
+
+  it('every highlighted bond is incident to the highlighted atom', () => {
+    const struct = makeMockStruct(bondsCaffeine);
+    const specs = buildSubHoverSpecs(
+      deriveBranchHover(CAFFEINE_C, 2),
+      auxMapCaffeine, {}, [], cLayer, struct, resolveVarFn,
+    );
+    const centre = specs[0].atoms[0];
+    for (const bid of specs[0].bonds) {
+      const [a, b] = bondsCaffeine[bid];
+      expect(a === centre || b === centre).toBe(true);
+    }
+  });
+
+  it('a branch hover carrying no branchPoint still yields atoms: [] (unchanged)', () => {
+    const struct = makeMockStruct(bondsA);
+    const specs = buildSubHoverSpecs(
+      { kind: 'branch', bondPairs: [[3, 4], [4, 5]] },
+      auxMapA, {}, [], cLayer, struct, resolveVarFn,
+    );
+    expect(specs[0].atoms).toEqual([]);
   });
 });
 
@@ -553,6 +647,19 @@ describe('CLYR-05 N-star branch — bondPairs covers both fragment instances', (
     expect(specs[0].bonds).toContain(1);
     expect(specs[0].bonds).toContain(4);
     expect(specs[0].bonds).toHaveLength(2);
+  });
+
+  // branchPoints fans the centre atom the same way bondPairs fan the bonds. Without
+  // it the first copy's centre lights and the second copy's stays dark.
+  it('branchPoints [2,6] → the centre atom of BOTH copies', () => {
+    const auxMapD: AuxMap = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 7 };
+    const bondsD: Array<[number, number]> = [[0, 1], [1, 2], [2, 3], [4, 5], [5, 6], [6, 7]];
+    const struct = makeMockStruct(bondsD);
+    const specs = buildSubHoverSpecs(
+      { kind: 'branch', bondPairs: [[2, 3], [6, 7]], branchPoint: 2, branchPoints: [2, 6] },
+      auxMapD, {}, [], cLayer, struct, resolveVarFn,
+    );
+    expect(specs[0].atoms).toEqual([1, 5]);
   });
 
   it('deduplication: duplicate bondPairs produce only one bond ID each', () => {

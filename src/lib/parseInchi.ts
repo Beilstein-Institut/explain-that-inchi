@@ -77,6 +77,11 @@ export interface SubHover {
   /** 'branch' kind: the GLOBAL canonical of the atom the branch hangs off (the branch-point).
    *  Explicit field rather than inferring direction from bondPairs[0][0] (research A1). */
   branchPoint?: number;
+
+  /** 'branch' kind, N* duplicated fragments: the branch point of every copy, GLOBAL
+   *  canonicals. Mirrors canonical / canonicals — branchPoint is the frag-0 atom the
+   *  card names, branchPoints is what the highlight lights. Absent for single fragments. */
+  branchPoints?: number[];
 }
 
 // ---------------------------------------------------------------------------

@@ -546,7 +546,20 @@ export function buildSubHoverSpecs(
         if (bid !== null && !bonds.includes(bid)) bonds.push(bid);
       }
       if (bonds.length === 0) return [];
-      return [{ atoms: [], bonds, rgroupAttachmentPoints: [], color: resolveVarFn('--c-conn') }];
+      // The branch point is the atom every one of those bonds meets at, so it has to
+      // be lit with them. Without it the highlight is a star with a hole at the
+      // centre: Ketcher draws a carbon as a bare vertex, where the bonds meet at a
+      // point and nothing looks missing, but a heteroatom as a letter with clearance
+      // around it — and the bonds then stop short of a centre that was never lit,
+      // reading as though the atom breaks the chain.
+      // branchPoints (one per N* copy) falls back to the single branchPoint, exactly as
+      // canonicals falls back to canonical in case 'atom'.
+      const branchCanons = subHover.branchPoints
+        ?? (subHover.branchPoint != null ? [subHover.branchPoint] : []);
+      const atoms = branchCanons
+        .map(c => auxMap[c])
+        .filter((id): id is number => id !== undefined);
+      return [{ atoms, bonds, rgroupAttachmentPoints: [], color: resolveVarFn('--c-conn') }];
     }
 
     case 'stereo': {

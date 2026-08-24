@@ -220,4 +220,32 @@ describe('LayerText ConnectionText — REAL InChI c-layer hover spans (CLYR-03 r
     expect(hit!.bondPairs).toBeDefined();
     expect(pairKeys(hit!.bondPairs)).toEqual(new Set(['1-2', '2-3', '2-4', '5-6', '6-7', '6-8']));
   });
+
+  // The branch point has to fan across the copies exactly as bondPairs do. If it
+  // does not, the highlight lights the centre atom of the first copy and leaves
+  // the second copy's centre dark — the same hole this fix closes, one level down.
+  it('N* "2*1-2(3)4": branchPoints cover both fragment instances', () => {
+    const { container } = render(
+      <LayerText layer={cLayer} rawText="2*1-2(3)4" fragCounts={[4, 4]} />
+    );
+    const openParens = Array.from(container.querySelectorAll('span')).filter(
+      (s) => s.textContent === '(',
+    );
+    fireEvent.mouseEnter(openParens[0]);
+    const hit = lastHit();
+    expect(hit!.branchPoints).toEqual([2, 6]);
+  });
+
+  it('single fragment "1-2(3)4": branchPoint is set, branchPoints is not', () => {
+    const { container } = render(
+      <LayerText layer={cLayer} rawText="1-2(3)4" fragCounts={[4]} />
+    );
+    const openParens = Array.from(container.querySelectorAll('span')).filter(
+      (s) => s.textContent === '(',
+    );
+    fireEvent.mouseEnter(openParens[0]);
+    const hit = lastHit();
+    expect(hit!.branchPoint).toBe(2);
+    expect(hit!.branchPoints).toBeUndefined();
+  });
 });
