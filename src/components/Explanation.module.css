@@ -64,7 +64,7 @@
   align-items: center;
   gap: 8px;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: var(--fs-micro);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--accent, var(--ink-soft));
@@ -84,7 +84,7 @@
 /* Layer title — verbatim from styles.css .explain .layer-title */
 .layerTitle {
   font-family: var(--font-serif);
-  font-size: 26px;
+  font-size: var(--fs-title);
   font-weight: 500;
   margin: 0 0 12px;
   letter-spacing: -0.01em;
@@ -93,7 +93,7 @@
 
 /* Prose body — verbatim from styles.css .explain .layer-body */
 .layerBody {
-  font-size: 14.5px;
+  font-size: var(--fs-body);
   line-height: 1.55;
   color: var(--ink-soft);
   margin: 0 0 14px;
@@ -102,7 +102,7 @@
 
 /* UAT-13: "not present in this molecule" note on the legend-hover static card. */
 .notPresent {
-  font-size: 12.5px;
+  font-size: var(--fs-ui);
   font-style: italic;
   color: var(--ink-faint);
   margin: 0 0 14px;
@@ -111,7 +111,7 @@
 /* Reading-code block — verbatim from styles.css .explain .layer-eg */
 .layerEg {
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: var(--fs-ui);
   color: var(--ink-soft);
   background: var(--bg-panel);
   border: 1px solid var(--line);
@@ -129,7 +129,7 @@
 .lbl {
   display: block;
   font-family: var(--font-sans);
-  font-size: 10px;
+  font-size: var(--fs-micro);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink-faint);

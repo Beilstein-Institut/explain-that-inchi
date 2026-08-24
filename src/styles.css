@@ -68,6 +68,21 @@
   --font-sans: "IBM Plex Sans", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
   --font-serif: "IBM Plex Serif", Georgia, serif;
+
+  /* Type scale. Role names, not values: the token says what the text is for,
+     so the same job cannot drift to five sizes across twelve files (it had).
+     rem, so a reader who raises their browser font size gets larger text.
+     Steps are deliberately coarse — a half-pixel difference cannot carry a
+     different job, and 12.5 / 13 / 13.5 / 14 / 14.5px could not. */
+  --fs-display: 3.25rem;    /* 52px — page h1 */
+  --fs-display-sm: 2.25rem; /* 36px — page h1 below 900px */
+  --fs-title: 1.75rem;      /* 28px — legal h1, dialog and card titles */
+  --fs-string: 1.1875rem;   /* 19px — the InChI / InChIKey itself: the subject */
+  --fs-subtitle: 1.1875rem; /* 19px — legal h2, tour step title */
+  --fs-body: 0.9375rem;     /* 15px — reading prose and form inputs */
+  --fs-ui: 0.8125rem;       /* 13px — buttons, list items, secondary notes */
+  --fs-meta: 0.75rem;       /* 12px — footer, captions, tertiary notes */
+  --fs-micro: 0.6875rem;    /* 11px — mono keys, chips, uppercase micro-labels */
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
@@ -98,7 +113,7 @@ body {
 .header h1 {
   font-family: var(--font-serif);
   font-weight: 500;
-  font-size: 52px;
+  font-size: var(--fs-display);
   line-height: 1.02;
   letter-spacing: -0.02em;
   margin: 0;
@@ -110,7 +125,7 @@ body {
 }
 .header .meta {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: var(--fs-micro);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-faint);
@@ -132,7 +147,7 @@ body {
   background: var(--c-formula);
   color: var(--bg-canvas);
   font-family: var(--font-sans);
-  font-size: 12.5px;
+  font-size: var(--fs-ui);
   font-weight: 500;
   letter-spacing: 0;
   text-transform: none;
@@ -160,7 +175,7 @@ body {
   background: var(--line);
   color: var(--ink-soft);
   font-family: var(--font-sans);
-  font-size: 12.5px;
+  font-size: var(--fs-ui);
   font-weight: 500;
   letter-spacing: 0;
   text-transform: none;
@@ -187,7 +202,7 @@ body {
   background: var(--line);
   color: var(--ink-soft);
   font-family: var(--font-sans);
-  font-size: 12.5px;
+  font-size: var(--fs-ui);
   font-weight: 500;
   letter-spacing: 0;
   text-transform: none;
@@ -217,7 +232,7 @@ body {
   margin: 8px auto 0;
   padding: 4px 34px 52px;
   font-family: var(--font-sans);
-  font-size: 12px;
+  font-size: var(--fs-meta);
   color: var(--ink-faint);
 }
 /* Attribution mark: intrinsic 507x120, sized to sit on the 12px link baseline
@@ -262,7 +277,7 @@ body {
   align-items: center;
   justify-content: space-between;
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: var(--fs-micro);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink-faint);
@@ -316,7 +331,7 @@ body {
 }
 .mol-list-header {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: var(--fs-micro);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink-faint);
@@ -342,7 +357,7 @@ body {
   border-left-color: var(--ink);
 }
 .mol-item .mol-name {
-  font-size: 13.5px;
+  font-size: var(--fs-ui);
   font-weight: 500;
   color: var(--ink);
 }
@@ -356,7 +371,7 @@ body {
 }
 .mol-item .mol-formula {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: var(--fs-micro);
   color: var(--ink-faint);
   letter-spacing: 0.02em;
 }
@@ -365,7 +380,7 @@ body {
 .mol-item .mol-layer {
   flex: 0 0 auto;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: var(--fs-micro);
   font-weight: 600;
   line-height: 1;
   letter-spacing: 0.02em;
@@ -392,7 +407,7 @@ body {
   .app { padding: 20px 16px 0; }
   /* Same arithmetic as the desktop rule: 16 + 2 inset, 32 + 12 below. */
   .site-footer { padding: 4px 18px 44px; }
-  .header h1 { font-size: 36px; }
+  .header h1 { font-size: var(--fs-display-sm); }
   .section-label { flex-wrap: wrap; row-gap: 8px; }
   /* Examples reflow from a vertical sidebar into a horizontal chip strip
      below the editor (the mol-list is grid row 2 on mobile — see
@@ -446,7 +461,10 @@ body {
    Readable single column; reuses the token system so light/dark match the app.
    -------------------------------------------------------------------------- */
 .legal-page {
-  max-width: 760px;
+  /* ch, not px: the reading measure follows the face and the reader's font size
+     instead of freezing at one. 760px was 79ch of 16px prose, past the 75ch
+     ceiling where the eye starts losing the line it came from. */
+  max-width: 70ch;
   margin: 0 auto;
   padding: 32px 20px 64px;
   font-family: var(--font-sans);
@@ -456,7 +474,7 @@ body {
 .legal-back {
   display: inline-block;
   margin-bottom: 24px;
-  font-size: 14px;
+  font-size: var(--fs-ui);
   color: var(--ink-soft);
   text-decoration: none;
 }
@@ -464,7 +482,7 @@ body {
 .legal-back:focus-visible { outline: 2px solid var(--c-formula); outline-offset: 2px; }
 .legal-content h1 {
   font-family: var(--font-serif);
-  font-size: 28px;
+  font-size: var(--fs-title);
   font-weight: 500;
   color: var(--ink);
   margin: 0 0 24px;
@@ -473,7 +491,7 @@ body {
 }
 .legal-content h2 {
   font-family: var(--font-serif);
-  font-size: 19px;
+  font-size: var(--fs-subtitle);
   font-weight: 500;
   color: var(--ink);
   margin: 32px 0 8px;
@@ -502,7 +520,7 @@ body {
   margin: 0 auto;
   padding: 64px 32px;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: var(--fs-meta);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink-faint);

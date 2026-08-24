@@ -2,15 +2,20 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 // Self-hosted fonts (GDPR: no request to Google's CDN). Only the weights/styles
 // actually used in styles.css are imported.
-import '@fontsource/ibm-plex-sans/400.css';
-import '@fontsource/ibm-plex-sans/500.css';
-import '@fontsource/ibm-plex-sans/600.css';
-import '@fontsource/ibm-plex-mono/400.css';
-import '@fontsource/ibm-plex-mono/500.css';
-import '@fontsource/ibm-plex-mono/600.css';
-import '@fontsource/ibm-plex-serif/400.css';
-import '@fontsource/ibm-plex-serif/400-italic.css';
-import '@fontsource/ibm-plex-serif/500.css';
+// The `latin-` prefix matters: the bare `400.css` aggregate pulls the cyrillic,
+// cyrillic-ext, greek and vietnamese subsets too — 30 extra woff2 (~348 KB) that
+// an English-only UI never requests. The glyphs this app uses beyond Latin-1
+// (subscripts, arrows, +/-) are in no IBM Plex subset, so they fell back to a
+// system face before this change and still do.
+import '@fontsource/ibm-plex-sans/latin-400.css';
+import '@fontsource/ibm-plex-sans/latin-500.css';
+import '@fontsource/ibm-plex-sans/latin-600.css';
+import '@fontsource/ibm-plex-mono/latin-400.css';
+import '@fontsource/ibm-plex-mono/latin-500.css';
+import '@fontsource/ibm-plex-mono/latin-600.css';
+import '@fontsource/ibm-plex-serif/latin-400.css';
+import '@fontsource/ibm-plex-serif/latin-400-italic.css';
+import '@fontsource/ibm-plex-serif/latin-500.css';
 import './styles.css';
 import { Root } from './components/Root';
 import { registerLeaveWipe } from './lib/leaveWipe';

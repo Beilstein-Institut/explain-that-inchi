@@ -11,7 +11,7 @@
   gap: 10px;
   min-height: 28px;
   padding: 6px 22px;
-  font-size: 12.5px;
+  font-size: var(--fs-ui);
   position: relative;
   border-radius: 4px;
   transition: background 120ms;
@@ -39,7 +39,6 @@
 .key {
   font-family: var(--font-mono);
   font-weight: 600;
-  font-size: 13px;
 }
 
 /* Name column — verbatim from styles.css .legend-row .name */
@@ -51,7 +50,7 @@
 /* Desc column — verbatim from styles.css .legend-row .desc */
 .desc {
   color: var(--ink-faint);
-  font-size: 12px;
+  font-size: var(--fs-meta);
   line-height: 1.4;
 }
 

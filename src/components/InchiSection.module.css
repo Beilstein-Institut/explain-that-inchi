@@ -16,7 +16,7 @@
   gap: 8px;
   margin-bottom: 8px;
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: var(--fs-micro);
   letter-spacing: 0.14em;
   color: var(--ink-faint);
   text-transform: uppercase;
@@ -37,7 +37,7 @@
   padding: 8px 14px;
   padding-right: 40px;
   font-family: var(--font-mono);
-  font-size: 19px;
+  font-size: var(--fs-string);
   line-height: 1.6;
   letter-spacing: -0.005em;
   word-break: break-all;
@@ -125,7 +125,7 @@
 .emptyHint {
   color: var(--ink-faint);
   font-family: var(--font-mono);
-  font-size: 14px;
+  font-size: var(--fs-body);
   display: block;
   text-align: center;
   padding: 4px 0;
@@ -138,7 +138,7 @@
 .errorHint {
   color: var(--ink-soft);
   font-family: var(--font-mono);
-  font-size: 14px;
+  font-size: var(--fs-body);
   display: block;
   text-align: center;
   padding: 4px 0;
@@ -184,7 +184,7 @@
   top: 50%;
   transform: translateY(-50%);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: var(--fs-micro);
   color: var(--c-formula);
   white-space: nowrap;
   pointer-events: none;
@@ -209,7 +209,7 @@
   display: block;
   margin-top: 6px;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: var(--fs-micro);
   color: var(--ink-faint);
   white-space: nowrap;
   pointer-events: none;

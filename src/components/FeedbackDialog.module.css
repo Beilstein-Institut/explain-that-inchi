@@ -34,7 +34,7 @@ dialog.feedbackDialog::backdrop {
 /* Dialog title */
 .dialogTitle {
   font-family: var(--font-serif);
-  font-size: 26px;
+  font-size: var(--fs-title);
   font-weight: 500;
   line-height: 1.15;
   margin: 0;
@@ -44,7 +44,7 @@ dialog.feedbackDialog::backdrop {
 /* Intro paragraph */
 .dialogIntro {
   font-family: var(--font-sans);
-  font-size: 14.5px;
+  font-size: var(--fs-body);
   line-height: 1.55;
   color: var(--ink-soft);
   margin: 0;
@@ -67,7 +67,7 @@ dialog.feedbackDialog::backdrop {
 .fieldLabel {
   display: block;
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: var(--fs-micro);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink-faint);
@@ -82,7 +82,7 @@ dialog.feedbackDialog::backdrop {
   padding: 6px 8px;
   border-radius: 4px;
   font-family: var(--font-sans);
-  font-size: 14.5px;
+  font-size: var(--fs-body);
   line-height: 1.55;
   color: var(--ink);
   cursor: pointer;
@@ -97,7 +97,7 @@ dialog.feedbackDialog::backdrop {
 .textarea {
   width: 100%;
   font-family: var(--font-sans);
-  font-size: 14.5px;
+  font-size: var(--fs-body);
   line-height: 1.55;
   background: var(--bg-canvas);
   border: 1px solid var(--line);
@@ -120,7 +120,7 @@ dialog.feedbackDialog::backdrop {
 /* Context preview monospace block (verbatim .layerEg pattern) */
 .contextPreview {
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: var(--fs-ui);
   color: var(--ink-soft);
   background: var(--bg-panel);
   border: 1px solid var(--line);
@@ -137,7 +137,7 @@ dialog.feedbackDialog::backdrop {
 /* Context preview sub-note */
 .previewSubNote {
   font-family: var(--font-sans);
-  font-size: 12.5px;
+  font-size: var(--fs-ui);
   color: var(--ink-faint);
   line-height: 1.4;
   margin: 0 0 8px;
@@ -146,7 +146,7 @@ dialog.feedbackDialog::backdrop {
 /* Inline public-issue note (D-06) */
 .publicNote {
   font-family: var(--font-sans);
-  font-size: 12.5px;
+  font-size: var(--fs-ui);
   color: var(--ink-soft);
   line-height: 1.55;
   margin: 0;
@@ -157,7 +157,7 @@ dialog.feedbackDialog::backdrop {
   background: var(--c-formula);
   color: var(--bg-canvas);
   font-family: var(--font-sans);
-  font-size: 12.5px;
+  font-size: var(--fs-ui);
   font-weight: 500;
   border: none;
   border-radius: 6px;
@@ -182,7 +182,7 @@ dialog.feedbackDialog::backdrop {
   border: 1px solid var(--line);
   color: var(--ink-soft);
   font-family: var(--font-sans);
-  font-size: 12.5px;
+  font-size: var(--fs-ui);
   font-weight: 500;
   border-radius: 6px;
   padding: 0 16px;
@@ -206,7 +206,7 @@ dialog.feedbackDialog::backdrop {
   border: 1px solid var(--c-formula);
   color: var(--c-formula);
   font-family: var(--font-sans);
-  font-size: 12.5px;
+  font-size: var(--fs-ui);
   font-weight: 400;
   border-radius: 6px;
   padding: 0 12px;
@@ -227,7 +227,7 @@ dialog.feedbackDialog::backdrop {
 /* Transient "Copied" confirmation (verbatim .copiedFeedback pattern) */
 .copiedFeedback {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: var(--fs-micro);
   color: var(--c-formula);
   white-space: nowrap;
   pointer-events: none;
@@ -244,7 +244,7 @@ dialog.feedbackDialog::backdrop {
 
 .truncationNote {
   font-family: var(--font-sans);
-  font-size: 12.5px;
+  font-size: var(--fs-ui);
   color: var(--ink-soft);
   line-height: 1.55;
   margin: 0;
@@ -260,7 +260,7 @@ dialog.feedbackDialog::backdrop {
 /* Fallback selectable pre when clipboard write fails */
 .fallbackBody {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: var(--fs-meta);
   color: var(--ink-soft);
   background: var(--bg-panel);
   border: 1px solid var(--line);

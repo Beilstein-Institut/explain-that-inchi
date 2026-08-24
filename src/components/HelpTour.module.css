@@ -38,7 +38,7 @@
 /* "N of 8" counter — mono label style */
 .stepCounter {
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: var(--fs-micro);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink-faint);
@@ -50,7 +50,9 @@
   border: none;
   color: var(--ink-faint);
   font-family: var(--font-sans);
-  font-size: 20px;
+  /* Glyph sizing, deliberately outside the text ramp: this is the × icon, and
+     no text role should drag it along when the ramp is tuned. */
+  font-size: 1.25rem;
   line-height: 1;
   cursor: pointer;
   padding: 0 2px;
@@ -68,7 +70,7 @@
 /* Step title — serif, mirrors dialog title pattern */
 .stepTitle {
   font-family: var(--font-serif);
-  font-size: 18px;
+  font-size: var(--fs-subtitle);
   font-weight: 500;
   line-height: 1.2;
   color: var(--ink);
@@ -78,7 +80,7 @@
 /* Step body — sans, readable */
 .stepBody {
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: var(--fs-body);
   line-height: 1.55;
   color: var(--ink-soft);
   margin: 0;
@@ -98,7 +100,7 @@
   border: 1px solid var(--line);
   color: var(--ink-soft);
   font-family: var(--font-sans);
-  font-size: 12.5px;
+  font-size: var(--fs-ui);
   font-weight: 500;
   border-radius: 6px;
   padding: 0 14px;
@@ -124,7 +126,7 @@
   color: var(--bg-canvas);
   border: none;
   font-family: var(--font-sans);
-  font-size: 12.5px;
+  font-size: var(--fs-ui);
   font-weight: 500;
   border-radius: 6px;
   padding: 0 14px;
