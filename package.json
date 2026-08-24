@@ -14,7 +14,6 @@
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.2.7",
     "@fontsource/ibm-plex-sans": "^5.2.8",
-    "@fontsource/ibm-plex-serif": "^5.2.7",
     "ketcher-core": "3.17.1",
     "ketcher-react": "3.17.1",
     "ketcher-standalone": "3.17.1",

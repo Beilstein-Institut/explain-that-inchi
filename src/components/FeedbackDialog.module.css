@@ -33,9 +33,10 @@ dialog.feedbackDialog::backdrop {
 
 /* Dialog title */
 .dialogTitle {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: var(--fs-title);
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: -0.02em;
   line-height: 1.15;
   margin: 0;
   color: var(--ink);

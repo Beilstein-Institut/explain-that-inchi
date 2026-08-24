@@ -9,7 +9,7 @@
 //     scripts/og-image.svg public/og-image.png
 //
 // IBM Plex ships as woff2 in node_modules, which resvg cannot read; fetch the
-// TTFs (Sans Regular/SemiBold, Serif Medium/Italic, Mono Regular) from
+// TTFs (Sans Regular/SemiBold, Mono Regular) from
 // https://github.com/IBM/plex/tree/master/packages/*/fonts/complete/ttf.
 import { readFileSync, writeFileSync } from 'node:fs';
 const f = (x) => {
@@ -107,7 +107,7 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.
 
   <text x="72" y="112" font-family="IBM Plex Mono" font-size="16" letter-spacing="2.2" fill="${C.inkFaint}">IUPAC INTERNATIONAL CHEMICAL IDENTIFIER</text>
 
-  <text x="72" y="212" font-family="IBM Plex Serif" font-weight="500" font-size="86" letter-spacing="-1.6" fill="${C.ink}">Explain that <tspan font-style="italic" font-weight="400" fill="${C.inkSoft}">InChI</tspan></text>
+  <text x="72" y="212" font-family="IBM Plex Sans" font-weight="600" font-size="86" letter-spacing="-2.6" fill="${C.ink}">Explain that <tspan font-weight="400" fill="${C.inkSoft}">InChI</tspan></text>
 
   <text x="72" y="254" font-family="IBM Plex Sans" font-size="27" fill="${C.inkSoft}">Draw a molecule — read its InChI, layer by layer.</text>
 

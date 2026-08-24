@@ -67,7 +67,6 @@
 
   --font-sans: "IBM Plex Sans", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
-  --font-serif: "IBM Plex Serif", Georgia, serif;
 
   /* Type scale. Role names, not values: the token says what the text is for,
      so the same job cannot drift to five sizes across twelve files (it had).
@@ -111,15 +110,20 @@ body {
   margin-bottom: 6px;
 }
 .header h1 {
-  font-family: var(--font-serif);
-  font-weight: 500;
+  font-family: var(--font-sans);
+  font-weight: 600;
   font-size: var(--fs-display);
   line-height: 1.02;
-  letter-spacing: -0.02em;
+  /* Tighter than the serif it replaces: Plex Sans sets looser at display size,
+     and 52px needs the counters closed up to read as one word-shape. */
+  letter-spacing: -0.03em;
   margin: 0;
 }
+/* "InChI" recedes so the verb leads. Weight and colour do this, not italic:
+   Plex Sans Italic is not among the loaded cuts, so italic here would be a
+   browser-synthesised slant — a sheared upright, visibly wrong at 52px. */
 .header h1 em {
-  font-style: italic;
+  font-style: normal;
   color: var(--ink-soft);
   font-weight: 400;
 }
@@ -481,18 +485,20 @@ body {
 .legal-back:hover { color: var(--ink); text-decoration: underline; }
 .legal-back:focus-visible { outline: 2px solid var(--c-formula); outline-offset: 2px; }
 .legal-content h1 {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: var(--fs-title);
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: -0.02em;
   color: var(--ink);
   margin: 0 0 24px;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--line-soft);
 }
 .legal-content h2 {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: var(--fs-subtitle);
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--ink);
   margin: 32px 0 8px;
   padding-top: 8px;
