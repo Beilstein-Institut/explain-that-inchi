@@ -36,7 +36,7 @@ export function KetcherPanel({
   return (
     <section aria-labelledby="editor-heading">
       <div className="section-label">
-        <h2 id="editor-heading">Draw a molecule to see its InChI</h2>
+        <h2 id="editor-heading">Draw a molecule to learn more about its InChI</h2>
         <div className="section-label-actions">
           {onHelpClick && (
             <button type="button" className="help-trigger" onClick={onHelpClick}>
