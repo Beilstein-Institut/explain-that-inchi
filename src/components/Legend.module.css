@@ -90,3 +90,31 @@
   outline: 2px solid var(--ink);
   outline-offset: -2px;
 }
+
+/* A row is a hit target on touch — 28px is a mouse figure. The grid just centres the
+   row's ink in a taller box, so the visual rhythm is unchanged for pointer users. */
+@media (pointer: coarse) {
+  .legendRow {
+    min-height: 44px;
+  }
+}
+
+/* Below ~420px the four fixed-ish columns leave the description about 24px — a couple
+   of characters per line. It drops to its own row instead of being hidden: it is a
+   two-word gloss, and hiding it would leave the key and the name with nothing to say
+   what the layer is for. Row padding tightens to buy the width back. */
+@media (max-width: 420px) {
+  .legendRow {
+    grid-template-columns: 14px 28px 1fr;
+    row-gap: 1px;
+    padding: 6px 14px;
+  }
+  .name {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .desc {
+    grid-column: 3;
+    grid-row: 2;
+  }
+}

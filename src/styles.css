@@ -464,11 +464,8 @@ body {
        the pill's upper edge. */
     align-items: center;
     gap: 6px;
-    /* 44px is the finger target. The pill was ~35px from padding alone, which is
-       fine for a mouse and small for a thumb on a horizontally scrolling strip —
-       the one place here where a mis-tap loads the wrong molecule. min-height
-       does the work so the text keeps its own padding rhythm. */
-    min-height: 44px;
+    /* Target height is not here — it follows the pointer, not the width
+       (see the @media (pointer: coarse) block below). */
     padding: 9px 14px;
     border: 1px solid var(--line-control);
     border-radius: 999px;
@@ -478,8 +475,25 @@ body {
     background: var(--bg-panel);
     border-color: var(--ink);
   }
-  /* Same reasoning for the action pills: 32px is a comfortable mouse target and
-     a poor thumb one. They only grow on touch-width viewports. */
+}
+
+/* Touch targets follow the INPUT DEVICE, not the viewport width.
+ *
+ * These used to live in the max-width: 900px block, which got both ends wrong: a
+ * 1024px iPad and a 1280px touch laptop are wide AND coarse, so they were served
+ * 32px mouse-sized pills, while a 700px desktop window on a mouse was served 44px
+ * finger-sized ones. Width decides LAYOUT (what reflows); the pointer decides
+ * TARGETS (how big a thing you hit). They are different questions.
+ *
+ * Enumerated per control rather than as one `button` base rule on purpose: the InChI
+ * layer chunks are inline spans carrying role="button" from lib/keyboardProps, so a
+ * blanket min-height would inflate the line boxes of the string this page is about.
+ *
+ * 44px is Apple's HIG figure and comfortably over WCAG 2.5.8's 24px floor. */
+@media (pointer: coarse) {
+  .mol-item {
+    min-height: 44px;
+  }
   .help-trigger,
   .reset-trigger,
   .limitations-trigger,

@@ -129,3 +129,10 @@
   outline: 2px solid var(--ink);
   outline-offset: 1px;
 }
+
+/* Mirrors the InChI box's copy button. */
+@media (pointer: coarse) {
+  .copyBtn {
+    padding: 14px;
+  }
+}

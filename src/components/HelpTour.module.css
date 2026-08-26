@@ -142,3 +142,12 @@
   outline: 2px solid var(--c-formula);
   outline-offset: 2px;
 }
+
+/* Tour navigation is the one control a touch user must hit repeatedly. */
+@media (pointer: coarse) {
+  .navBtn,
+  .closeBtn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}

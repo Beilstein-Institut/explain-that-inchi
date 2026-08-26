@@ -46,3 +46,12 @@
   letter-spacing: 0.04em;
   z-index: 1001; /* must exceed Ketcher's highest internal z-index of 1000 */
 }
+
+/* Landscape phone. A 360px canvas on a ~390px-tall viewport fills the screen, so the
+   InChI the page exists to explain starts entirely below the fold — and the user has
+   no reason to suspect it is there. The canvas gives up the height, not the string. */
+@media (max-width: 900px) and (max-height: 520px) {
+  .ketcher {
+    grid-template-rows: 220px auto;
+  }
+}

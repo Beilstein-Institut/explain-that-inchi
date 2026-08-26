@@ -59,6 +59,12 @@ export function Legend({ activeType }: LegendProps) {
         const isActive = l.type === activeType;
         const color = `var(--c-${swatchVar(l.type)})`;
         const layerIdx = layerIndexByType.get(l.type);
+        // One handler for hover, focus and tap — the three ways in must not drift.
+        const show = () => {
+          setSubHover(null);
+          setLegendHover({ type: l.type, eg: l.eg });
+          if (present && layerIdx !== undefined) setHover(layerIdx);
+        };
         // UAT-13: hovering ANY row shows that layer's info in the explanation card
         // (the floating tooltip is gone). Present layers also drive the live card +
         // canvas highlight via setHover; absent layers show static info via legendHoverType.
@@ -75,16 +81,13 @@ export function Legend({ activeType }: LegendProps) {
             // Focusable text, not a button: focus shows the layer's card exactly as
             // hover does, and there is nothing further to activate.
             tabIndex={0}
-            onMouseEnter={() => {
-              setSubHover(null);
-              setLegendHover({ type: l.type, eg: l.eg });
-              if (present && layerIdx !== undefined) setHover(layerIdx);
-            }}
-            onFocus={() => {
-              setSubHover(null);
-              setLegendHover({ type: l.type, eg: l.eg });
-              if (present && layerIdx !== undefined) setHover(layerIdx);
-            }}
+            onMouseEnter={show}
+            onFocus={show}
+            // Touch has no hover, and iOS Safari does not reliably move focus to a
+            // non-form element on tap — so without this the legend is the one part of
+            // the page a touch user cannot reach at all. It is also how the layers
+            // ABSENT from the molecule are explained, which exist nowhere else.
+            onClick={show}
             onMouseLeave={() => {
               setLegendHover(null);
               if (present && layerIdx !== undefined) setHover(null);

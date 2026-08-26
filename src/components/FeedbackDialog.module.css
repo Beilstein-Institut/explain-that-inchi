@@ -283,3 +283,12 @@ dialog.feedbackDialog::backdrop {
   justify-content: flex-end;
   margin-top: 16px;
 }
+
+/* Dialog actions: a mis-tap here either loses a typed report or sends it early. */
+@media (pointer: coarse) {
+  .submitBtn,
+  .cancelBtn,
+  .copyBodyBtn {
+    min-height: 44px;
+  }
+}

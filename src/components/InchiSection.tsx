@@ -175,7 +175,15 @@ export function InchiSection() {
             </button>
             {copied && <span className={styles.copiedFeedback}>Copied!</span>}
             {pinned && (
-              <span className={styles.pinnedHint}>Pinned — click anywhere or press Esc to release.</span>
+              // Both phrasings ship; CSS shows one. On touch, pinning is the ONLY way
+              // to open an explanation — hover does not exist — so the release
+              // instruction is load-bearing on exactly the devices where "click" and
+              // "Esc" name things the user does not have. display:none keeps the
+              // hidden one out of the accessibility tree too, so nothing is read twice.
+              <span className={styles.pinnedHint}>
+                Pinned — <span className={styles.hintPointer}>click anywhere or press Esc</span>
+                <span className={styles.hintTouch}>tap anywhere</span> to release.
+              </span>
             )}
           </>
         )}
