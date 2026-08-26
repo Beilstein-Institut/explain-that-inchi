@@ -4,10 +4,10 @@ milestone: v1.6
 milestone_name: Connection-layer cards
 current_phase: 19
 status: milestone_shipped
-stopped_at: Session paused 2026-08-13 — chips + picker cull + audit + Help tour repairs; HEAD 17b0f35, both remotes synced, tree clean
-last_updated: "2026-08-13T12:20:00.000Z"
-last_activity: 2026-08-13
-last_activity_desc: "Layer chips, picker cull 33->20, PRODUCT.md refresh, /impeccable audit + fixes, Help tour repairs"
+stopped_at: Session paused 2026-08-26 — 8 commits on dev, HEAD 6914965, both remotes synced, tree clean, 712 tests green. Nothing live; browser verification of the new wasm load path is the blocking human action
+last_updated: "2026-08-26T08:43:43.340Z"
+last_activity: 2026-08-26
+last_activity_desc: "Eight commits on dev: T&C version line, string-box height fix + EMPTY_INFO, c-layer comma hover, wasm binary load (8.57->5.28MB), harden (--line-control + ketcherEditor adapter), legend contrast, touch adaptations keyed to pointer, dead-CSS removal"
 progress:
   total_phases: 6
   completed_phases: 6
@@ -147,7 +147,8 @@ Stopped at: Quick task 260811-b69 complete — on-leave wipe widened, opt-in Cle
 
 Stopped at: Session resumed — no active milestone. Work landed outside GSD since 2026-07-13: Jmol CPK element colors (map + hex passthrough + white-atom ring + dead --c-el-* cleanup), in-app Imprint/Privacy/Terms pages, refined connection/hydrogen layer explanations (PR #3). HEAD f413a96, both remotes synced, tree clean. Stale HANDOFF.json + .continue-here.md consumed and deleted. Awaiting next milestone scope.
 Stopped at: Session resumed 2026-08-11 — HANDOFF.json read; no active milestone, no incomplete plans. Blocking item: rebuild + redeploy the container, then curl `__leave` through the proxy.
-Resume file: .planning/.continue-here.md (from the 260811-b69 session)
+Stopped at: Session 2026-08-26 — no active milestone. Conversational Q&A plus /impeccable audit -> optimize -> harden -> adapt -> polish, and one direct design request. Eight commits on dev (fe11d0d..6914965), pushed to BOTH remotes, tree clean, 712 tests green, tsc clean, detector 0 findings. master still at 2b7720d. Open correctness defect diagnosed but not fixed: the b-layer is modelled as if it were the t-layer (see .continue-here.md).
+Resume file: .planning/.continue-here.md (2026-08-26)
 
 ## Performance Metrics
 

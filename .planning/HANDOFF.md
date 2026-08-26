@@ -1,3 +1,12 @@
+> **ARCHIVED — this is the 2026-06-10 handoff, not the current one.**
+>
+> Kept because `.planning/milestones/v1.0-phases/08-hydrogen-implicit-explicit-highlight/08-UAT.md`
+> cites it twice for the recurring multi-fragment repro molecule — see the
+> "## The recurring test molecule" section. That UAT says "HANDOFF.md line 17"; this banner shifted
+> the file, so go by the section heading, not the number. Nothing else here describes present state.
+>
+> Live handoff: `.planning/HANDOFF.json` + `.planning/.continue-here.md`.
+
 # Handoff — Explain that InChI (2026-06-10)
 
 ## Where things stand

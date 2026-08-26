@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "timestamp": "2026-08-13T12:20:00.000Z",
+  "timestamp": "2026-08-26T08:42:14.643Z",
   "phase": null,
   "phase_name": null,
   "phase_dir": null,
@@ -9,103 +9,141 @@
   "total_tasks": null,
   "status": "paused",
   "context": "default",
-  "context_reason": "No active milestone since v1.6. This session ran as quick tasks and skill invocations: layer chips on the preset picker, a five-round cull of the picker from 33 to 20 presets, a PRODUCT.md refresh, an /impeccable audit with its fixes, and two Help tour repairs from user reports. HEAD 17b0f35, both remotes synced, tree clean, 612 tests green.",
+  "context_reason": "No active milestone since v1.6. This session ran as conversational questions plus four /impeccable passes (audit, optimize, harden, adapt, polish) and one direct design request. Eight commits on dev, HEAD 6914965, pushed to BOTH remotes. Tree clean. tsc -b clean, 712 tests green, detector 0 findings, build clean. master still at 2b7720d.",
   "completed_tasks": [
     {
-      "id": "260813-exd",
-      "name": "Layer chips on the example molecules — one per InChI layer, chipped presets first in legend order; picker cut 33 → 20",
+      "id": "fe11d0d",
+      "name": "Dated version line added to the Terms & Conditions (Version 11.08.2026), after the numbered terms rather than after the MIT/third-party appendix",
       "status": "done",
-      "commit": "6461386"
+      "commit": "fe11d0d"
     },
     {
-      "id": "product",
-      "name": "PRODUCT.md refresh via /impeccable init — mobile stance (desktop-first, best-effort), picker-as-map-of-the-notation, Limitations dialog, test count 446 → 596",
+      "id": "9fda5ed",
+      "name": "String boxes no longer resize on the first atom (min-height now covers padding+border; placeholder fills the reserved line via line-height). EMPTY_INFO replaces the 'Hover any layer' lie on an empty canvas",
       "status": "done",
-      "commit": "2a096fc"
+      "commit": "9fda5ed"
     },
     {
-      "id": "260813-aud",
-      "name": "/impeccable audit (14/20) + fixes: feedback textarea label, touch targets, tokenised dot grid, HelpTour width",
+      "id": "07a303c",
+      "name": "c-layer branch-list comma is hoverable: new 'comma' token + 'siblings' SubHover kind, highlights the two flanking atoms and never a bond",
       "status": "done",
-      "commit": "26acdb2"
+      "commit": "07a303c"
     },
     {
-      "id": "260813-tour-1",
-      "name": "Help tour description card was rendering off-screen — measured card replaces a 180px guess; always anchored top/left",
+      "id": "aa60971",
+      "name": "Indigo wasm loads as a binary via ketcher-standalone/dist/binaryWasm instead of a 21MB inlined base64 worker. Cold load 8.57MB -> 5.28MB gzip",
       "status": "done",
-      "commit": "47030d3"
+      "commit": "aa60971"
     },
     {
-      "id": "260813-tour-2",
-      "name": "Help tour step for the explanation card — anchor added to all five render branches; step 7 of 9",
+      "id": "114c966",
+      "name": "Harden: --line-control token for WCAG 1.4.11 on 7 controls; lib/ketcherEditor.ts is the only door into Ketcher internals with checkEditorShape() at init; typed 'open' token fields; visible editor-failure notice; window.ketcher dev-only. as any 13 -> 3",
       "status": "done",
-      "commit": "17b0f35"
+      "commit": "114c966"
+    },
+    {
+      "id": "ce5eb20",
+      "name": "Legend present-vs-absent separation on four axes (present desc -> --ink-soft, absent swatch becomes a hollow ring, name weight steps down); presence styling moved from JSX ternaries into CSS via --layer-color",
+      "status": "done",
+      "commit": "ce5eb20"
+    },
+    {
+      "id": "0bd09ab",
+      "name": "Touch adaptations keyed to (pointer: coarse) not max-width; legend gained a tap path (was unreachable on iOS); pin-release hint adapts to input; landscape-phone canvas; narrow legend reflow",
+      "status": "done",
+      "commit": "0bd09ab"
+    },
+    {
+      "id": "6914965",
+      "name": "Deleted 15 CSS rules the CSS-module migration made unmatchable (.inchi-layer x12, .ketcher .toolbar x2, .explain x1) plus 4 stranded module classes. index.css 11.20 -> 10.65 kB",
+      "status": "done",
+      "commit": "6914965"
     }
   ],
-  "remaining_tasks": [],
+  "remaining_tasks": [
+    {
+      "id": "b-layer-model",
+      "name": "The b-layer is modelled as if it were the t-layer. ParityText's regex /(\\d+)([-+?])/g matches only a number followed by a sign, so in 'b2-1+' it emits {kind:'stereo', atom:1} and swallows the leading 2 as inert text. But b2-1+ names a DOUBLE BOND between atoms 2 and 1, not a stereocentre at atom 1. Diagnosed from src/components/LayerText.tsx:426-453, never fixed. Fixture: InChI=1S/C4H4O4/c5-3(6)1-2-4(7)8/h1-2H,(H,5,6)(H,7,8)/b2-1+ (fumaric acid).",
+      "status": "not_started"
+    }
+  ],
   "blockers": [
     {
-      "id": "mount-failure",
-      "summary": "Undiagnosed browser mount failure: createRoot twice on #root, RulerArea throwing SVGLength. Two hypotheses tested and falsified. Never bisected.",
-      "blocking": "the first-load split, which touches the same mount path"
+      "description": "Undiagnosed browser mount failure: createRoot twice on #root, RulerArea throwing SVGLength. Two hypotheses tested and falsified, never bisected. Pre-chip tree for a bisect is 4b5f9dc.",
+      "type": "technical",
+      "workaround": "Avoided entirely this session: the 38% first-load reduction came from wasm packaging, which does not touch the mount path. The remaining lazy-boundary split (App -> KetcherPanel) is still gated on this, but is now worth far less than it was."
     }
   ],
   "async_jobs": [],
   "human_actions_pending": [
     {
-      "action": "Make the repository public",
-      "context": "github.com/Beilstein-Institut/explain-that-inchi is private — verified by fetching it anonymously. That makes the Limitations dialog's new LIMITATIONS.md link 404, and the Send feedback button has been 404ing on the live site for anyone without repo access since before this session. One setting fixes both. Nothing in the repo can.",
-      "blocking": false
-    },
-    {
-      "action": "Reload and confirm both Help tour fixes",
-      "context": "Neither is verified in a browser — there is none in this environment. Expect: the description card visible on every step, and step 7 of 9 stopping on the explanation card below the InChIKey, left of the legend. The positioning fix is proven only by unit tests over pure functions, replayed against the old implementation.",
-      "blocking": false
-    },
-    {
-      "action": "Diagnose the mount failure before attempting the first-load split",
-      "context": "Pre-chip tree for a bisect is 4b5f9dc. The failure was reported mid-session, attributed to the layer chips, and I twice claimed it was not mine from static evidence that could not distinguish the two. The chips were reverted and restored to enable a bisect that never ran, so the question is still open.",
+      "action": "Open the app in a browser and confirm the editor still mounts and computes an InChI",
+      "context": "The wasm load path changed (aa60971). The chain is verified statically and over HTTP - worker 200, wasm 200, magic bytes \\0asm, Vite rewrote the worker's lookup to the hashed base-prefixed URL - but no browser exists in this environment. If the editor fails to mount, the single revert is src/App.tsx:6.",
       "blocking": true
     },
     {
+      "action": "Eyeball six passes' worth of unseen visual change",
+      "context": "--line-control borders on 7 controls, the legend's hollow rings and reweighted rows, the editor-failure notice, the box-height fix, the comma hover, and the touch rules. None has been rendered. Worth a pass at desktop width, one phone in both orientations, and an iPad (the pointer:coarse rules are exactly what emulators report differently from hardware).",
+      "blocking": false
+    },
+    {
+      "action": "Decide whether Ketcher's toolbar should be themed",
+      "context": "6914965 deleted .ketcher .toolbar .tool.active/:hover as unmatchable - the selector is literal in index.css while the element carries _ketcher_g9xnf. Someone intended to theme the toolbar and it silently never applied. Wiring it up would change how the editor looks, which is redesign, so it was deleted rather than fixed.",
+      "blocking": false
+    },
+    {
+      "action": "Make the repository public",
+      "context": "github.com/Beilstein-Institut/explain-that-inchi is private, which 404s both the Limitations dialog's LIMITATIONS.md link and the Send feedback button. Carried from the previous handoff. One setting fixes both; nothing in the repo can.",
+      "blocking": false
+    },
+    {
       "action": "Rebuild and redeploy the container",
-      "context": "Carried since 2026-08-11 and still true: the published privacy policy describes an on-leave purge production does not perform. None of this session's work is live either.",
+      "context": "Carried since 2026-08-11 and now more valuable: the published privacy policy still describes an on-leave purge production does not perform, AND the 38% first-load reduction is not live. Note the Dockerfile now precompresses .wasm - without that step the new load path is WORSE than what it replaced (11.8MB uncompressed vs 7.17MB of gzipped base64).",
       "blocking": false
     },
     {
       "action": "Curl __leave through the upstream proxy after deploying",
-      "context": "The proxy's HTTP Basic gate may 401 the beacon; a 401 carries no Clear-Site-Data header, so the purge silently does nothing. Command: curl -sI -u eti -X POST https://cheminfo.beilstein.org/explain-that-inchi/__leave | grep -iE '^(HTTP|clear-site-data)'",
+      "context": "The proxy's HTTP Basic gate may 401 the beacon; a 401 carries no Clear-Site-Data header, so the purge silently does nothing. curl -sI -u eti -X POST https://cheminfo.beilstein.org/explain-that-inchi/__leave | grep -iE '^(HTTP|clear-site-data)'",
       "blocking": false
     },
     {
       "action": "Take the GitHub Pages site down",
-      "context": "The workflow is gone (df4121d) but the gh-pages branch still exists on origin, so a stale copy of the app is served with no __leave endpoint. Disable Pages in Settings, then: git push origin --delete gh-pages",
+      "context": "The workflow is gone (df4121d) but the gh-pages branch still exists on origin, so a stale copy is served with no __leave endpoint. Disable Pages in Settings, then: git push origin --delete gh-pages",
+      "blocking": false
+    },
+    {
+      "action": "Decide whether dev merges to master",
+      "context": "master is at 2b7720d; all eight commits live on dev only. Nothing about them is provisional except the browser verification above.",
       "blocking": false
     }
   ],
   "decisions": [
     {
-      "decision": "The preset picker is a map of the notation, and that is product truth",
-      "rationale": "One worked example per InChI layer, chipped, leading the list in the order layers appear in a string. Recorded in PRODUCT.md with the reason: a layer with no example leaves an explanation card no user can reach, and a second example for a claimed layer breaks the one-to-one map. Asserted in presetLayerCoverage.test.ts against WASM-measured InChIs, not left to inspection."
+      "decision": "--line stays soft at 1.37:1; a separate --line-control token carries the 3:1 boundary",
+      "rationale": "WCAG 1.4.11 covers UI components, not decorative container edges. Darkening --line globally would have coarsened 25 container borders across a deliberately soft page for no standards gain, and darkening the pills' --line FILL instead would have broken --ink-soft's 4.5:1 on top of it. Asserted both ways in tokenContrast.test.ts, including that --line is deliberately under 3:1."
     },
     {
-      "decision": "The 7.3MB first-load split was deferred, not skipped",
-      "rationale": "It is the single biggest user-facing win left and the fix is known — move the lazy boundary from App down to KetcherPanel. Not shipped because it changes the mount path of a canvas PRODUCT.md calls load-bearing, there is no browser here to verify the editor still mounts exactly once, and an unexplained mount failure is already open on that same path. Making an unverifiable change there on top of an undiagnosed bug is how the bug becomes permanent."
+      "decision": "Absent legend rows keep their text at 4.5:1 and are separated by shape and weight instead",
+      "rationale": "They are focusable and open their own explanation card, so they are ACTIVE controls and WCAG 1.4.3's incidental-text exception does not apply. --ink-faint is 5.20:1 on the card; the lightest AA-legal value is L=0.56 at 4.58:1, a barely perceptible gain for the last of the headroom. Spent the effect on a hollow swatch ring and a weight step instead."
     },
     {
-      "decision": "Accessibility left recorded as undecided, against the evidence of the code",
-      "rationale": "The user chose this explicitly when asked. Worth knowing it is now an understatement: lib/keyboardProps.ts gives layer chunks role=button, tab stops, Enter/Space and arrow-key roving, every onMouseEnter has a paired onFocus, and colour is not the sole carrier of layer identity. Reported in the audit rather than repaired, because repairing drift as a side effect of a design task is forbidden."
+      "decision": "The Dockerfile now gzips .wasm, overriding a documented decision in two files",
+      "rationale": "Both files excluded .wasm to protect streaming compilation, which cost nothing while the wasm was inlined and never fetched. Fetched for real, the exclusion would ship 11.8MB uncompressed - worse than the 7.17MB of gzipped base64 it replaces. Content-Encoding is transfer-level: the browser inflates before WebAssembly.instantiateStreaming reads, and Content-Type is what streaming needs. Verified the emitted worker does use instantiateStreaming with an ArrayBuffer fallback."
     },
     {
-      "decision": "Maleic acid's InChI fixture kept after the molecule was removed from the picker",
-      "rationale": "Fumaric and maleic are identical up to one sign character, which makes them the sharpest available check that the b layer's sign is parsed at all. Pulled out of ALL_FIXTURES and relabelled as parser coverage rather than deleted with the preset."
+      "decision": "Touch target size follows (pointer: coarse); layout still follows max-width",
+      "rationale": "Keying targets to width served a 1024px iPad 32px mouse pills and a 700px desktop window 44px finger pills - both backwards. Enumerated per control rather than as one `button` base rule, because the InChI layer chunks are inline spans carrying role=button from lib/keyboardProps and a blanket min-height would inflate the line boxes of the string the page is about."
     },
     {
-      "decision": "prefers-reduced-motion is correctly absent",
-      "rationale": "Verified rather than assumed during the audit: all 21 transition declarations across 7 files are background/color/opacity/box-shadow. There is no transform, translate or scale to suppress. A naive audit reports this as a defect and is wrong."
+      "decision": "src/testing/cssProbe.ts landed with the first CSS-invariant test, not in the polish commit",
+      "rationale": "History reads better when the shared reader is introduced where it is first needed. The 'consolidated my own duplication' version was an artifact of the order the work happened in, not of the change."
+    },
+    {
+      "decision": "Deleted the unmatchable .ketcher .toolbar rules rather than wiring them up",
+      "rationale": "Making them work would change how the editor looks, which is redesign, not the cleanup pass that found them. Flagged for a separate decision."
     }
   ],
   "uncommitted_files": [],
-  "next_action": "Make the repository public (fixes two broken outward links), then reload to confirm the Help tour description card and its new step 7 of 9. Nothing in the repo is pending; tree is clean and both remotes are at 17b0f35.",
-  "context_notes": "Two process lessons worth carrying, both learned the hard way this session. First: I twice asserted the browser mount failure was not caused by my change, using a grep of my diff and a curl of the module graph — neither of which can distinguish innocent code from code that breaks at runtime. That needed a bisect or a test, and cost two rounds. Second: a guard is worthless until you try to break it. The first version of the tour-anchor test scanned all sources including HelpTour.tsx, so every assertion matched its own STEPS declaration and passed with the anchor deleted; I only found that by renaming the anchor and watching 27 tests stay green. Both failure modes look like diligence from the outside."
+  "next_action": "Open the app in a browser and confirm the editor mounts and computes an InChI - the wasm load path changed and nothing here can verify it. If that passes, the b-layer modelling bug in remaining_tasks is the sharpest open piece of work, and it is a real correctness defect rather than polish.",
+  "context_notes": "Three process failures this session, all worth carrying. (1) I ran `git checkout` on an uncommitted file to undo a mutation test and wiped a whole pass's edits to KetcherPanel.tsx. Mutation-test against a scratch copy, or commit first. (2) My hunk-staging helper used git diff -U3 while I had inspected at -U0, so adjacent hunks from different logical changes merged and I committed a broken commit 6 (tsc: Cannot find name 'show'). Caught only because I verified each commit in isolation by stashing the remainder - do that, always. (3) My own audit's grep missed three controls with `border: none` and a --line fill, and separately flagged .mol-item as dead CSS when it is built by string concatenation at KetcherPanel.tsx:101 - deleting on that evidence would have stripped the preset picker's styling. Verify an 'unused' claim against how the thing is actually constructed. Carried forward and repeatedly useful: a guard is worthless until you try to break it. Every new guard this session was mutation-tested by reverting the fix and watching the test fail; that is how the segmentBonds comma regression and the two staging errors were caught."
 }
