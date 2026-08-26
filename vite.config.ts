@@ -1,6 +1,5 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { readFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 
@@ -92,18 +91,13 @@ export default defineConfig({
       },
     },
   },
-  plugins: [
-    react(),
-    viteStaticCopy({
-      targets: [
-        {
-          src: 'node_modules/ketcher-standalone/dist/binaryWasm/*.{wasm,js}',
-          dest: '',
-          rename: { stripBase: true },
-        },
-      ],
-    }),
-  ],
+  // No static copy of binaryWasm: importing 'ketcher-standalone/dist/binaryWasm'
+  // puts the worker and the .wasm through Vite's asset pipeline, which emits both
+  // into assets/ with content hashes and rewrites the worker's own wasm lookup to
+  // the hashed, base-prefixed URL. The old copy placed a second, unhashed pair at
+  // the site root that nothing referenced — 19.3 MB of shadow copies one deploy
+  // away from going stale against the real ones.
+  plugins: [react()],
   build: {
     assetsInlineLimit: 0,
   },

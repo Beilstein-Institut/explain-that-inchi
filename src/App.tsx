@@ -3,7 +3,12 @@ import { flushSync } from 'react-dom';
 // Editor stylesheet lives here, not in main.tsx, so it ships in App's lazy chunk
 // instead of on every legal-page visit.
 import 'ketcher-react/dist/index.css';
-import { StandaloneStructServiceProvider } from 'ketcher-standalone';
+// The default 'ketcher-standalone' entry inlines the whole 15.8MB indigo worker as a
+// base64 blob, which is why App's chunk was 21MB (7.35MB gzip) of un-cacheable string.
+// The binaryWasm entry is 41KB and fetches indigo-ketcher-*.wasm as a real binary the
+// engine can stream-compile and the browser can cache. Same exported class; a declared
+// export of ketcher-standalone, not a direct indigo-ketcher import.
+import { StandaloneStructServiceProvider } from 'ketcher-standalone/dist/binaryWasm';
 import type { Ketcher } from 'ketcher-core';
 import { Header } from './components/Header';
 import { KetcherPanel } from './components/KetcherPanel';
