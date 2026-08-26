@@ -3,6 +3,7 @@
 // CSS-only tooltip on row hover — no React state for tooltip visibility.
 // Reads layers from Zustand store to compute which layer types are present.
 
+import type React from 'react';
 import { useInchiStore } from '../store';
 import { swatchVar, LAYER_KEY } from '../lib/layerInfo';
 import type { LayerType } from '../lib/parseInchi';
@@ -65,7 +66,12 @@ export function Legend({ activeType }: LegendProps) {
           <div
             key={l.type}
             className={[styles.legendRow, !present ? styles.muted : ''].filter(Boolean).join(' ')}
-            style={isActive ? { background: `var(--c-${swatchVar(l.type)}-bg)` } : undefined}
+            // The layer hue goes down as a custom property so the presence styling can
+            // live entirely in CSS (filled swatch vs ring, coloured key vs faint).
+            style={{
+              '--layer-color': color,
+              ...(isActive ? { background: `var(--c-${swatchVar(l.type)}-bg)` } : {}),
+            } as React.CSSProperties}
             // Focusable text, not a button: focus shows the layer's card exactly as
             // hover does, and there is nothing further to activate.
             tabIndex={0}
@@ -88,16 +94,9 @@ export function Legend({ activeType }: LegendProps) {
               if (present && layerIdx !== undefined) setHover(null);
             }}
           >
-            <span className={styles.sw} style={{ background: color }} />
-            <span
-              className={styles.key}
-              style={{ color: present ? color : 'var(--ink-faint)' }}
-            >
-              {legendKey(l.type)}
-            </span>
-            <span className={styles.name} style={!present ? { color: 'var(--ink-faint)' } : undefined}>
-              {l.name}
-            </span>
+            <span className={styles.sw} />
+            <span className={styles.key}>{legendKey(l.type)}</span>
+            <span className={styles.name}>{l.name}</span>
             <span className={styles.desc}>{l.desc}</span>
           </div>
         );

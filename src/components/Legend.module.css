@@ -17,41 +17,68 @@
   transition: background 120ms;
 }
 
-/* Absent layer type — muted appearance — verbatim from styles.css .legend-row.muted */
-.muted {
-  /* key and name color handled inline; sw opacity handled below */
-}
-
-.muted .sw {
-  opacity: 0.35;
-}
-
-/* Swatch circle inside legend row — verbatim from styles.css .legend-row .sw */
+/* Present vs absent. Both states live here rather than half here and half in a JSX
+   ternary, so the whole comparison is readable in one place; the row passes its layer
+   hue down as --layer-color and CSS decides what to do with it.
+ *
+ * The separation is carried on four axes, only one of which is text contrast. That is
+ * deliberate: an absent row is focusable and opens its own explanation card, so it is
+ * an ACTIVE control and WCAG 1.4.3's incidental-text exception does not apply — its
+ * text has to stay at 4.5:1 no matter how faint it looks. --ink-faint is 5.20:1 on the
+ * card and stays put. Everything else is free, so the swatch, the weight, and the
+ * present row's own description do the work. */
 .sw {
   display: inline-block;
   width: 10px;
   height: 10px;
   border-radius: 2px;
   flex-shrink: 0;
+  background: var(--layer-color);
 }
 
-/* Key column (e.g. "c…") — verbatim from styles.css .legend-row .key */
+/* Hollow, not dimmed: a ring reads as "this layer exists in the notation but not in
+   this molecule" at a glance, where 35% opacity read as "slightly less important".
+   Shape carries it, so no contrast is spent. */
+.muted .sw {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--layer-color);
+  opacity: 0.5;
+}
+
+/* Key column (e.g. "c…") */
 .key {
   font-family: var(--font-mono);
   font-weight: 600;
+  color: var(--layer-color);
 }
 
-/* Name column — verbatim from styles.css .legend-row .name */
+.muted .key {
+  color: var(--ink-faint);
+}
+
+/* Name column */
 .name {
   color: var(--ink);
   font-weight: 500;
 }
 
-/* Desc column — verbatim from styles.css .legend-row .desc */
-.desc {
+.muted .name {
   color: var(--ink-faint);
+  font-weight: 400;
+}
+
+/* Desc column. The present row's description was --ink-faint, identical to the absent
+   row's — which left the widest column of the grid looking the same in both states and
+   flattened the whole comparison. Raising it to --ink-soft (7.33:1) is most of why the
+   two now separate. */
+.desc {
+  color: var(--ink-soft);
   font-size: var(--fs-meta);
   line-height: 1.4;
+}
+
+.muted .desc {
+  color: var(--ink-faint);
 }
 
 /* UAT-13: legend tooltip removed — hover info now renders in the explanation
