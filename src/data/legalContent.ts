@@ -100,6 +100,7 @@ export const TERMS_HTML = `
   <li>The Beilstein-Institut shall not be held liable for the content of any third-party web sites this Web Site is linked to.</li>
   <li>These terms shall be governed by the laws of the Federal Republic of Germany. Sole place of jurisdiction for all disputes arising out or in connection with the use of this Web Site and its contents shall be Frankfurt am Main.</li>
 </ol>
+<p>Version 11.08.2026</p>
 
 <h2>MIT License</h2>
 <p>Copyright © 2026 Beilstein-Institut zur Förderung der Chemischen Wissenschaften</p>

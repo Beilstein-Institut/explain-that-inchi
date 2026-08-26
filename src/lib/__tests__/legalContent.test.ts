@@ -110,6 +110,13 @@ describe('legal content is adapted to Explain that InChI', () => {
     expect(PRIVACY_HTML).toMatch(/Version 11\.08\.2026/);
   });
 
+  // Dated versioning, same scheme as the Privacy Policy: the line closes the
+  // terms themselves, not the MIT/third-party appendix that follows them.
+  it('Terms carries the current version date, right after the numbered terms', () => {
+    expect(TERMS_HTML).toMatch(/Version 11\.08\.2026/);
+    expect(TERMS_HTML).toMatch(/<\/ol>\s*<p>Version 11\.08\.2026<\/p>/);
+  });
+
   // § 3 (1) promises no analytics; § 5 must not imply analysis happens anyway.
   it('Privacy does not claim data-analysis processing that the app never does', () => {
     expect(PRIVACY_HTML).not.toMatch(/data analysis purposes/);
