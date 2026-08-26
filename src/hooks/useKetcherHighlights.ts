@@ -16,6 +16,7 @@ import {
   isWhite,
 } from '../lib/highlightUtils';
 import type { HighlightSpec, StructLike } from '../lib/highlightUtils';
+import { moleculeStruct, canvasSvgRoot, highlightApi } from '../lib/ketcherEditor';
 import type { SubHover, AuxMap, Layer } from '../lib/parseInchi';
 
 /**
@@ -40,7 +41,7 @@ export function applyKetcherHighlights(
  * DOM contract (verified in ketcher-core/dist/index.modern.js):
  *  - highlights.create() calls editor.update() synchronously, recreating SVG elements
  *  - Each atom's primary SVG element gets data-atom-id="<poolId>" and data-atomLabel="<symbol>"
- *  - SVG root is at editorAny.render.paper.canvas
+ *  - SVG root comes from canvasSvgRoot() in lib/ketcherEditor
  *
  * Carbon atoms have no visible label in skeletal formula and are left unchanged.
  * The inline style.fill overrides Raphaël's fill attribute and is wiped automatically
@@ -312,10 +313,11 @@ export function useKetcherHighlights(
 
   useEffect(() => {
     if (!isReady || !ketcherRef.current) return;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const editorAny = ketcherRef.current.editor as any;
-    const struct = editorAny.render.ctab.molecule as StructLike;
-    const highlightEditor = editorAny as { highlights: { clear(): void; create(...args: HighlightSpec[]): void } };
+    // Ketcher's private render tree is reached only through lib/ketcherEditor, so a
+    // moved property surfaces as one shape error at mount instead of a silent no-op here.
+    const ketcher = ketcherRef.current;
+    const struct = moleculeStruct<StructLike>(ketcher);
+    const highlightEditor = { highlights: highlightApi<HighlightSpec>(ketcher) };
 
     // Guard: highlights.create/clear both call editor.update() synchronously, which
     // fires the editor change event. Without this flag, each highlight triggers
@@ -327,14 +329,14 @@ export function useKetcherHighlights(
       // Also clears on effIdx=null (idle) and non-spatial layers (D-01).
       if (effIdx === null) {
         highlightEditor.highlights.clear();
-        const svgRoot = editorAny.render.paper.canvas as Element;
+        const svgRoot = canvasSvgRoot(ketcher);
         cleanHBadges(svgRoot);
         return;
       }
       const layer = layers[effIdx];
       if (!layer) {
         highlightEditor.highlights.clear();
-        const svgRoot = editorAny.render.paper.canvas as Element;
+        const svgRoot = canvasSvgRoot(ketcher);
         cleanHBadges(svgRoot);
         return;
       }
@@ -343,14 +345,14 @@ export function useKetcherHighlights(
       // here never reaches the builder, so a case added there stays dead.
       if (layer.type === 'version') {
         highlightEditor.highlights.clear();
-        const svgRoot = editorAny.render.paper.canvas as Element;
+        const svgRoot = canvasSvgRoot(ketcher);
         cleanHBadges(svgRoot);
         return;
       }
 
       const specs = buildHighlightSpecs(layer, effSub, auxMap, atomElements, hAtomPoolIds, layers, struct, resolveVar);
       applyKetcherHighlights(highlightEditor, specs);
-      const svgRoot = editorAny.render.paper.canvas as Element;
+      const svgRoot = canvasSvgRoot(ketcher);
       cleanHBadges(svgRoot);
       // whiteAtomLabels only meaningful when there are highlighted atoms.
       if (specs.length > 0) {

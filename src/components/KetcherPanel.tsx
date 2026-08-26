@@ -19,6 +19,10 @@ interface KetcherPanelProps {
   onHelpClick?: () => void;
   /** Opens the Limitations dialog. Rendered immediately left of Send feedback. */
   onLimitationsClick?: () => void;
+  /** Set when the editor or its internals failed — shown above the canvas. */
+  editorError?: string | null;
+  /** Ketcher's own errorHandler routes here so a failure is visible, not console-only. */
+  onEditorError?: (message: string) => void;
 }
 
 export function KetcherPanel({
@@ -32,6 +36,8 @@ export function KetcherPanel({
   onResetClick,
   onHelpClick,
   onLimitationsClick,
+  editorError,
+  onEditorError,
 }: KetcherPanelProps) {
   return (
     <section aria-labelledby="editor-heading">
@@ -60,6 +66,9 @@ export function KetcherPanel({
           )}
         </div>
       </div>
+      {editorError && (
+        <p className="editor-error" role="alert">{editorError}</p>
+      )}
       <div className={styles.ketcher}>
         {/* Canvas column: Editor + loading overlay + canvas-meta overlay */}
         <div className={`${styles.canvasWrap} canvas-wrap`} data-tour-id="editor">
@@ -69,7 +78,10 @@ export function KetcherPanel({
             structServiceProvider={structServiceProvider}
             staticResourcesUrl={import.meta.env.BASE_URL}
             onInit={onInit}
-            errorHandler={(msg) => console.error('Ketcher error:', msg)}
+            errorHandler={(msg) => {
+              console.error('Ketcher error:', msg);
+              onEditorError?.(String(msg));
+            }}
           />
           {/* Loading overlay sits position:absolute on top of the mounted Editor.
               Removed from DOM (not hidden) when isReady becomes true. */}

@@ -7,6 +7,15 @@
   --ink-faint: oklch(0.53 0.012 255);
   --line: oklch(0.88 0.008 250);
   --line-soft: oklch(0.93 0.006 250);
+  /* Boundary of anything the user operates. WCAG 1.4.11 asks 3:1 for that, and
+     --line above is 1.37:1 — invisible to a low-vision reader, and the surfaces are
+     only 1.03:1 apart so no fill difference covers for it. Solved the same way as the
+     layer colours: hue and chroma untouched, L is the lightest value that clears 3:1
+     on the page, the panel AND the canvas, with headroom for the two decimals.
+     --line stays soft on purpose — it draws container edges, which 1.4.11 does not
+     cover, and darkening it globally would coarsen the whole page for no gain.
+     Asserted in tokenContrast.test.ts. */
+  --line-control: oklch(0.63 0.008 250);
 
   /* InChI layer colors — one hue per layer, all at a matched lightness band.
      Lightness is solved, not eyeballed: each value is the LIGHTEST L that still
@@ -61,9 +70,10 @@
   --ink-inverse-faint: oklch(0.70 0.03 250);
   --line-inverse:      oklch(0.40 0.02 255);
 
-  /* The one alert accent: the word "public" in the feedback dialog's warning.
-     Sits on --bg-canvas at 5.6:1. */
+  /* The one alert accent: the word "public" in the feedback dialog's warning, and the
+     editor-failure notice. Sits on --bg-canvas at 5.6:1, on its own chip at 5.4:1. */
   --c-alert: oklch(0.52 0.19 25);
+  --c-alert-bg: oklch(0.97 0.03 25);
 
   --font-sans: "IBM Plex Sans", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
@@ -100,6 +110,23 @@ body {
      page's closing space itself, so the 8px gap above it stays what it was. */
   padding: 24px 32px 0;
 }
+/* Editor failure notice: the editor reported an error, or its internals are not the
+   shape the atom mapping reads. Neither is a modal — the canvas still draws, so the
+   message sits above it and stays put rather than interrupting or timing out. It names
+   what still works, because the visible symptom (an InChI box stuck on its placeholder)
+   otherwise reads as "my molecule is wrong". */
+.editor-error {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--c-alert);
+  border-radius: 6px;
+  background: var(--c-alert-bg);
+  color: var(--c-alert);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  line-height: 1.5;
+}
+
 /* ---------- Header ---------- */
 .header {
   display: flex;
@@ -174,7 +201,7 @@ body {
 .limitations-trigger {
   height: 32px;
   padding: 0 14px;
-  border: none;
+  border: 1px solid var(--line-control);
   border-radius: 999px;
   background: var(--line);
   color: var(--ink-soft);
@@ -201,7 +228,7 @@ body {
 .help-trigger {
   height: 32px;
   padding: 0 14px;
-  border: none;
+  border: 1px solid var(--line-control);
   border-radius: 999px;
   background: var(--line);
   color: var(--ink-soft);
@@ -443,7 +470,7 @@ body {
        does the work so the text keeps its own padding rhythm. */
     min-height: 44px;
     padding: 9px 14px;
-    border: 1px solid var(--line);
+    border: 1px solid var(--line-control);
     border-radius: 999px;
     white-space: nowrap;
   }

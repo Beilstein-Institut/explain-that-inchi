@@ -149,7 +149,13 @@ export type CLayerToken =
   // its flanking atoms like a hyphen does, but they are NOT bonded to each other —
   // segmentBonds never reads this token, so adjacency is unaffected.
   | { type: 'comma';  pos: number; leftLocal: number | null; rightLocal: number | null }
-  | { type: 'open';   pos: number; attachLocal: number | null; closeTokenIdx: number }
+  // The three optional fields are filled in by ConnectionText while rendering the
+  // '(' and read back when it reaches the matching ')', so both parens describe the
+  // same branch (research A2). They are render state, not tokenizer output — declared
+  // here rather than smuggled through the union with a cast, which is what the rest of
+  // this type is for.
+  | { type: 'open';   pos: number; attachLocal: number | null; closeTokenIdx: number;
+      bondPairs?: [number, number][]; branchPoint?: number; branchPoints?: number[] }
   | { type: 'close';  pos: number; openTokenIdx: number }
   | { type: 'other';  slice: string };
 

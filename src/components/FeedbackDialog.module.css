@@ -101,7 +101,7 @@ dialog.feedbackDialog::backdrop {
   font-size: var(--fs-body);
   line-height: 1.55;
   background: var(--bg-canvas);
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-control);
   border-radius: 6px;
   padding: 10px 12px;
   resize: vertical;
@@ -180,7 +180,7 @@ dialog.feedbackDialog::backdrop {
 /* Cancel button — secondary action */
 .cancelBtn {
   background: transparent;
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-control);
   color: var(--ink-soft);
   font-family: var(--font-sans);
   font-size: var(--fs-ui);

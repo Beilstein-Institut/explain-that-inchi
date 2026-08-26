@@ -17,6 +17,8 @@ import { InchiKeySection } from './components/InchiKeySection';
 import { Explanation } from './components/Explanation';
 import { parseInchiWithAux, remapAuxToPoolIds } from './lib/parseAuxMapping';
 import { isExplicitHydrogenLabel } from './lib/highlightUtils';
+import { checkEditorShape, readCanvasAtoms, setRenderDefaults, KetcherShapeError }
+  from './lib/ketcherEditor';
 import { useInchiStore } from './store';
 import { useKetcherHighlights } from './hooks/useKetcherHighlights';
 import { MOLECULES } from './data/molecules';
@@ -36,6 +38,11 @@ export default function App() {
   const [selectedMolId, setSelectedMolId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
+  // Set when the editor reports a failure, or when its internals are not the shape
+  // the atom mapping needs. Console-only was the previous behaviour: on a WASM or
+  // shape failure the InChI box simply sat on its placeholder forever with no
+  // explanation, which reads as 'my molecule is wrong', not 'the tool broke'.
+  const [editorError, setEditorError] = useState<string | null>(null);
   // smiles is fetched once per dialog-open (handleFeedbackOpen); undefined until the user
   // opens the dialog or if getSmiles() throws (D-12).
   const [previewSmiles, setPreviewSmiles] = useState<string | undefined>(undefined);
@@ -59,15 +66,25 @@ export default function App() {
 
   const handleInit = (ketcher: Ketcher) => {
     ketcherRef.current = ketcher;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window as any).ketcher = ketcher;
-    // Reset render settings to canonical defaults, overriding any stale localStorage
-    // values. The micro-mode editor exposes setOptions() on its legacy Raphaël editor
-    // object; bondLength (px) === microModeScale, default is 40px per Å.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (ketcher.editor as any).setOptions(
-      JSON.stringify({ bondLength: 40, bondLengthUnit: 'px', zoom: 1 }),
-    );
+    // Debug handle for the console, dev only. Shipping it pinned the whole editor to a
+    // global and handed the page an unintended public API.
+    if (import.meta.env.DEV) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).ketcher = ketcher;
+    }
+    // Every internal path the app reads, checked once here. A Ketcher upgrade that
+    // moves one of them otherwise yields a working editor whose highlights silently
+    // never appear — so it is reported at mount, not discovered at first hover.
+    const missing = checkEditorShape(ketcher);
+    if (missing) {
+      console.error(new KetcherShapeError(missing));
+      setEditorError(
+        'The molecule editor loaded, but this page cannot read its structure. ' +
+        'Drawing works; the InChI below will not update.',
+      );
+    }
+
+    setRenderDefaults(ketcher);
     setIsReady(true);
   };
 
@@ -193,8 +210,9 @@ export default function App() {
           // Both failure paths below blank the data. Whether that reads as "nothing
           // drawn yet" or "this structure was refused" depends entirely on whether
           // atoms are on the canvas — so ask the canvas, don't guess from the string.
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const hasAtoms = (ketcher.editor as any).render.ctab.molecule.atoms.size > 0;
+          // One read of the canvas; the three projections below are array work on it.
+          const canvasAtoms = readCanvasAtoms(ketcher);
+          const hasAtoms = canvasAtoms.length > 0;
           const FAILED = 'No InChI could be generated for this structure — check for unusual valences or unsupported atoms.';
 
           // D-02: rejected InChI blanks both inchi and inchiKey — asymmetric treatment
@@ -212,32 +230,20 @@ export default function App() {
           // parseInchiWithAux returns canonical → 0-based mol-file rank (from AuxInfo N: field).
           // Ketcher atom Pool IDs are NOT sequential from 0 — they are cumulative across draws.
           // We must read actual Pool IDs and remap rank → poolId so highlights.create() works.
-          const poolIds: number[] = [];
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (ketcher.editor as any).render.ctab.molecule.atoms.forEach((_: unknown, id: number) => poolIds.push(id));
+          const poolIds: number[] = canvasAtoms.map(a => a.poolId);
           // Collect explicit H atom pool IDs from Ketcher render struct (INCHI-05).
           // isExplicitHydrogenLabel, not label === 'H': deuterium and tritium come
           // through as their own labels ('D', 'T'), and this one pool feeds every
           // hydrogen-aware highlight in the app.
-          const hAtomPoolIds: number[] = [];
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (ketcher.editor as any).render.ctab.molecule.atoms.forEach(
-            (atom: { label: string }, id: number) => {
-              if (isExplicitHydrogenLabel(atom.label)) hAtomPoolIds.push(id);
-            }
-          );
+          const hAtomPoolIds: number[] = canvasAtoms
+            .filter(a => isExplicitHydrogenLabel(a.label))
+            .map(a => a.poolId);
           // Build live-atom coordinates for coordinate-based canonical→poolId remap.
           // For multi-component molecules, AuxInfo molfile rank order (which poolIds[rank]
           // assumes) diverges from pool-ID iteration order, so a rank→poolId index lookup
           // mismaps fragments. remapAuxToPoolIds matches by (x, -y) coordinate instead,
           // with iteration-order `poolIds` as the per-rank fallback (no regression).
-          const liveAtoms: { poolId: number; x: number; y: number }[] = [];
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (ketcher.editor as any).render.ctab.molecule.atoms.forEach(
-            (atom: { pp: { x: number; y: number } }, id: number) => {
-              liveAtoms.push({ poolId: id, x: atom.pp.x, y: atom.pp.y });
-            }
-          );
+          const liveAtoms: { poolId: number; x: number; y: number }[] = canvasAtoms;
           const actualAuxMap = remapAuxToPoolIds(
             result.auxMap,
             result.molfileCoords ?? [],
@@ -246,6 +252,11 @@ export default function App() {
           );
           // D-02: rejected key call produces '' — it does NOT blank the InChI result
           const inchiKey = keyResult.status === 'fulfilled' ? keyResult.value : '';
+          // A completed round trip is the only proof the editor works, so it is what
+          // clears the notice. Ketcher's errorHandler fires for transient things too (a
+          // molfile it cannot parse), and those must not pin a banner above the canvas
+          // forever. A genuine shape failure never reaches this line, so it persists.
+          setEditorError(null);
           useInchiStore.getState().setInchiData(result.inchi, result.layers, actualAuxMap, result.atomElements, hAtomPoolIds, inchiKey);
         } catch {
           // Discard if a newer draw event fired while this WASM call was in flight —
@@ -281,6 +292,8 @@ export default function App() {
       <KetcherPanel
         isReady={isReady}
         onInit={handleInit}
+        editorError={editorError}
+        onEditorError={setEditorError}
         structServiceProvider={structServiceProvider}
         selectedMolId={selectedMolId}
         onMolSelect={handleMolSelect}

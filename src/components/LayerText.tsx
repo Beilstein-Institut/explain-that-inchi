@@ -303,9 +303,9 @@ function ConnectionText({ text, fragCounts, layerIdx, pinnedSub }: { text: strin
           // leaves the rest dark.
           const branchPoints: number[] | undefined = attachCanon?.canonicals;
           // Store bondPairs + branch point on the open token for the close-paren to look up
-          (tokens[tokenIdx] as unknown as Record<string, unknown>)['_bondPairs'] = bondPairs;
-          (tokens[tokenIdx] as unknown as Record<string, unknown>)['_branchPoint'] = branchPoint;
-          (tokens[tokenIdx] as unknown as Record<string, unknown>)['_branchPoints'] = branchPoints;
+          token.bondPairs = bondPairs;
+          token.branchPoint = branchPoint;
+          token.branchPoints = branchPoints;
           if (bondPairs.length === 0) {
             // Comma-only branch — plain non-interactive span
             parts.push(<span key={key++}>{'('}</span>);
@@ -321,14 +321,14 @@ function ConnectionText({ text, fragCounts, layerIdx, pinnedSub }: { text: strin
         }
 
       } else if (token.type === 'close') {
-        const bondPairs: [number, number][] =
-          (tokens[token.openTokenIdx] as unknown as Record<string, unknown>)?.['_bondPairs'] as [number, number][] ?? [];
-        // branchPoint stashed by the matching open-paren — both parens carry the identical
-        // field so hovering '(' or ')' shows the same card (research A2).
-        const branchPoint =
-          (tokens[token.openTokenIdx] as unknown as Record<string, unknown>)?.['_branchPoint'] as number | undefined;
-        const branchPoints =
-          (tokens[token.openTokenIdx] as unknown as Record<string, unknown>)?.['_branchPoints'] as number[] | undefined;
+        // The matching open-paren filled these in on its own pass; both parens carry the
+        // identical values so hovering '(' or ')' shows the same card (research A2). An
+        // unmatched ')' leaves `open` undefined and falls through to the plain span.
+        const open = tokens[token.openTokenIdx];
+        const matched = open?.type === 'open' ? open : undefined;
+        const bondPairs: [number, number][] = matched?.bondPairs ?? [];
+        const branchPoint = matched?.branchPoint;
+        const branchPoints = matched?.branchPoints;
         if (bondPairs.length === 0) {
           parts.push(<span key={key++}>{')'}</span>);
         } else {

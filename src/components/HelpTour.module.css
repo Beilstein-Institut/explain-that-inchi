@@ -98,7 +98,7 @@
 /* Secondary nav button (Back) */
 .navBtn {
   background: transparent;
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-control);
   color: var(--ink-soft);
   font-family: var(--font-sans);
   font-size: var(--fs-ui);
