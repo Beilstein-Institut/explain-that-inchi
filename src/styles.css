@@ -330,13 +330,6 @@ body {
   align-items: center;
   gap: 8px;
 }
-.ketcher .toolbar .tool.active {
-  background: var(--ink);
-  color: var(--bg-canvas);
-}
-.ketcher .toolbar .tool:not(.active):hover {
-  background: var(--line-soft);
-}
 .canvas-wrap {
   position: relative;
   /* The grid dot was the one literal colour left outside :root. Derived from
@@ -418,22 +411,6 @@ body {
   padding: 3px 5px;
   border-radius: 3px;
 }
-.inchi-layer.active[data-layer="version"] { background: var(--c-version-bg); }
-.inchi-layer.active[data-layer="formula"] { background: var(--c-formula-bg); }
-.inchi-layer.active[data-layer="c"]       { background: var(--c-conn-bg); }
-.inchi-layer.active[data-layer="h"]       { background: var(--c-hydro-bg); }
-.inchi-layer.active[data-layer="q"]       { background: var(--c-charge-bg); }
-.inchi-layer.active[data-layer="p"]       { background: var(--c-proton-bg); }
-.inchi-layer.active[data-layer="b"],
-.inchi-layer.active[data-layer="t"],
-.inchi-layer.active[data-layer="m"],
-.inchi-layer.active[data-layer="s"] { background: var(--c-stereo-bg); }
-.inchi-layer.active[data-layer="i"]       { background: var(--c-isotope-bg); }
-.inchi-layer.active .inchi-subtoken:hover {
-  background: var(--bg-canvas);
-  box-shadow: inset 0 0 0 1.5px currentColor;
-}
-.explain .card.active::before { background: var(--accent); }
 @media (max-width: 900px) {
   .app { padding: 20px 16px 0; }
   /* Same arithmetic as the desktop rule: 16 + 2 inset, 32 + 12 below. */

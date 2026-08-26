@@ -9,26 +9,6 @@
   margin-top: 12px;
 }
 
-/* Section label row */
-.sectionLabel {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-  font-family: var(--font-mono);
-  font-size: var(--fs-micro);
-  letter-spacing: 0.14em;
-  color: var(--ink-faint);
-  text-transform: uppercase;
-}
-
-.hint {
-  margin-left: auto;
-  color: var(--ink-faint);
-  letter-spacing: 0;
-  text-transform: none;
-}
-
 /* InChI string display box */
 .inchiDisplay {
   background: var(--bg-canvas);

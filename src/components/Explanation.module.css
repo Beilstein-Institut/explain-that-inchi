@@ -58,29 +58,6 @@
   display: none;
 }
 
-/* Layer tag row (type label + swatch) — verbatim from styles.css .explain .layer-tag */
-.layerTag {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--font-mono);
-  font-size: var(--fs-micro);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--accent, var(--ink-soft));
-  margin-bottom: 8px;
-}
-
-/* Color swatch circle — verbatim from styles.css .explain .layer-tag .swatch */
-.swatch {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 2px;
-  background: var(--accent, var(--ink-faint));
-  flex-shrink: 0;
-}
-
 /* Layer title — verbatim from styles.css .explain .layer-title */
 .layerTitle {
   font-family: var(--font-sans);

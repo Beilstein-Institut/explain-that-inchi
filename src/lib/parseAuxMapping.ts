@@ -50,6 +50,7 @@ export function buildAtomElements(layers: Layer[]): Record<number, string> {
  * OPEN QUESTION (Assumption A2): if Ketcher 3.12.0 on Windows uses \r\n, the
  * caller (parseInchiWithAux) must account for that. Verify by drawing benzene
  * in the running app and logging: window.ketcher.getInchi(true).then(r => console.log(JSON.stringify(r)))
+ * (window.ketcher is a dev-build handle only — see the guard in App.tsx handleInit)
  */
 export function parseAuxMapping(auxBody: string, formulaText?: string): AuxMap {
   const parts = auxBody.split('/');
