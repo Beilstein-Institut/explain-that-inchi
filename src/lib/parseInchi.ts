@@ -30,7 +30,7 @@ export interface Layer {
 export type AuxMap = Record<number, number>; // canonical 1-based → Ketcher 0-based (per D-10)
 
 export interface SubHover {
-  kind: 'element' | 'atom' | 'stereo' | 'hAtoms' | 'mobileH' | 'bond' | 'branch';
+  kind: 'element' | 'atom' | 'stereo' | 'hAtoms' | 'mobileH' | 'bond' | 'branch' | 'siblings';
   el?: string;
   // Inclusive canonical ID range [lo, hi] for element hovers in multi-fragment formulas.
   // Restricts highlights to the hovered fragment or group of identical fragments.
@@ -73,6 +73,12 @@ export interface SubHover {
    *  (fragment offset already applied — never de-offset before storing; the card derives
    *  neighbours as the "other endpoint" and de-offsets for DISPLAY only, GAP-2). */
   incidentPairs?: [number, number][];
+
+  /** 'siblings' kind: the two atoms a branch-list comma sits between, GLOBAL canonicals
+   *  (fragment offset already applied). They share an attachment point and are NOT bonded
+   *  to each other — the highlight lights atoms only. One pair per fragment copy, mirroring
+   *  endpointPairs; the card describes the first. */
+  siblingPairs?: [number, number][];
 
   /** 'branch' kind: the GLOBAL canonical of the atom the branch hangs off (the branch-point).
    *  Explicit field rather than inferring direction from bondPairs[0][0] (research A1). */
@@ -139,12 +145,17 @@ export function parseConnectionBonds(text: string): [number, number][] {
 export type CLayerToken =
   | { type: 'atom';   start: number; end: number; localN: number }
   | { type: 'hyphen'; pos: number; leftLocal: number | null; rightLocal: number | null }
+  // A comma separates two sibling branches off the same attachment point. It carries
+  // its flanking atoms like a hyphen does, but they are NOT bonded to each other —
+  // segmentBonds never reads this token, so adjacency is unaffected.
+  | { type: 'comma';  pos: number; leftLocal: number | null; rightLocal: number | null }
   | { type: 'open';   pos: number; attachLocal: number | null; closeTokenIdx: number }
   | { type: 'close';  pos: number; openTokenIdx: number }
   | { type: 'other';  slice: string };
 
 // Internal type aliases for narrowing within the tokenizer
 type HyphenToken = Extract<CLayerToken, { type: 'hyphen' }>;
+type CommaToken  = Extract<CLayerToken, { type: 'comma' }>;
 type OpenToken   = Extract<CLayerToken, { type: 'open' }>;
 
 /**
@@ -169,9 +180,10 @@ export function tokenizeCLayerSeg(seg: string): CLayerToken[] {
       let j = i;
       while (j < seg.length && /\d/.test(seg[j])) j++;
       const localN = parseInt(seg.slice(i, j), 10);
-      // Fill rightLocal of the immediately preceding hyphen token
-      if (tokens.length > 0 && tokens[tokens.length - 1].type === 'hyphen') {
-        (tokens[tokens.length - 1] as HyphenToken).rightLocal = localN;
+      // Fill rightLocal of the immediately preceding hyphen or comma token
+      const prev = tokens[tokens.length - 1];
+      if (prev?.type === 'hyphen' || prev?.type === 'comma') {
+        (prev as HyphenToken | CommaToken).rightLocal = localN;
       }
       tokens.push({ type: 'atom', start: i, end: j, localN });
       lastLocal = localN;
@@ -194,8 +206,14 @@ export function tokenizeCLayerSeg(seg: string): CLayerToken[] {
         lastLocal = (tokens[openIdx] as OpenToken).attachLocal;
       }
       i++;
+    } else if (c === ',') {
+      // lastLocal is the atom that closed the previous branch — the atom the comma
+      // sits after. Left as-is so the next atom continues from the attachment point
+      // via segmentBonds' own stack, not from this token.
+      tokens.push({ type: 'comma', pos: i, leftLocal: lastLocal, rightLocal: null });
+      i++;
     } else {
-      // comma, semicolon (shouldn't appear — segments are pre-split), etc.
+      // semicolon (shouldn't appear — segments are pre-split), etc.
       tokens.push({ type: 'other', slice: c });
       i++;
     }
@@ -221,7 +239,9 @@ export function segmentBonds(tokens: CLayerToken[]): Extract<CLayerToken, { type
       stack.push(last);
     } else if (t.type === 'close') {
       last = stack.pop() ?? null;
-    } else if (t.type === 'other' && t.slice === ',') {
+    } else if (t.type === 'comma') {
+      // A sibling branch restarts from the attachment point, not from the atom that
+      // ended the previous branch.
       if (stack.length) last = stack[stack.length - 1] as number | null;
     }
   }

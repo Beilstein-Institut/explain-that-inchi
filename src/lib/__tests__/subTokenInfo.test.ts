@@ -390,3 +390,26 @@ describe('subTokenInfo — h-layer N* hAtoms card (GAP-19, screenshot-1 regressi
     expect(card.body).toMatch(/in each of the 2 identical components \(components 3 and 4\)/);
   });
 });
+
+// CLYR-06: the comma card. Choline's measured c-layer "1-6(2,3)4-5-7" — the comma sits
+// between two methyls that both hang off the nitrogen and are not bonded to each other.
+describe('subTokenInfo — branch-list comma', () => {
+  it('names both flanking atoms and denies a bond between them', () => {
+    const info = subTokenInfo({ kind: 'siblings', siblingPairs: [[2, 3]] }, {});
+    expect(info).not.toBeNull();
+    expect(info!.title).toMatch(/Connection layer/);
+    expect(info!.body).toContain('2');
+    expect(info!.body).toContain('3');
+    expect(info!.body).toMatch(/not bonded/i);
+  });
+
+  it('de-offsets the displayed numbers for a later component', () => {
+    const info = subTokenInfo(
+      { kind: 'siblings', siblingPairs: [[9, 10]], fragmentOffset: 6, componentIndex: 1 },
+      {},
+    );
+    expect(info!.body).toContain('3');
+    expect(info!.body).toContain('4');
+    expect(info!.body).not.toContain('10');
+  });
+});

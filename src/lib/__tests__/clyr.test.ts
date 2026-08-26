@@ -679,3 +679,122 @@ describe('CLYR-05 N-star branch — bondPairs covers both fragment instances', (
     expect(specs[0].bonds).toHaveLength(1);
   });
 });
+
+// ---------------------------------------------------------------------------
+// CLYR-06: the comma inside a branch list
+//
+// Choline, measured: InChI=1S/C5H14NO/c1-6(2,3)4-5-7/h7H,4-5H2,1-3H3/q+1
+// c-layer "1-6(2,3)4-5-7" — atom 6 is the quaternary nitrogen, atoms 1/2/3 its
+// methyls. The comma in "(2,3)" separates two sibling branches off atom 6; the
+// atoms it sits between are NOT bonded to each other, so it highlights a pair of
+// ATOMS, never a bond. That is what distinguishes it from the hyphen.
+// ---------------------------------------------------------------------------
+
+const CHOLINE_C = '1-6(2,3)4-5-7';
+// canonical 1..7 → pool 0..6
+const auxMapCholine: AuxMap = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6 };
+// Real adjacency of the segment, mapped to pool IDs — index in this array is the bond ID.
+const bondsCholine: Array<[number, number]> = segmentBonds(tokenizeCLayerSeg(CHOLINE_C))
+  .map((b) => [auxMapCholine[b.leftLocal!], auxMapCholine[b.rightLocal!]] as [number, number]);
+
+/** Index of the Nth 'comma' token. */
+function commaTokenIndex(tokens: CLayerToken[], nth: number): number {
+  let seen = 0;
+  for (let i = 0; i < tokens.length; i++) {
+    if (tokens[i].type === 'comma') {
+      if (seen === nth) return i;
+      seen++;
+    }
+  }
+  throw new Error(`no comma token #${nth}`);
+}
+
+describe('tokenizeCLayerSeg — choline "1-6(2,3)4-5-7" comma token', () => {
+  const tokens = tokenizeCLayerSeg(CHOLINE_C);
+
+  it('emits a typed comma token, not an inert "other"', () => {
+    expect(tokens.some((t) => t.type === 'other' && t.slice === ',')).toBe(false);
+    expect(commaTokenIndex(tokens, 0)).toBeGreaterThan(0);
+  });
+
+  it('carries the flanking atoms 2 and 3', () => {
+    const comma = tokens[commaTokenIndex(tokens, 0)];
+    if (comma.type !== 'comma') throw new Error('not a comma token');
+    expect(comma.leftLocal).toBe(2);
+    expect(comma.rightLocal).toBe(3);
+  });
+
+  it('carries the source position of the "," character', () => {
+    const comma = tokens[commaTokenIndex(tokens, 0)];
+    if (comma.type !== 'comma') throw new Error('not a comma token');
+    expect(CHOLINE_C[comma.pos]).toBe(',');
+  });
+
+  // The comma must not disturb adjacency: 2 and 3 both bond to 6, never to each other.
+  it('leaves the bond walk unchanged', () => {
+    expect(pairKeys(segmentBonds(tokens).map((b) => [b.leftLocal!, b.rightLocal!])))
+      .toEqual(new Set(['1-6', '6-2', '6-3', '6-4', '4-5', '5-7']));
+  });
+});
+
+describe('CLYR-06 comma hover — highlights the two flanking atoms, no bond', () => {
+  it('siblingPairs [[2,3]] lights pools 1 and 2', () => {
+    const struct = makeMockStruct(bondsCholine);
+    const specs = buildSubHoverSpecs(
+      { kind: 'siblings', siblingPairs: [[2, 3]] },
+      auxMapCholine,
+      {},
+      [],
+      cLayer,
+      struct,
+      resolveVarFn,
+    );
+    expect(specs).toHaveLength(1);
+    expect(specs[0].atoms).toEqual([1, 2]);
+    // The two siblings are not bonded to each other — a bond here would be a lie.
+    expect(specs[0].bonds).toEqual([]);
+    expect(specs[0].color).toBe('--c-conn');
+  });
+
+  it('fans every fragment copy of an N* layer', () => {
+    const struct = makeMockStruct(bondsCholine);
+    const specs = buildSubHoverSpecs(
+      { kind: 'siblings', siblingPairs: [[2, 3], [4, 5]] },
+      auxMapCholine,
+      {},
+      [],
+      cLayer,
+      struct,
+      resolveVarFn,
+    );
+    expect(specs[0].atoms).toEqual([1, 2, 3, 4]);
+  });
+
+  it('empty siblingPairs → returns []', () => {
+    const struct = makeMockStruct(bondsCholine);
+    const specs = buildSubHoverSpecs(
+      { kind: 'siblings', siblingPairs: [] },
+      auxMapCholine,
+      {},
+      [],
+      cLayer,
+      struct,
+      resolveVarFn,
+    );
+    expect(specs).toEqual([]);
+  });
+
+  it('skips a sibling missing from the auxMap rather than emitting undefined', () => {
+    const struct = makeMockStruct(bondsCholine);
+    const specs = buildSubHoverSpecs(
+      { kind: 'siblings', siblingPairs: [[2, 99]] },
+      auxMapCholine,
+      {},
+      [],
+      cLayer,
+      struct,
+      resolveVarFn,
+    );
+    expect(specs[0].atoms).toEqual([1]);
+  });
+});

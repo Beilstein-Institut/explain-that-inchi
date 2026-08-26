@@ -249,3 +249,50 @@ describe('LayerText ConnectionText — REAL InChI c-layer hover spans (CLYR-03 r
     expect(hit!.branchPoints).toBeUndefined();
   });
 });
+
+// CLYR-06: the comma in a branch list. Choline's measured c-layer is "1-6(2,3)4-5-7"
+// (InChI=1S/C5H14NO/c1-6(2,3)4-5-7/h7H,4-5H2,1-3H3/q+1) — atom 6 is the quaternary
+// nitrogen, 2 and 3 two of its methyls. The comma separates two sibling branches, so
+// it names a pair of atoms that share an attachment but are NOT bonded to each other.
+describe('LayerText ConnectionText — branch-list comma (CLYR-06)', () => {
+  const CHOLINE_C = '1-6(2,3)4-5-7';
+
+  function commaSpans(container: HTMLElement): HTMLElement[] {
+    return Array.from(container.querySelectorAll('span')).filter((s) => s.textContent === ',');
+  }
+
+  it('choline "1-6(2,3)4-5-7": the comma is interactive and emits kind="siblings"', () => {
+    const { container } = render(
+      <LayerText layer={cLayer} rawText={CHOLINE_C} fragCounts={[7]} />
+    );
+    const commas = commaSpans(container);
+    expect(commas.length).toBe(1);
+
+    fireEvent.mouseEnter(commas[0]);
+    const hit = lastHit();
+    expect(hit).toBeDefined();
+    expect(hit!.kind).toBe('siblings');
+    expect(pairKeys(hit!.siblingPairs)).toEqual(new Set(['2-3']));
+  });
+
+  // A comma between a branch that ENDS in one atom and a branch that STARTS at another
+  // takes the atoms either side of it in the string, exactly as the hyphen does.
+  it('"1-6(2-8,3)4": the comma takes the atoms flanking it, 8 and 3', () => {
+    const { container } = render(
+      <LayerText layer={cLayer} rawText="1-6(2-8,3)4" fragCounts={[8]} />
+    );
+    fireEvent.mouseEnter(commaSpans(container)[0]);
+    expect(pairKeys(lastHit()!.siblingPairs)).toEqual(new Set(['8-3']));
+  });
+
+  it('multi-fragment "1-6(2,3)4;1-2(3,4)5": frag-2 comma is offset-applied', () => {
+    const { container } = render(
+      <LayerText layer={cLayer} rawText="1-6(2,3)4;1-2(3,4)5" fragCounts={[6, 5]} />
+    );
+    const commas = commaSpans(container);
+    expect(commas.length).toBe(2);
+    fireEvent.mouseEnter(commas[1]);
+    // Fragment 2 starts after 6 heavy atoms, so its local 3,4 are canonical 9,10.
+    expect(pairKeys(lastHit()!.siblingPairs)).toEqual(new Set(['9-10']));
+  });
+});

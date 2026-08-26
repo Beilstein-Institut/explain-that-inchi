@@ -73,6 +73,9 @@ function isSubPinned(hit: SubHover, pinnedSub: SubHover | null): boolean {
   if (hit.kind === 'branch' && pinnedSub.kind === 'branch') {
     return JSON.stringify(hit.bondPairs) === JSON.stringify(pinnedSub.bondPairs);
   }
+  if (hit.kind === 'siblings' && pinnedSub.kind === 'siblings') {
+    return JSON.stringify(hit.siblingPairs) === JSON.stringify(pinnedSub.siblingPairs);
+  }
   if (hit.kind === 'stereo' && pinnedSub.kind === 'stereo') return hit.atom === pinnedSub.atom;
   if (hit.kind === 'hAtoms' && pinnedSub.kind === 'hAtoms') {
     return JSON.stringify(hit.atoms) === JSON.stringify(pinnedSub.atoms);
@@ -338,8 +341,32 @@ function ConnectionText({ text, fragCounts, layerIdx, pinnedSub }: { text: strin
           );
         }
 
+      } else if (token.type === 'comma') {
+        if (token.leftLocal == null || token.rightLocal == null) {
+          // Malformed — a comma with nothing on one side of it
+          parts.push(<span key={key++}>{','}</span>);
+        } else {
+          // Same fanning as the hyphen path: one pair per fragment copy for an N* layer.
+          const siblingPairs: [number, number][] = canonicalFn
+            ? (() => {
+                const lc = canonicalFn(token.leftLocal);
+                const rc = canonicalFn(token.rightLocal);
+                const ls = lc.canonicals ?? [lc.canonical];
+                const rs = rc.canonicals ?? [rc.canonical];
+                return ls.map((l, i) => [l, rs[i]] as [number, number]);
+              })()
+            : [[token.leftLocal + offset, token.rightLocal + offset]];
+          const hit: SubHover = { kind: 'siblings', siblingPairs, fragmentOffset, componentIndex, fragMult };
+          parts.push(
+            <span key={key++} className={[styles.inchiSubtoken, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')}
+              {...subHoverProps(hit, layerIdx)}>
+              {','}
+            </span>
+          );
+        }
+
       } else {
-        // 'other' token — comma, or any unrecognised character
+        // 'other' token — any unrecognised character
         parts.push(<span key={key++}>{token.slice}</span>);
       }
     }

@@ -533,6 +533,19 @@ export function buildSubHoverSpecs(
       return [{ atoms: [], bonds, rgroupAttachmentPoints: [], color: resolveVarFn('--c-conn') }];
     }
 
+    case 'siblings': {
+      // CLYR-06: a branch-list comma. The two atoms either side of it hang off the same
+      // attachment point but are not bonded to each other, so this lights atoms and never
+      // a bond — the hyphen's job is the bond, and conflating them would teach the notation
+      // wrong. Pairs are already global; one per fragment copy for an N* layer.
+      const kAtomIds = (subHover.siblingPairs ?? [])
+        .flat()
+        .map(c => auxMap[c])
+        .filter((id): id is number => id !== undefined);
+      if (kAtomIds.length === 0) return [];
+      return [{ atoms: kAtomIds, bonds: [], rgroupAttachmentPoints: [], color: resolveVarFn('--c-conn') }];
+    }
+
     case 'branch': {
       // CLYR-03 (D-03/D-04): parenthesis hover highlights all bonds in the branch (incl. nested
       // sub-branches and the stem bond). bondPairs: all hyphen pairs within the branch token range.

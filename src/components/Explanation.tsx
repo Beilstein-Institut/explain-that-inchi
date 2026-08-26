@@ -77,6 +77,7 @@ export function Explanation() {
     stereo: 't',
     bond: 'c',
     branch: 'c',
+    siblings: 'c',
   };
   const subAccent = layer
     ? accentVar

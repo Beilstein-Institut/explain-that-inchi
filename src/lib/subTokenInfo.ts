@@ -152,6 +152,18 @@ export function subTokenInfo(
       return { title: 'Connection layer - Bond', body };
     }
 
+    case 'siblings': {
+      // The comma's whole meaning is "another branch off the same atom" — so the card has
+      // to say what the highlight cannot: these two are siblings, not neighbours.
+      const off = sub.fragmentOffset ?? 0;
+      const [a, b] = (sub.siblingPairs ?? [[0, 0]])[0];
+      const body =
+        `Atoms ${a - off} and ${b - off}${componentMarker(sub)} are not bonded to each other — ` +
+        `this comma separates two branches hanging off the same atom. Each one continues from ` +
+        `the atom before the opening parenthesis.`;
+      return { title: 'Connection layer - Branch separator', body };
+    }
+
     case 'branch': {
       // Branch-point is the explicit field (research A1); fall back to the shared left endpoint.
       const off = sub.fragmentOffset ?? 0;
