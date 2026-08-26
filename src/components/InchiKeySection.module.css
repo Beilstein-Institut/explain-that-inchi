@@ -23,7 +23,11 @@
   letter-spacing: -0.005em;
   word-break: break-all;
   cursor: default;
-  min-height: calc(1.6em + 16px);
+  /* One line of --fs-string, plus this box's own padding and 1px border —
+     box-sizing is border-box, so all three have to be in the number or the
+     floor sits under the filled height and the box changes size when the
+     placeholder gives way to the string. */
+  min-height: calc(1.6em + 18px);
   position: relative;
 }
 
@@ -70,7 +74,9 @@
   font-size: var(--fs-body);
   display: block;
   text-align: center;
-  padding: 4px 0;
+  /* Fill the line the box reserves, so the placeholder sits centred in it rather
+     than riding at the top. Padding would grow the box back; line-height cannot. */
+  line-height: calc(1.6 * var(--fs-string));
 }
 
 /* Copy-to-clipboard button (D-11 / PLSH-04 parity) */

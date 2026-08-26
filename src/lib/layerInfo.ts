@@ -110,6 +110,17 @@ export const DEFAULT_INFO = {
   accent: 'var(--ink-faint)',
 };
 
+// Shown in place of DEFAULT_INFO while the canvas is empty: there are no layers to
+// hover yet, so the card names the prerequisite instead of prompting for a gesture
+// that cannot succeed. Deliberately not a second copy of the InChI box's placeholder
+// — that one promises the string, this one promises the explanation.
+export const EMPTY_INFO = {
+  title: 'Nothing to explain yet',
+  blurb:
+    'Draw a molecule in the editor above. Its InChI appears below, split into colour-coded layers — hover any one to see what it encodes.',
+  accent: 'var(--ink-faint)',
+};
+
 // ---------------------------------------------------------------------------
 // subscript — verbatim from layers-info.js lines 184-189
 // ---------------------------------------------------------------------------

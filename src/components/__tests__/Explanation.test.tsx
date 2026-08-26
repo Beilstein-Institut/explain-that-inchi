@@ -15,6 +15,7 @@ import { render, screen } from '@testing-library/react';
 import { Explanation } from '../Explanation';
 import { subTokenInfo } from '../../lib/subTokenInfo';
 import type { Layer, SubHover } from '../../lib/parseInchi';
+import { DEFAULT_INFO, EMPTY_INFO } from '../../lib/layerInfo';
 
 const REAL_INCHI = 'InChI=1S/C3H7NO2/c1-2(4)3(5)6/h2H,4H2,1H3,(H,5,6)/t2-/m0/s1';
 
@@ -212,5 +213,34 @@ describe('Explanation — invariant guards (SUBEX-09 read-only + verbatim passth
     render(<Explanation />);
     const body = subTokenInfo(mock.subHover, mock.atomElements)!.body;
     expect(screen.getByText(body)).toBeInTheDocument();
+  });
+});
+
+describe('Explanation — empty canvas', () => {
+  // "Hover any layer" is a lie when there are no layers to hover. The card has to
+  // name the prerequisite instead, and go back to the hover prompt once one exists.
+  it('asks for a molecule when no layers are parsed', () => {
+    mock.layers = [];
+    render(<Explanation />);
+    expect(screen.getByText(EMPTY_INFO.title)).toBeInTheDocument();
+    expect(screen.getByText(EMPTY_INFO.blurb)).toBeInTheDocument();
+    expect(screen.queryByText(DEFAULT_INFO.title)).not.toBeInTheDocument();
+  });
+
+  it('restores the hover prompt once a molecule is drawn', () => {
+    render(<Explanation />); // beforeEach leaves ALANINE_LAYERS in place
+    expect(screen.getByText(DEFAULT_INFO.title)).toBeInTheDocument();
+    expect(screen.queryByText(EMPTY_INFO.title)).not.toBeInTheDocument();
+  });
+
+  // The two states share the idle branch, so the accent must not regress either.
+  it('keeps the idle accent in both states', () => {
+    for (const layers of [[], ALANINE_LAYERS]) {
+      mock.layers = layers;
+      const { container, unmount } = render(<Explanation />);
+      const card = container.querySelector('[style*="--accent"]') as HTMLElement;
+      expect(card.style.getPropertyValue('--accent')).toBe('var(--ink-faint)');
+      unmount();
+    }
   });
 });

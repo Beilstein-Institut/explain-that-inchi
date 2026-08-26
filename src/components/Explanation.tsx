@@ -10,7 +10,7 @@
 import { useInchiStore } from '../store';
 import type { KeyHoverZone } from '../store';
 import { formulaFragmentCounts } from '../lib/parseInchi';
-import { LAYER_INFO, DEFAULT_INFO, readingFor, swatchVar } from '../lib/layerInfo';
+import { LAYER_INFO, DEFAULT_INFO, EMPTY_INFO, readingFor, swatchVar } from '../lib/layerInfo';
 import { subTokenInfo } from '../lib/subTokenInfo';
 import type { SubHover, LayerType } from '../lib/parseInchi';
 import { KEY_ZONE_COPY } from '../lib/inchiKeyInfo';
@@ -94,6 +94,8 @@ export function Explanation() {
   // Inputs are parsed InChI data from WASM — no user-controlled free text.
   const reading = layer ? readingFor(layer, atomElements, fragCounts) : '';
 
+  const idleInfo = layers.length === 0 ? EMPTY_INFO : DEFAULT_INFO;
+
   return (
     // aria-live: focusing a chunk swaps this card's contents. Sighted users see the
     // change; a screen-reader user needs it announced, or focus moves silently.
@@ -173,14 +175,16 @@ export function Explanation() {
           )}
         </div>
       ) : (
-        /* D-10: Idle state — DEFAULT_INFO with ink-faint left border (title only) */
+        /* D-10: Idle state — ink-faint left border, title only. An empty canvas has
+           no layers to hover, so it gets EMPTY_INFO; DEFAULT_INFO returns as soon as
+           a molecule is drawn. */
         <div
           data-tour-id="explanation"
           className={styles.card}
           style={{ '--accent': 'var(--ink-faint)' } as React.CSSProperties}
         >
-          <h3 className={styles.layerTitle}>{DEFAULT_INFO.title}</h3>
-          <p className={styles.layerBody}>{DEFAULT_INFO.blurb}</p>
+          <h3 className={styles.layerTitle}>{idleInfo.title}</h3>
+          <p className={styles.layerBody}>{idleInfo.blurb}</p>
         </div>
       )}
 
