@@ -1,18 +1,19 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.6
-milestone_name: Connection-layer cards
+milestone_name: unmilestoned
 current_phase: 19
 status: milestone_shipped
 stopped_at: Session paused 2026-08-26 — 8 commits on dev, HEAD 6914965, both remotes synced, tree clean, 712 tests green. Nothing live; browser verification of the new wasm load path is the blocking human action
-last_updated: "2026-08-26T08:43:43.340Z"
-last_activity: 2026-08-26
-last_activity_desc: "Eight commits on dev: T&C version line, string-box height fix + EMPTY_INFO, c-layer comma hover, wasm binary load (8.57->5.28MB), harden (--line-control + ketcherEditor adapter), legend contrast, touch adaptations keyed to pointer, dead-CSS removal"
+last_updated: "2026-08-31T07:28:25.981Z"
+last_activity: 2026-08-13
+last_activity_desc: Layer chips + picker cull (260813-exd), PRODUCT.md refresh, /impeccable audit + fixes, Help tour repairs. HEAD 17b0f35, both remotes synced
 progress:
   total_phases: 6
   completed_phases: 6
   total_plans: 11
   completed_plans: 11
+  percent: 100
 current_phase_name: null
 ---
 
@@ -74,6 +75,7 @@ See: .planning/PROJECT.md (updated 2026-06-30)
 | 260813-aud | `/impeccable audit` + fixes: real `<label htmlFor>` for the feedback textarea (was a styled `<p>`, announced unlabelled); touch targets — legend rows to 28px min-height, preset and action pills to 44px on ≤900px; `.canvas-wrap` dot grid derived from `--line` (last literal colour outside `:root`); HelpTour callout centring reads one `effectiveWidth()`. Detector 0 findings. Deferred: the 7.3MB gzip first-load split | 2026-08-13 | 26acdb2 | — |
 | 260813-tour | Help tour repairs, from two user reports. (1) The description card rendered off-screen: `CALLOUT_HEIGHT = 180` was a guess, the card is ~214px, and `calloutPosition` anchored by `bottom` so the real height decided the top edge — replayed at -26px off the top and 826px in an 800px viewport. Now measured after paint and always anchored top/left. (2) No tour step for the explanation card, and no `data-tour-id` on it at all — added to all five render branches; step 7 of 9, between InChIKey and legend. `STEPS` exported so tests derive the count | 2026-08-13 | 17b0f35 | — |
 | 260811-b69 | Harden client-side data removal on leave — full localStorage/sessionStorage wipe, guarded IndexedDB/Cache sweeps, COI-gated SW unregister, opt-in Clear-Site-Data leave endpoint + footer toggle, honest privacy §3(3)(4) | 2026-08-11 | e097453 | [260811-b69-client-side-data-removal-on-leave-harden](./quick/260811-b69-client-side-data-removal-on-leave-harden/) |
+| 18 | Typeset: real Plex Mono italic for mobile-H; drop italic on not-present note | 2026-08-31 | 6d212f9 | — |
 
 ## Deferred Items
 
@@ -114,6 +116,7 @@ Items acknowledged and deferred at v1.3 milestone close on 2026-06-19 (same v1.0
   The chips were reverted (4b5f9dc) and restored (338d797) for a bisect that was
   never run. Pre-chip tree for bisecting is `4b5f9dc`. Blocks the first-load split
   honestly: that change touches the same mount path.
+
 - Not blocking, but outward-facing: the repository is private, so the in-app
   Limitations link and the Send feedback button both 404 for the public.
   (Phase 19's chemist accuracy gate is closed — v1.6 shipped 2026-06-30.)
@@ -129,14 +132,18 @@ Last activity: 2026-08-13 — Layer chips + picker cull (260813-exd), PRODUCT.md
 
 1. **Make the repository public** — one setting, and it fixes both broken outward
    links at once (Limitations, Send feedback). Nothing in the repo can fix these.
+
 2. **Reload and confirm the Help tour**: the description card should appear, and
    step 7 of 9 should stop on the explanation card. Both fixes are unverified in a
    browser — there is none in this environment.
+
 3. **Diagnose the mount failure** (see Blockers) before anyone attempts the
    first-load split.
+
 4. **Rebuild and redeploy the container.** Carried since 2026-08-11 and still
    true: the published privacy policy describes an on-leave purge production does
    not perform, and none of today's work is live either.
+
 5. `/gsd-new-milestone` if the candidates in ROADMAP.md's Post-v1.6 section are
    worth scoping as v1.7.
 
