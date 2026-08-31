@@ -13,6 +13,12 @@ import '@fontsource/ibm-plex-sans/latin-600.css';
 import '@fontsource/ibm-plex-mono/latin-400.css';
 import '@fontsource/ibm-plex-mono/latin-500.css';
 import '@fontsource/ibm-plex-mono/latin-600.css';
+// The one italic cut. The mobile-H token in the h-layer is set in italic
+// (InchiSection.module.css .hydroMobile) — a colour-independent second channel
+// for a distinction colour alone was carrying. Without the real cut the browser
+// shears the upright, which is visibly wrong at --fs-string. Not unused: delete
+// this and the token silently degrades to a synthesised slant.
+import '@fontsource/ibm-plex-mono/latin-400-italic.css';
 import './styles.css';
 import { Root } from './components/Root';
 import { registerLeaveWipe } from './lib/leaveWipe';

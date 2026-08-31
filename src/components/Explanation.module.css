@@ -78,9 +78,11 @@
 }
 
 /* UAT-13: "not present in this molecule" note on the legend-hover static card. */
+/* No italic: size and colour already separate this from .layerBody on two axes,
+   and Plex Sans Italic is not among the loaded cuts — a third channel here would
+   have cost a font file to render a 13px aside in a synthesised slant. */
 .notPresent {
   font-size: var(--fs-ui);
-  font-style: italic;
   color: var(--ink-faint);
   margin: 0 0 14px;
 }
