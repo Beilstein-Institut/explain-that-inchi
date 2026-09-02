@@ -413,3 +413,34 @@ describe('subTokenInfo — branch-list comma', () => {
     expect(info!.body).not.toContain('10');
   });
 });
+
+// quick 260902-gxx: /b tokens are double bonds. Fixture: fumaric acid
+// InChI=1S/C4H4O4/c5-3(6)1-2-4(7)8/h1-2H,(H,5,6)(H,7,8)/b2-1+ (maleic: /b2-1-).
+describe('subTokenInfo bondStereo', () => {
+  it('names both atoms and calls the sign a canonical parity, not E/Z itself', () => {
+    const info = subTokenInfo({ kind: 'bondStereo', stereoBond: [2, 1], sign: '+' }, {});
+    expect(info).not.toBeNull();
+    expect(info!.title).toMatch(/double-bond/i);
+    expect(info!.body).toContain('Atoms 2 and 1');
+    expect(info!.body).toMatch(/double bond/);
+    expect(info!.body).toMatch(/canonical/);
+    expect(info!.body).toMatch(/NOT the E\/Z descriptor/);
+    // The v1.5 chemistry invariant, carried to the b-layer: never assert the sign IS a descriptor.
+    expect(info!.body).not.toMatch(/\+ is E\b/);
+    expect(info!.body).not.toMatch(/\bis Z\b/);
+  });
+
+  it('describes an unspecified bond for the ? sign', () => {
+    const info = subTokenInfo({ kind: 'bondStereo', stereoBond: [2, 1], sign: '?' }, {});
+    expect(info!.body).toMatch(/unspecified or unknown/);
+  });
+
+  it('de-offsets the displayed numbers for a later component', () => {
+    const info = subTokenInfo(
+      { kind: 'bondStereo', stereoBond: [6, 5], sign: '-', fragmentOffset: 4, componentIndex: 1 },
+      {},
+    );
+    expect(info!.body).toContain('Atoms 2 and 1 (component 2)');
+    expect(info!.body).not.toContain('6');
+  });
+});

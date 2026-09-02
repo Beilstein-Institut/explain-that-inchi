@@ -282,7 +282,8 @@ export type BondStereoEntry = { a1: number; a2: number; sign: string };
 
 export function parseBondStereoEntries(text: string): BondStereoEntry[] {
   const entries: BondStereoEntry[] = [];
-  for (const m of text.matchAll(/(\d+)-(\d+)([+-])/g)) {
+  // '?' is a double bond whose geometry is unspecified or unknown — still one token.
+  for (const m of text.matchAll(/(\d+)-(\d+)([+\-?])/g)) {
     entries.push({ a1: parseInt(m[1], 10), a2: parseInt(m[2], 10), sign: m[3] });
   }
   return entries;

@@ -351,6 +351,9 @@ export function buildHighlightSpecs(
       const minusAtoms: number[] = [];
       const plusBonds: number[] = [];
       const minusBonds: number[] = [];
+      // '?' — geometry unspecified: lit in the neutral stereo colour, never as a minus.
+      const neutralAtoms: number[] = [];
+      const neutralBonds: number[] = [];
       let cumulativeOffsetB = 0;
       fragmentTextsB.forEach((fragText, fi) => {
         for (const { a1, a2, sign } of parseBondStereoEntries(fragText)) {
@@ -358,13 +361,12 @@ export function buildHighlightSpecs(
           const kA2 = auxMap[a2 + cumulativeOffsetB];
           if (kA1 === undefined || kA2 === undefined) continue;
           const bid = struct.findBondId(kA1, kA2);
-          if (sign === '+') {
-            plusAtoms.push(kA1, kA2);
-            if (bid !== null) plusBonds.push(bid);
-          } else {
-            minusAtoms.push(kA1, kA2);
-            if (bid !== null) minusBonds.push(bid);
-          }
+          const [atoms, bonds] =
+            sign === '+' ? [plusAtoms, plusBonds]
+            : sign === '-' ? [minusAtoms, minusBonds]
+            : [neutralAtoms, neutralBonds];
+          atoms.push(kA1, kA2);
+          if (bid !== null) bonds.push(bid);
         }
         cumulativeOffsetB += fragmentAtomCountsB[fi] ?? 0;
       });
@@ -375,6 +377,9 @@ export function buildHighlightSpecs(
       }
       if (minusAtoms.length > 0 || minusBonds.length > 0) {
         specs.push({ atoms: minusAtoms, bonds: minusBonds, rgroupAttachmentPoints: [], color: resolveVarFn('--c-stereo-minus') });
+      }
+      if (neutralAtoms.length > 0 || neutralBonds.length > 0) {
+        specs.push({ atoms: neutralAtoms, bonds: neutralBonds, rgroupAttachmentPoints: [], color: resolveVarFn('--c-stereo') });
       }
       return specs;
     }
@@ -576,10 +581,24 @@ export function buildSubHoverSpecs(
     }
 
     case 'stereo': {
-      const kAtomId = auxMap[subHover.atom!];
+      if (subHover.atom == null || subHover.sign == null) return [];
+      const kAtomId = auxMap[subHover.atom];
       if (kAtomId === undefined) return [];
-      const color = resolveVarFn(stripVar(parityColor(subHover.sign!)));
+      const color = resolveVarFn(stripVar(parityColor(subHover.sign)));
       return [{ atoms: [kAtomId], bonds: [], rgroupAttachmentPoints: [], color }];
+    }
+
+    case 'bondStereo': {
+      // A /b token is one double bond with a parity: light BOTH ends and the bond between
+      // them in the sign's colour. Mirrors the layer-wide case 'b' one bond at a time.
+      if (!subHover.stereoBond) return [];
+      const [c1, c2] = subHover.stereoBond;
+      const kA1 = auxMap[c1];
+      const kA2 = auxMap[c2];
+      if (kA1 === undefined || kA2 === undefined) return [];
+      const bid = struct.findBondId(kA1, kA2);
+      const color = resolveVarFn(stripVar(parityColor(subHover.sign ?? '')));
+      return [{ atoms: [kA1, kA2], bonds: bid !== null ? [bid] : [], rgroupAttachmentPoints: [], color }];
     }
 
     case 'hAtoms': {

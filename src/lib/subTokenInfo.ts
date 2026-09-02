@@ -107,6 +107,24 @@ export function subTokenInfo(
       return { title: 'Tetrahedral stereocenter', body };
     }
 
+    case 'bondStereo': {
+      // One /b token = one stereogenic double bond. The sign is a canonical parity, and the
+      // card must not sell it as the E/Z descriptor: for fumaric (+) and maleic (−) acid the two
+      // coincide, but the parity is taken over canonical neighbour numbers, not CIP priorities,
+      // so in general they need not. De-offset for DISPLAY only (GAP-2).
+      const off = sub.fragmentOffset ?? 0;
+      const [a, b] = sub.stereoBond ?? [0, 0];
+      const sign = sub.sign ?? '';
+      const where = `Atoms ${a - off} and ${b - off}${componentMarker(sub)}`;
+      const body =
+        sign === '?'
+          ? `${where} are joined by a double bond whose geometry is unspecified or unknown — the ? records that no E/Z assignment is made for this bond.`
+          : `${where} are the two ends of a double bond whose geometry is fixed: the groups on each end cannot rotate past each other. ` +
+            `The ${sign} is the parity of the substituents under InChI's canonical neighbour numbering — it is NOT the E/Z descriptor itself. ` +
+            `For simple alkenes + often coincides with E and − with Z, but that follows from the canonical numbers, not from CIP priorities, so it is not guaranteed.`;
+      return { title: 'Double-bond stereo', body };
+    }
+
     case 'atom': {
       // Neighbour set = the "other endpoint" of each incident pair, deduped + sorted (ring
       // closures can repeat a neighbour across pair directions). All GLOBAL; de-offset for

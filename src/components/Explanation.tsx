@@ -75,6 +75,7 @@ export function Explanation() {
     hAtoms: 'h',
     mobileH: 'h',
     stereo: 't',
+    bondStereo: 'b',
     bond: 'c',
     branch: 'c',
     siblings: 'c',

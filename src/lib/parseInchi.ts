@@ -30,7 +30,7 @@ export interface Layer {
 export type AuxMap = Record<number, number>; // canonical 1-based → Ketcher 0-based (per D-10)
 
 export interface SubHover {
-  kind: 'element' | 'atom' | 'stereo' | 'hAtoms' | 'mobileH' | 'bond' | 'branch' | 'siblings';
+  kind: 'element' | 'atom' | 'stereo' | 'bondStereo' | 'hAtoms' | 'mobileH' | 'bond' | 'branch' | 'siblings';
   el?: string;
   // Inclusive canonical ID range [lo, hi] for element hovers in multi-fragment formulas.
   // Restricts highlights to the hovered fragment or group of identical fragments.
@@ -79,6 +79,12 @@ export interface SubHover {
    *  to each other — the highlight lights atoms only. One pair per fragment copy, mirroring
    *  endpointPairs; the card describes the first. */
   siblingPairs?: [number, number][];
+
+  /** 'bondStereo' kind: the two ends of a stereogenic double bond from the /b layer, GLOBAL
+   *  canonicals (fragment offset already applied), in the order the InChI writes them. The
+   *  token `2-1+` is one bond with a parity sign — NOT a stereocentre at atom 1, which is what
+   *  the t-layer regex used to make of it. `sign` carries '+', '-' or '?'. */
+  stereoBond?: [number, number];
 
   /** 'branch' kind: the GLOBAL canonical of the atom the branch hangs off (the branch-point).
    *  Explicit field rather than inferring direction from bondPairs[0][0] (research A1). */

@@ -77,6 +77,9 @@ function isSubPinned(hit: SubHover, pinnedSub: SubHover | null): boolean {
     return JSON.stringify(hit.siblingPairs) === JSON.stringify(pinnedSub.siblingPairs);
   }
   if (hit.kind === 'stereo' && pinnedSub.kind === 'stereo') return hit.atom === pinnedSub.atom;
+  if (hit.kind === 'bondStereo' && pinnedSub.kind === 'bondStereo') {
+    return JSON.stringify(hit.stereoBond) === JSON.stringify(pinnedSub.stereoBond);
+  }
   if (hit.kind === 'hAtoms' && pinnedSub.kind === 'hAtoms') {
     return JSON.stringify(hit.atoms) === JSON.stringify(pinnedSub.atoms);
   }
@@ -103,8 +106,8 @@ export function LayerText({ layer, rawText, fragCounts = [], layerIdx = 0, pinne
   switch (layer.type) {
     case 'formula': return <FormulaText text={rawText} layerIdx={layerIdx} pinnedSub={pinnedSub} />;
     case 'c':       return <ConnectionText text={rawText} fragCounts={fragCounts} layerIdx={layerIdx} pinnedSub={pinnedSub} />;
-    case 't':
-    case 'b':       return <ParityText text={rawText} fragCounts={fragCounts} layerIdx={layerIdx} pinnedSub={pinnedSub} />;
+    case 't':       return <ParityText text={rawText} fragCounts={fragCounts} layerIdx={layerIdx} pinnedSub={pinnedSub} />;
+    case 'b':       return <BLayerText text={rawText} fragCounts={fragCounts} layerIdx={layerIdx} pinnedSub={pinnedSub} />;
     case 'h':       return <HLayerText text={rawText} fragCounts={fragCounts} layerIdx={layerIdx} pinnedSub={pinnedSub} />;
     default:        return <>{rawText}</>;
   }
@@ -457,6 +460,54 @@ function ParityText({ text, fragCounts, layerIdx, pinnedSub }: { text: string; f
   segments.forEach((seg, fi) => {
     if (fi > 0) parts.push(<span key={key++}>;</span>);
     renderSegment(seg, cumOffset);
+    cumOffset += fragCounts[fi] ?? 0;
+  });
+  return <>{parts}</>;
+}
+
+// b-layer: each token `a1-a2sign` is ONE double bond with an E/Z-type parity, so the whole
+// token is one hover target carrying both ends. It must not share ParityText: that regex
+// reads `2-1+` as a stereocentre at atom 1 and leaves the `2` inert. Same shape as
+// ParityText otherwise — `;` fragments, cumulative canonical offset, inert text between.
+function BLayerText({ text, fragCounts, layerIdx, pinnedSub }: { text: string; fragCounts: number[]; layerIdx: number; pinnedSub: SubHover | null }) {
+  const parts: React.ReactNode[] = [];
+  let key = 0;
+  const multi = text.includes(';');
+
+  const renderSegment = (seg: string, offset: number, fi: number) => {
+    let last = 0;
+    for (const m of seg.matchAll(/(\d+)-(\d+)([+\-?])/g)) {
+      const start = m.index ?? 0;
+      if (start > last) parts.push(<span key={key++}>{seg.slice(last, start)}</span>);
+      const a1 = parseInt(m[1], 10) + offset;
+      const a2 = parseInt(m[2], 10) + offset;
+      const sign = m[3];
+      const signClass = sign === '+' ? styles.parityPlus : sign === '-' ? styles.parityMinus : '';
+      const hit: SubHover = {
+        kind: 'bondStereo',
+        stereoBond: [a1, a2],
+        sign,
+        ...(multi ? { fragmentOffset: offset, componentIndex: fi } : {}),
+      };
+      parts.push(
+        <span
+          key={key++}
+          className={[signClass, styles.inchiSubtoken, isSubPinned(hit, pinnedSub) ? styles.pinned : ''].filter(Boolean).join(' ')}
+          {...subHoverProps(hit, layerIdx)}
+        >
+          {m[0]}
+        </span>
+      );
+      last = start + m[0].length;
+    }
+    if (last < seg.length) parts.push(<span key={key++}>{seg.slice(last)}</span>);
+  };
+
+  const segments = text.split(';');
+  let cumOffset = 0;
+  segments.forEach((seg, fi) => {
+    if (fi > 0) parts.push(<span key={key++}>;</span>);
+    renderSegment(seg, cumOffset, fi);
     cumOffset += fragCounts[fi] ?? 0;
   });
   return <>{parts}</>;

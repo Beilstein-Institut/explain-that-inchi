@@ -1103,3 +1103,62 @@ describe('buildSubHoverSpecs', () => {
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// quick 260902-gxx: the /b sub-token is a double bond — both ends AND the bond, parity colour.
+// Fixture: fumaric acid InChI=1S/C4H4O4/c5-3(6)1-2-4(7)8/h1-2H,(H,5,6)(H,7,8)/b2-1+
+// ---------------------------------------------------------------------------
+describe('buildSubHoverSpecs bondStereo', () => {
+  const FUMARIC = 'InChI=1S/C4H4O4/c5-3(6)1-2-4(7)8/h1-2H,(H,5,6)(H,7,8)/b2-1+';
+  const bLayer = parseInchi(FUMARIC).find(l => l.type === 'b')!;
+  // canonical → ketcher pool id; 8 heavy atoms
+  const fumaricMap: AuxMap = { 1: 10, 2: 11, 3: 12, 4: 13, 5: 14, 6: 15, 7: 16, 8: 17 };
+
+  function struct(bondId: number | null): StructLike {
+    return {
+      findBondId: vi.fn().mockReturnValue(bondId),
+      bonds: { forEach: vi.fn() },
+      atoms: { forEach: vi.fn() },
+    } as unknown as StructLike;
+  }
+
+  it('lights both atoms and the bond between them in the plus colour', () => {
+    const s = struct(42);
+    const specs = buildSubHoverSpecs(
+      { kind: 'bondStereo', stereoBond: [2, 1], sign: '+' },
+      fumaricMap, {}, [], bLayer, s, resolveVarFn,
+    );
+    expect(specs).toEqual([{ atoms: [11, 10], bonds: [42], rgroupAttachmentPoints: [], color: '--c-stereo-plus' }]);
+    expect(s.findBondId).toHaveBeenCalledWith(11, 10);
+  });
+
+  it('uses the minus colour for a minus sign and tolerates a missing bond id', () => {
+    const specs = buildSubHoverSpecs(
+      { kind: 'bondStereo', stereoBond: [2, 1], sign: '-' },
+      fumaricMap, {}, [], bLayer, struct(null), resolveVarFn,
+    );
+    expect(specs[0].bonds).toEqual([]);
+    expect(specs[0].atoms).toEqual([11, 10]);
+    expect(specs[0].color).toBe('--c-stereo-minus');
+  });
+
+  it('returns nothing when an end is not in the auxMap', () => {
+    const specs = buildSubHoverSpecs(
+      { kind: 'bondStereo', stereoBond: [2, 99], sign: '+' },
+      fumaricMap, {}, [], bLayer, struct(42), resolveVarFn,
+    );
+    expect(specs).toEqual([]);
+  });
+
+  it('layer-wide: an unspecified (?) bond is lit neutral, not as a minus', () => {
+    const qLayer: Layer = { ...bLayer, text: '2-1?' };
+    const layers: Layer[] = [
+      { type: 'formula', prefix: '', text: 'C4H4O4', atoms: [], bonds: [] },
+      qLayer,
+    ];
+    const specs = buildHighlightSpecs(qLayer, null, fumaricMap, {}, [], layers, struct(42), resolveVarFn);
+    expect(specs).toHaveLength(1);
+    expect(specs[0].color).toBe('--c-stereo');
+    expect(specs[0].bonds).toEqual([42]);
+  });
+});
