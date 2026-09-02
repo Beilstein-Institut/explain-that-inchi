@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "timestamp": "2026-08-26T08:42:14.643Z",
+  "timestamp": "2026-09-02T12:34:24.898Z",
   "phase": null,
   "phase_name": null,
   "phase_dir": null,
@@ -9,141 +9,33 @@
   "total_tasks": null,
   "status": "paused",
   "context": "default",
-  "context_reason": "No active milestone since v1.6. This session ran as conversational questions plus four /impeccable passes (audit, optimize, harden, adapt, polish) and one direct design request. Eight commits on dev, HEAD 6914965, pushed to BOTH remotes. Tree clean. tsc -b clean, 712 tests green, detector 0 findings, build clean. master still at 2b7720d.",
+  "context_reason": "No active milestone since v1.6 shipped. Work since the 2026-08-26 handoff was five /gsd-quick tasks on dev (13 commits, HEAD b6dbf9b, pushed to origin/dev). Tree clean except three untracked files. tsc -b clean, lint 0 problems, 731 tests green, npm audit 0 vulnerabilities. master still at 2b7720d.",
   "completed_tasks": [
-    {
-      "id": "fe11d0d",
-      "name": "Dated version line added to the Terms & Conditions (Version 11.08.2026), after the numbered terms rather than after the MIT/third-party appendix",
-      "status": "done",
-      "commit": "fe11d0d"
-    },
-    {
-      "id": "9fda5ed",
-      "name": "String boxes no longer resize on the first atom (min-height now covers padding+border; placeholder fills the reserved line via line-height). EMPTY_INFO replaces the 'Hover any layer' lie on an empty canvas",
-      "status": "done",
-      "commit": "9fda5ed"
-    },
-    {
-      "id": "07a303c",
-      "name": "c-layer branch-list comma is hoverable: new 'comma' token + 'siblings' SubHover kind, highlights the two flanking atoms and never a bond",
-      "status": "done",
-      "commit": "07a303c"
-    },
-    {
-      "id": "aa60971",
-      "name": "Indigo wasm loads as a binary via ketcher-standalone/dist/binaryWasm instead of a 21MB inlined base64 worker. Cold load 8.57MB -> 5.28MB gzip",
-      "status": "done",
-      "commit": "aa60971"
-    },
-    {
-      "id": "114c966",
-      "name": "Harden: --line-control token for WCAG 1.4.11 on 7 controls; lib/ketcherEditor.ts is the only door into Ketcher internals with checkEditorShape() at init; typed 'open' token fields; visible editor-failure notice; window.ketcher dev-only. as any 13 -> 3",
-      "status": "done",
-      "commit": "114c966"
-    },
-    {
-      "id": "ce5eb20",
-      "name": "Legend present-vs-absent separation on four axes (present desc -> --ink-soft, absent swatch becomes a hollow ring, name weight steps down); presence styling moved from JSX ternaries into CSS via --layer-color",
-      "status": "done",
-      "commit": "ce5eb20"
-    },
-    {
-      "id": "0bd09ab",
-      "name": "Touch adaptations keyed to (pointer: coarse) not max-width; legend gained a tap path (was unreachable on iOS); pin-release hint adapts to input; landscape-phone canvas; narrow legend reflow",
-      "status": "done",
-      "commit": "0bd09ab"
-    },
-    {
-      "id": "6914965",
-      "name": "Deleted 15 CSS rules the CSS-module migration made unmatchable (.inchi-layer x12, .ketcher .toolbar x2, .explain x1) plus 4 stranded module classes. index.css 11.20 -> 10.65 kB",
-      "status": "done",
-      "commit": "6914965"
-    }
+    {"id": "18", "name": "Typeset the mobile-H token in a real Plex Mono italic; drop italic on the not-present note", "status": "done", "commit": "6d212f9"},
+    {"id": "260902-gxx", "name": "b-layer sub-token modelled as a double bond: new SubHover kind 'bondStereo' ([a1,a2] + sign), BLayerText replaces ParityText for case 'b', canvas lights both ends and the bond, 'Double-bond stereo' card says canonical parity and NOT E/Z, '?' bonds go to the neutral stereo colour. Fixes REVIEW H-01 / W-03", "status": "done", "commit": "27663f9"},
+    {"id": "260902-gxx", "name": "setInchiData clears hoverIdx and subHover so a molecule swap cannot leave the InChI strip fully dimmed. Fixes REVIEW W-01", "status": "done", "commit": "09dc51a"},
+    {"id": "260902-hrp", "name": "Lint to 0 warnings (useKetcherHighlights deps listed; stale eslint-disable in ketcherEditor.ts removed)", "status": "done", "commit": "9806032"},
+    {"id": "260902-hrp", "name": ".nvmrc = 22, engines.node = 22.x (matches Dockerfile node:22-bookworm-slim); npm test passes NODE_OPTIONS=--no-experimental-webstorage so the suite is green on Node 25 without env fiddling", "status": "done", "commit": "af47f98"},
+    {"id": "260902-hrp", "name": "npm audit fix, lockfile only (browserslist, nanoid, dev tree) -> 0 vulnerabilities", "status": "done", "commit": "73359c3"},
+    {"id": "260902-hzh", "name": "Legend inert while canvas is empty: Legend.tsx show handler returns early when layers.length === 0, before any store write. User report: hovering a legend row with no molecule changed the explanation card", "status": "done", "commit": "4c53ba7"},
+    {"id": "260902-i2t", "name": "Legend greyed out while canvas is empty: data-empty attribute on the legend card, rows tabIndex -1, CSS mirrors .inchiDisplay[data-empty] (opacity .45, --line-soft border, pointer-events none). cssProbe.rule() now escapes regex metacharacters and accepts a rule after a comment", "status": "done", "commit": "6292eee"}
   ],
-  "remaining_tasks": [
-    {
-      "id": "b-layer-model",
-      "name": "The b-layer is modelled as if it were the t-layer. ParityText's regex /(\\d+)([-+?])/g matches only a number followed by a sign, so in 'b2-1+' it emits {kind:'stereo', atom:1} and swallows the leading 2 as inert text. But b2-1+ names a DOUBLE BOND between atoms 2 and 1, not a stereocentre at atom 1. Diagnosed from src/components/LayerText.tsx:426-453, never fixed. Fixture: InChI=1S/C4H4O4/c5-3(6)1-2-4(7)8/h1-2H,(H,5,6)(H,7,8)/b2-1+ (fumaric acid).",
-      "status": "not_started"
-    }
-  ],
-  "blockers": [
-    {
-      "description": "Undiagnosed browser mount failure: createRoot twice on #root, RulerArea throwing SVGLength. Two hypotheses tested and falsified, never bisected. Pre-chip tree for a bisect is 4b5f9dc.",
-      "type": "technical",
-      "workaround": "Avoided entirely this session: the 38% first-load reduction came from wasm packaging, which does not touch the mount path. The remaining lazy-boundary split (App -> KetcherPanel) is still gated on this, but is now worth far less than it was."
-    }
-  ],
-  "async_jobs": [],
+  "remaining_tasks": [],
+  "blockers": [],
   "human_actions_pending": [
-    {
-      "action": "Open the app in a browser and confirm the editor still mounts and computes an InChI",
-      "context": "The wasm load path changed (aa60971). The chain is verified statically and over HTTP - worker 200, wasm 200, magic bytes \\0asm, Vite rewrote the worker's lookup to the hashed base-prefixed URL - but no browser exists in this environment. If the editor fails to mount, the single revert is src/App.tsx:6.",
-      "blocking": true
-    },
-    {
-      "action": "Eyeball six passes' worth of unseen visual change",
-      "context": "--line-control borders on 7 controls, the legend's hollow rings and reweighted rows, the editor-failure notice, the box-height fix, the comma hover, and the touch rules. None has been rendered. Worth a pass at desktop width, one phone in both orientations, and an iPad (the pointer:coarse rules are exactly what emulators report differently from hardware).",
-      "blocking": false
-    },
-    {
-      "action": "Decide whether Ketcher's toolbar should be themed",
-      "context": "6914965 deleted .ketcher .toolbar .tool.active/:hover as unmatchable - the selector is literal in index.css while the element carries _ketcher_g9xnf. Someone intended to theme the toolbar and it silently never applied. Wiring it up would change how the editor looks, which is redesign, so it was deleted rather than fixed.",
-      "blocking": false
-    },
-    {
-      "action": "Make the repository public",
-      "context": "github.com/Beilstein-Institut/explain-that-inchi is private, which 404s both the Limitations dialog's LIMITATIONS.md link and the Send feedback button. Carried from the previous handoff. One setting fixes both; nothing in the repo can.",
-      "blocking": false
-    },
-    {
-      "action": "Rebuild and redeploy the container",
-      "context": "Carried since 2026-08-11 and now more valuable: the published privacy policy still describes an on-leave purge production does not perform, AND the 38% first-load reduction is not live. Note the Dockerfile now precompresses .wasm - without that step the new load path is WORSE than what it replaced (11.8MB uncompressed vs 7.17MB of gzipped base64).",
-      "blocking": false
-    },
-    {
-      "action": "Curl __leave through the upstream proxy after deploying",
-      "context": "The proxy's HTTP Basic gate may 401 the beacon; a 401 carries no Clear-Site-Data header, so the purge silently does nothing. curl -sI -u eti -X POST https://cheminfo.beilstein.org/explain-that-inchi/__leave | grep -iE '^(HTTP|clear-site-data)'",
-      "blocking": false
-    },
-    {
-      "action": "Take the GitHub Pages site down",
-      "context": "The workflow is gone (df4121d) but the gh-pages branch still exists on origin, so a stale copy is served with no __leave endpoint. Disable Pages in Settings, then: git push origin --delete gh-pages",
-      "blocking": false
-    },
-    {
-      "action": "Decide whether dev merges to master",
-      "context": "master is at 2b7720d; all eight commits live on dev only. Nothing about them is provisional except the browser verification above.",
-      "blocking": false
-    }
+    {"action": "Browser-verify the b-layer hover on fumaric/maleic acid and prostaglandin E2 presets: one hover target per bond token, both atoms plus the bond lit in the parity colour, card says canonical parity not E/Z", "context": "Quick 260902-gxx is unit-tested against real getInchi() fixtures but the live Ketcher canvas was never driven in this environment", "blocking": false},
+    {"action": "Browser-verify the empty-canvas legend: greyed at 0.45 with ring swatches still discernible, rows skipped by Tab, hover does nothing until a molecule exists", "context": "Quick 260902-hzh + 260902-i2t; the swatch legibility under the card-level opacity is a screen judgement", "blocking": false},
+    {"action": "Browser-verify the binary Indigo wasm load path (aa60971, from the 2026-08-26 session) still works in a fresh profile with COOP/COEP headers", "context": "Carried over from the previous handoff; still the only unverified runtime change with failure potential", "blocking": true},
+    {"action": "Decide what to do with three untracked files: .planning/REVIEW.md (2026-06-15 full-tree code review; H-01, W-01, W-03 are now fixed by 260902-gxx), docs/cicag-distillate-article.md and .docx (draft CICAG article about the tool)", "context": "Left untracked on purpose by this handoff; commit, move, or drop is the author's call", "blocking": false},
+    {"action": "Merge or fast-forward master from dev when the browser checks pass, then rebuild the Docker image and redeploy by hand", "context": "master is at 2b7720d; everything since 2026-08 lives only on dev. No CI deploy exists", "blocking": false}
   ],
   "decisions": [
-    {
-      "decision": "--line stays soft at 1.37:1; a separate --line-control token carries the 3:1 boundary",
-      "rationale": "WCAG 1.4.11 covers UI components, not decorative container edges. Darkening --line globally would have coarsened 25 container borders across a deliberately soft page for no standards gain, and darkening the pills' --line FILL instead would have broken --ink-soft's 4.5:1 on top of it. Asserted both ways in tokenContrast.test.ts, including that --line is deliberately under 3:1."
-    },
-    {
-      "decision": "Absent legend rows keep their text at 4.5:1 and are separated by shape and weight instead",
-      "rationale": "They are focusable and open their own explanation card, so they are ACTIVE controls and WCAG 1.4.3's incidental-text exception does not apply. --ink-faint is 5.20:1 on the card; the lightest AA-legal value is L=0.56 at 4.58:1, a barely perceptible gain for the last of the headroom. Spent the effect on a hollow swatch ring and a weight step instead."
-    },
-    {
-      "decision": "The Dockerfile now gzips .wasm, overriding a documented decision in two files",
-      "rationale": "Both files excluded .wasm to protect streaming compilation, which cost nothing while the wasm was inlined and never fetched. Fetched for real, the exclusion would ship 11.8MB uncompressed - worse than the 7.17MB of gzipped base64 it replaces. Content-Encoding is transfer-level: the browser inflates before WebAssembly.instantiateStreaming reads, and Content-Type is what streaming needs. Verified the emitted worker does use instantiateStreaming with an ArrayBuffer fallback."
-    },
-    {
-      "decision": "Touch target size follows (pointer: coarse); layout still follows max-width",
-      "rationale": "Keying targets to width served a 1024px iPad 32px mouse pills and a 700px desktop window 44px finger pills - both backwards. Enumerated per control rather than as one `button` base rule, because the InChI layer chunks are inline spans carrying role=button from lib/keyboardProps and a blanket min-height would inflate the line boxes of the string the page is about."
-    },
-    {
-      "decision": "src/testing/cssProbe.ts landed with the first CSS-invariant test, not in the polish commit",
-      "rationale": "History reads better when the shared reader is introduced where it is first needed. The 'consolidated my own duplication' version was an artifact of the order the work happened in, not of the change."
-    },
-    {
-      "decision": "Deleted the unmatchable .ketcher .toolbar rules rather than wiring them up",
-      "rationale": "Making them work would change how the editor looks, which is redesign, not the cleanup pass that found them. Flagged for a separate decision."
-    }
+    {"decision": "b-layer token is ONE hover target carrying both bond ends (kind 'bondStereo'), not two 'stereo' atoms", "rationale": "The '-' between atom numbers in /b is a separator, not a parity sign; ParityText mis-signed the first atom of every pair (REVIEW H-01)", "phase": "quick-260902-gxx"},
+    {"decision": "The /b card calls the sign a canonical parity and explicitly says it is NOT the E/Z descriptor", "rationale": "Same chemical-correctness rule as /t: parity comes from canonical numbering + geometry, not CIP", "phase": "quick-260902-gxx"},
+    {"decision": "Empty-canvas legend is both inert (handler guard) and visibly greyed (CSS), mirroring the InChI box; the explanation card itself is untouched", "rationale": "Two separate user reports; the guard fixes behaviour, the greying communicates it. Card precedence logic must stay identical once a molecule exists (UAT-13)", "phase": "quick-260902-hzh/i2t"},
+    {"decision": "Pin Node 22 in .nvmrc/engines and bake --no-experimental-webstorage into npm test", "rationale": "Node 25 ships a global localStorage that shadows happy-dom's and breaks the leaveWipe tests", "phase": "quick-260902-hrp"}
   ],
-  "uncommitted_files": [],
-  "next_action": "Open the app in a browser and confirm the editor mounts and computes an InChI - the wasm load path changed and nothing here can verify it. If that passes, the b-layer modelling bug in remaining_tasks is the sharpest open piece of work, and it is a real correctness defect rather than polish.",
-  "context_notes": "Three process failures this session, all worth carrying. (1) I ran `git checkout` on an uncommitted file to undo a mutation test and wiped a whole pass's edits to KetcherPanel.tsx. Mutation-test against a scratch copy, or commit first. (2) My hunk-staging helper used git diff -U3 while I had inspected at -U0, so adjacent hunks from different logical changes merged and I committed a broken commit 6 (tsc: Cannot find name 'show'). Caught only because I verified each commit in isolation by stashing the remainder - do that, always. (3) My own audit's grep missed three controls with `border: none` and a --line fill, and separately flagged .mol-item as dead CSS when it is built by string concatenation at KetcherPanel.tsx:101 - deleting on that evidence would have stripped the preset picker's styling. Verify an 'unused' claim against how the thing is actually constructed. Carried forward and repeatedly useful: a guard is worthless until you try to break it. Every new guard this session was mutation-tested by reverting the fix and watching the test fail; that is how the segmentBonds comma regression and the two staging errors were caught."
+  "uncommitted_files": [".planning/REVIEW.md (untracked)", "docs/cicag-distillate-article.md (untracked)", "docs/cicag-distillate-article.docx (untracked)"],
+  "next_action": "Run the app (npm run dev) and do the browser checks listed in human_actions_pending, starting with the wasm load path and the fumaric acid /b hover. Then decide on the three untracked files.",
+  "context_notes": "Session was a run of small /gsd-quick tasks driven by user reports and the old REVIEW.md, not milestone work. Every quick task has PLAN + SUMMARY under .planning/quick/260902-*/ and a row in STATE.md's Quick Tasks table. Nothing is half-finished. The three blocking constraints from the 2026-08-26 handoff still apply and are repeated in .continue-here.md."
 }
