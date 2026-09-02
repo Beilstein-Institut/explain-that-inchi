@@ -4,12 +4,15 @@
   "version": "1.2.0",
   "license": "MIT",
   "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest"
+    "test": "NODE_OPTIONS=--no-experimental-webstorage vitest"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.2.7",
