@@ -77,10 +77,12 @@ export const useInchiStore = create<InchiState>()(
       keyHoverKind: null,
       legendHover: null,
       inchiError: null,
-      // CR-01: reset keyHoverKind on every data transition. setInchiData fires only
-      // after a debounced structure change; at that point a stale key-hover (from an
-      // emptied key or a preset swap) must be dropped so it cannot mask the panel.
-      setInchiData: (inchi, layers, auxMap, atomElements, hAtomPoolIds = [], inchiKey = '') => set({ inchi, layers, auxMap, atomElements, hAtomPoolIds, inchiKey, keyHoverKind: null, pinned: null, inchiError: null }),
+      // CR-01: every transient hover field is dropped on a data transition. setInchiData
+      // fires only after a debounced structure change; at that point a stale key-hover
+      // (from an emptied key or a preset swap) must not mask the panel, and a stale
+      // hoverIdx pointing past the new layer count would dim the whole strip — every
+      // chunk isDim, none isActive — until the mouse happens to move (REVIEW W-01).
+      setInchiData: (inchi, layers, auxMap, atomElements, hAtomPoolIds = [], inchiKey = '') => set({ inchi, layers, auxMap, atomElements, hAtomPoolIds, inchiKey, hoverIdx: null, subHover: null, keyHoverKind: null, pinned: null, inchiError: null }),
       // Same blanking as a data transition, plus the reason. One code path for both
       // failure modes (generator rejection, unparseable result) so they cannot drift.
       setInchiFailure: (message) => set({

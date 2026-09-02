@@ -32,6 +32,23 @@ describe('useInchiStore', () => {
     expect(state.subHover).toBeNull();
   });
 
+  // REVIEW W-01 / quick 260902-gxx: a hoverIdx left over from a molecule with more layers
+  // points past the new array, so every chunk renders dimmed and none active until the
+  // mouse moves. The data transition must drop both transient hover fields.
+  it('setInchiData clears a stale hoverIdx and subHover', () => {
+    useInchiStore.setState({ hoverIdx: 5, subHover: { kind: 'element', el: 'C' } });
+    const fakeLayers: Layer[] = [
+      { type: 'version', prefix: '', text: '1S', atoms: [], bonds: [] },
+      { type: 'formula', prefix: '', text: 'CH4', atoms: [1], bonds: [] },
+    ];
+
+    useInchiStore.getState().setInchiData('InChI=1S/CH4/h1H4', fakeLayers, { 1: 0 }, { 1: 'C' });
+
+    const state = useInchiStore.getState();
+    expect(state.hoverIdx).toBeNull();
+    expect(state.subHover).toBeNull();
+  });
+
   it('setInchiData updates inchi, layers, and auxMap', () => {
     const fakeLayers: Layer[] = [
       { type: 'version', prefix: '', text: '1S', atoms: [], bonds: [] },
