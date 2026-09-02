@@ -58,6 +58,16 @@
   display: none;
 }
 
+/* Empty state — same treatment as .inchiDisplay[data-empty] in InchiSection.module.css:
+   the legend is inert while nothing is drawn, and this is what says so. The rows are
+   already in their "absent" styling underneath, so this dims the whole card once rather
+   than each row twice. */
+.legendCard[data-empty="true"] {
+  opacity: 0.45;
+  border-color: var(--line-soft);
+  pointer-events: none;
+}
+
 /* Layer title — verbatim from styles.css .explain .layer-title */
 .layerTitle {
   font-family: var(--font-sans);

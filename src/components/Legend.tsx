@@ -50,9 +50,16 @@ export function Legend({ activeType }: LegendProps) {
   const layers = useInchiStore(state => state.layers);
   const presentTypes = new Set(layers.map(l => l.type));
   const layerIndexByType = new Map(layers.map((l, i) => [l.type, i]));
+  // Empty canvas: the legend is inert (see `show`), and the string boxes above already
+  // say so for themselves with data-empty — same attribute, same dim, same one rule.
+  const isEmpty = layers.length === 0;
 
   return (
-    <div className={`${expStyles.card} ${expStyles.legendCard}`} data-tour-id="legend">
+    <div
+      className={`${expStyles.card} ${expStyles.legendCard}`}
+      data-tour-id="legend"
+      data-empty={isEmpty ? 'true' : undefined}
+    >
       {/* UAT-13: legend header (swatch dot + "Layer legend · hover any row") removed. */}
       {ALL_LAYERS.map(l => {
         const present = presentTypes.has(l.type);
@@ -83,8 +90,9 @@ export function Legend({ activeType }: LegendProps) {
               ...(isActive ? { background: `var(--c-${swatchVar(l.type)}-bg)` } : {}),
             } as React.CSSProperties}
             // Focusable text, not a button: focus shows the layer's card exactly as
-            // hover does, and there is nothing further to activate.
-            tabIndex={0}
+            // hover does, and there is nothing further to activate. While the canvas
+            // is empty a focus would do nothing, so the rows leave the tab order.
+            tabIndex={isEmpty ? -1 : 0}
             onMouseEnter={show}
             onFocus={show}
             // Touch has no hover, and iOS Safari does not reliably move focus to a

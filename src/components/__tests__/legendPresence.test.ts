@@ -65,3 +65,19 @@ describe('the legend separates present from absent on four axes', () => {
     expect(tsx).not.toContain("present ? color :");
   });
 });
+
+// quick 260902-i2t: the empty-canvas dim must stay in step with the string boxes' — one
+// treatment for the three "no molecule yet" surfaces, not three drifting ones.
+describe('the empty legend dims exactly like the empty InChI box', () => {
+  const EXPL = readCss('components/Explanation.module.css');
+  const INCHI = readCss('components/InchiSection.module.css');
+  const legend = rule(EXPL, '.legendCard[data-empty="true"]');
+  const box = rule(INCHI, '.inchiDisplay[data-empty="true"]');
+
+  it('shares opacity, border colour and pointer-events with .inchiDisplay[data-empty]', () => {
+    for (const prop of ['opacity', 'border-color', 'pointer-events']) {
+      expect(declOf(legend, prop)).toBeDefined();
+      expect(declOf(legend, prop)).toBe(declOf(box, prop));
+    }
+  });
+});

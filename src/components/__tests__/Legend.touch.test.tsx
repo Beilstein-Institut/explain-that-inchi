@@ -110,3 +110,26 @@ describe('the legend is inert while the canvas is empty', () => {
     expect(spies.setLegendHover).toHaveBeenCalled();
   });
 });
+
+// quick 260902-i2t: the inertness has to be visible. The string boxes above already dim
+// themselves with data-empty; the legend card carries the same attribute, and its rows
+// leave the tab order while a focus would do nothing.
+describe('the legend looks inert while the canvas is empty', () => {
+  it('carries data-empty and takes every row out of the tab order', () => {
+    mockLayers = [];
+    const { container } = render(<Legend activeType={undefined} />);
+    const card = container.querySelector('[data-tour-id="legend"]') as HTMLElement;
+    expect(card.getAttribute('data-empty')).toBe('true');
+    const rows = container.querySelectorAll('div[tabindex]');
+    expect(rows.length).toBe(11);
+    for (const r of rows) expect(r.getAttribute('tabindex')).toBe('-1');
+  });
+
+  it('drops the attribute and restores focusability once a molecule is drawn', () => {
+    mockLayers = BENZENE;
+    const { container } = render(<Legend activeType={undefined} />);
+    const card = container.querySelector('[data-tour-id="legend"]') as HTMLElement;
+    expect(card.hasAttribute('data-empty')).toBe(false);
+    expect(container.querySelectorAll('div[tabindex="0"]').length).toBe(11);
+  });
+});

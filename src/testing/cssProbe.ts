@@ -14,11 +14,13 @@ export function readCss(relativeToSrc: string): string {
 
 /**
  * The declaration block of one rule.
- * Anchored at a rule boundary, so `.sw` cannot match `.muted .sw`.
+ * Anchored at a rule boundary — the previous rule's `}` or a comment's `*\/` — so `.sw`
+ * cannot match `.muted .sw`. Every regex metacharacter in the selector is escaped, so
+ * attribute selectors such as `.card[data-empty="true"]` are looked up literally.
  */
 export function rule(css: string, selector: string): string {
-  const escaped = selector.replace(/[.]/g, '\\.');
-  const m = css.match(new RegExp(`(?:^|\\})\\s*${escaped}\\s*\\{([^}]*)\\}`));
+  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const m = css.match(new RegExp(`(?:^|\\}|\\*\\/)\\s*${escaped}\\s*\\{([^}]*)\\}`));
   if (!m) throw new Error(`rule "${selector}" not found`);
   return m[1];
 }
