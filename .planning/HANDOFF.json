@@ -9,33 +9,113 @@
   "total_tasks": null,
   "status": "paused",
   "context": "default",
-  "context_reason": "No active milestone since v1.6 shipped. Work since the 2026-08-26 handoff was five /gsd-quick tasks on dev (13 commits, HEAD b6dbf9b, pushed to origin/dev). Tree clean except three untracked files. tsc -b clean, lint 0 problems, 731 tests green, npm audit 0 vulnerabilities. master still at 2b7720d.",
+  "context_reason": "No active milestone since v1.6 shipped. Work since the 2026-08-26 handoff was five /gsd-quick tasks on dev (13 commits, HEAD b6dbf9b, pushed to BOTH remotes (origin = cm-beilstein, beilstein = Beilstein-Institut org)). Tree clean except three untracked files. tsc -b clean, lint 0 problems, 731 tests green, npm audit 0 vulnerabilities. master still at 2b7720d.",
   "completed_tasks": [
-    {"id": "18", "name": "Typeset the mobile-H token in a real Plex Mono italic; drop italic on the not-present note", "status": "done", "commit": "6d212f9"},
-    {"id": "260902-gxx", "name": "b-layer sub-token modelled as a double bond: new SubHover kind 'bondStereo' ([a1,a2] + sign), BLayerText replaces ParityText for case 'b', canvas lights both ends and the bond, 'Double-bond stereo' card says canonical parity and NOT E/Z, '?' bonds go to the neutral stereo colour. Fixes REVIEW H-01 / W-03", "status": "done", "commit": "27663f9"},
-    {"id": "260902-gxx", "name": "setInchiData clears hoverIdx and subHover so a molecule swap cannot leave the InChI strip fully dimmed. Fixes REVIEW W-01", "status": "done", "commit": "09dc51a"},
-    {"id": "260902-hrp", "name": "Lint to 0 warnings (useKetcherHighlights deps listed; stale eslint-disable in ketcherEditor.ts removed)", "status": "done", "commit": "9806032"},
-    {"id": "260902-hrp", "name": ".nvmrc = 22, engines.node = 22.x (matches Dockerfile node:22-bookworm-slim); npm test passes NODE_OPTIONS=--no-experimental-webstorage so the suite is green on Node 25 without env fiddling", "status": "done", "commit": "af47f98"},
-    {"id": "260902-hrp", "name": "npm audit fix, lockfile only (browserslist, nanoid, dev tree) -> 0 vulnerabilities", "status": "done", "commit": "73359c3"},
-    {"id": "260902-hzh", "name": "Legend inert while canvas is empty: Legend.tsx show handler returns early when layers.length === 0, before any store write. User report: hovering a legend row with no molecule changed the explanation card", "status": "done", "commit": "4c53ba7"},
-    {"id": "260902-i2t", "name": "Legend greyed out while canvas is empty: data-empty attribute on the legend card, rows tabIndex -1, CSS mirrors .inchiDisplay[data-empty] (opacity .45, --line-soft border, pointer-events none). cssProbe.rule() now escapes regex metacharacters and accepts a rule after a comment", "status": "done", "commit": "6292eee"}
+    {
+      "id": "18",
+      "name": "Typeset the mobile-H token in a real Plex Mono italic; drop italic on the not-present note",
+      "status": "done",
+      "commit": "6d212f9"
+    },
+    {
+      "id": "260902-gxx",
+      "name": "b-layer sub-token modelled as a double bond: new SubHover kind 'bondStereo' ([a1,a2] + sign), BLayerText replaces ParityText for case 'b', canvas lights both ends and the bond, 'Double-bond stereo' card says canonical parity and NOT E/Z, '?' bonds go to the neutral stereo colour. Fixes REVIEW H-01 / W-03",
+      "status": "done",
+      "commit": "27663f9"
+    },
+    {
+      "id": "260902-gxx",
+      "name": "setInchiData clears hoverIdx and subHover so a molecule swap cannot leave the InChI strip fully dimmed. Fixes REVIEW W-01",
+      "status": "done",
+      "commit": "09dc51a"
+    },
+    {
+      "id": "260902-hrp",
+      "name": "Lint to 0 warnings (useKetcherHighlights deps listed; stale eslint-disable in ketcherEditor.ts removed)",
+      "status": "done",
+      "commit": "9806032"
+    },
+    {
+      "id": "260902-hrp",
+      "name": ".nvmrc = 22, engines.node = 22.x (matches Dockerfile node:22-bookworm-slim); npm test passes NODE_OPTIONS=--no-experimental-webstorage so the suite is green on Node 25 without env fiddling",
+      "status": "done",
+      "commit": "af47f98"
+    },
+    {
+      "id": "260902-hrp",
+      "name": "npm audit fix, lockfile only (browserslist, nanoid, dev tree) -> 0 vulnerabilities",
+      "status": "done",
+      "commit": "73359c3"
+    },
+    {
+      "id": "260902-hzh",
+      "name": "Legend inert while canvas is empty: Legend.tsx show handler returns early when layers.length === 0, before any store write. User report: hovering a legend row with no molecule changed the explanation card",
+      "status": "done",
+      "commit": "4c53ba7"
+    },
+    {
+      "id": "260902-i2t",
+      "name": "Legend greyed out while canvas is empty: data-empty attribute on the legend card, rows tabIndex -1, CSS mirrors .inchiDisplay[data-empty] (opacity .45, --line-soft border, pointer-events none). cssProbe.rule() now escapes regex metacharacters and accepts a rule after a comment",
+      "status": "done",
+      "commit": "6292eee"
+    }
   ],
   "remaining_tasks": [],
   "blockers": [],
   "human_actions_pending": [
-    {"action": "Browser-verify the b-layer hover on fumaric/maleic acid and prostaglandin E2 presets: one hover target per bond token, both atoms plus the bond lit in the parity colour, card says canonical parity not E/Z", "context": "Quick 260902-gxx is unit-tested against real getInchi() fixtures but the live Ketcher canvas was never driven in this environment", "blocking": false},
-    {"action": "Browser-verify the empty-canvas legend: greyed at 0.45 with ring swatches still discernible, rows skipped by Tab, hover does nothing until a molecule exists", "context": "Quick 260902-hzh + 260902-i2t; the swatch legibility under the card-level opacity is a screen judgement", "blocking": false},
-    {"action": "Browser-verify the binary Indigo wasm load path (aa60971, from the 2026-08-26 session) still works in a fresh profile with COOP/COEP headers", "context": "Carried over from the previous handoff; still the only unverified runtime change with failure potential", "blocking": true},
-    {"action": "Decide what to do with three untracked files: .planning/REVIEW.md (2026-06-15 full-tree code review; H-01, W-01, W-03 are now fixed by 260902-gxx), docs/cicag-distillate-article.md and .docx (draft CICAG article about the tool)", "context": "Left untracked on purpose by this handoff; commit, move, or drop is the author's call", "blocking": false},
-    {"action": "Merge or fast-forward master from dev when the browser checks pass, then rebuild the Docker image and redeploy by hand", "context": "master is at 2b7720d; everything since 2026-08 lives only on dev. No CI deploy exists", "blocking": false}
+    {
+      "action": "Browser-verify the b-layer hover on fumaric/maleic acid and prostaglandin E2 presets: one hover target per bond token, both atoms plus the bond lit in the parity colour, card says canonical parity not E/Z",
+      "context": "Quick 260902-gxx is unit-tested against real getInchi() fixtures but the live Ketcher canvas was never driven in this environment",
+      "blocking": false
+    },
+    {
+      "action": "Browser-verify the empty-canvas legend: greyed at 0.45 with ring swatches still discernible, rows skipped by Tab, hover does nothing until a molecule exists",
+      "context": "Quick 260902-hzh + 260902-i2t; the swatch legibility under the card-level opacity is a screen judgement",
+      "blocking": false
+    },
+    {
+      "action": "Browser-verify the binary Indigo wasm load path (aa60971, from the 2026-08-26 session) still works in a fresh profile with COOP/COEP headers",
+      "context": "Carried over from the previous handoff; still the only unverified runtime change with failure potential",
+      "blocking": true
+    },
+    {
+      "action": "Decide what to do with three untracked files: .planning/REVIEW.md (2026-06-15 full-tree code review; H-01, W-01, W-03 are now fixed by 260902-gxx), docs/cicag-distillate-article.md and .docx (draft CICAG article about the tool)",
+      "context": "Left untracked on purpose by this handoff; commit, move, or drop is the author's call",
+      "blocking": false
+    },
+    {
+      "action": "Merge or fast-forward master from dev when the browser checks pass, then rebuild the Docker image and redeploy by hand",
+      "context": "master is at 2b7720d; everything since 2026-08 lives only on dev. No CI deploy exists",
+      "blocking": false
+    }
   ],
   "decisions": [
-    {"decision": "b-layer token is ONE hover target carrying both bond ends (kind 'bondStereo'), not two 'stereo' atoms", "rationale": "The '-' between atom numbers in /b is a separator, not a parity sign; ParityText mis-signed the first atom of every pair (REVIEW H-01)", "phase": "quick-260902-gxx"},
-    {"decision": "The /b card calls the sign a canonical parity and explicitly says it is NOT the E/Z descriptor", "rationale": "Same chemical-correctness rule as /t: parity comes from canonical numbering + geometry, not CIP", "phase": "quick-260902-gxx"},
-    {"decision": "Empty-canvas legend is both inert (handler guard) and visibly greyed (CSS), mirroring the InChI box; the explanation card itself is untouched", "rationale": "Two separate user reports; the guard fixes behaviour, the greying communicates it. Card precedence logic must stay identical once a molecule exists (UAT-13)", "phase": "quick-260902-hzh/i2t"},
-    {"decision": "Pin Node 22 in .nvmrc/engines and bake --no-experimental-webstorage into npm test", "rationale": "Node 25 ships a global localStorage that shadows happy-dom's and breaks the leaveWipe tests", "phase": "quick-260902-hrp"}
+    {
+      "decision": "b-layer token is ONE hover target carrying both bond ends (kind 'bondStereo'), not two 'stereo' atoms",
+      "rationale": "The '-' between atom numbers in /b is a separator, not a parity sign; ParityText mis-signed the first atom of every pair (REVIEW H-01)",
+      "phase": "quick-260902-gxx"
+    },
+    {
+      "decision": "The /b card calls the sign a canonical parity and explicitly says it is NOT the E/Z descriptor",
+      "rationale": "Same chemical-correctness rule as /t: parity comes from canonical numbering + geometry, not CIP",
+      "phase": "quick-260902-gxx"
+    },
+    {
+      "decision": "Empty-canvas legend is both inert (handler guard) and visibly greyed (CSS), mirroring the InChI box; the explanation card itself is untouched",
+      "rationale": "Two separate user reports; the guard fixes behaviour, the greying communicates it. Card precedence logic must stay identical once a molecule exists (UAT-13)",
+      "phase": "quick-260902-hzh/i2t"
+    },
+    {
+      "decision": "Pin Node 22 in .nvmrc/engines and bake --no-experimental-webstorage into npm test",
+      "rationale": "Node 25 ships a global localStorage that shadows happy-dom's and breaks the leaveWipe tests",
+      "phase": "quick-260902-hrp"
+    }
   ],
-  "uncommitted_files": [".planning/REVIEW.md (untracked)", "docs/cicag-distillate-article.md (untracked)", "docs/cicag-distillate-article.docx (untracked)"],
+  "uncommitted_files": [
+    ".planning/REVIEW.md (untracked)",
+    "docs/cicag-distillate-article.md (untracked)",
+    "docs/cicag-distillate-article.docx (untracked)"
+  ],
   "next_action": "Run the app (npm run dev) and do the browser checks listed in human_actions_pending, starting with the wasm load path and the fumaric acid /b hover. Then decide on the three untracked files.",
-  "context_notes": "Session was a run of small /gsd-quick tasks driven by user reports and the old REVIEW.md, not milestone work. Every quick task has PLAN + SUMMARY under .planning/quick/260902-*/ and a row in STATE.md's Quick Tasks table. Nothing is half-finished. The three blocking constraints from the 2026-08-26 handoff still apply and are repeated in .continue-here.md."
+  "context_notes": "Session was a run of small /gsd-quick tasks driven by user reports and the old REVIEW.md, not milestone work. Every quick task has PLAN + SUMMARY under .planning/quick/260902-*/ and a row in STATE.md's Quick Tasks table. Nothing is half-finished. The three blocking constraints from the 2026-08-26 handoff still apply and are repeated in .continue-here.md. Two independent GitHub remotes exist (origin=cm-beilstein, beilstein=Beilstein-Institut); the org one was missing from this clone until 2026-09-02 and must be pushed explicitly."
 }
