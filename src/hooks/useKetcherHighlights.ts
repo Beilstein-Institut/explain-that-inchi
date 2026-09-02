@@ -370,6 +370,7 @@ export function useKetcherHighlights(
     } finally {
       if (_isHighlightingRef) _isHighlightingRef.current = false;
     }
-  }, [effIdx, effSub, pinned, layers, auxMap, atomElements, hAtomPoolIds, isReady]);
-  // Note: ketcherRef is a ref — intentionally not in deps (stable reference)
+  // ketcherRef and _isHighlightingRef are refs: stable identities, so listing them
+  // never re-fires the effect. They are here to keep exhaustive-deps honest.
+  }, [effIdx, effSub, pinned, layers, auxMap, atomElements, hAtomPoolIds, isReady, ketcherRef, _isHighlightingRef]);
 }

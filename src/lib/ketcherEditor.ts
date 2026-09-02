@@ -41,7 +41,6 @@ interface AtomPoolHost {
 }
 
 function internals(ketcher: Ketcher): EditorInternals {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return ketcher.editor as unknown as EditorInternals;
 }
 
