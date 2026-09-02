@@ -7,7 +7,7 @@ status: milestone_shipped
 stopped_at: Session paused 2026-08-26 — 8 commits on dev, HEAD 6914965, both remotes synced, tree clean, 712 tests green. Nothing live; browser verification of the new wasm load path is the blocking human action
 last_updated: "2026-08-31T07:28:25.981Z"
 last_activity: 2026-09-02
-last_activity_desc: Quick task 260902-gxx — b-layer sub-token modelled as a double bond; setInchiData clears hover state. HEAD 09dc51a
+last_activity_desc: Quick task 260902-gxx — b-layer sub-token modelled as a double bond; setInchiData clears hover state. HEAD 73359c3
 progress:
   total_phases: 6
   completed_phases: 6
@@ -77,6 +77,7 @@ See: .planning/PROJECT.md (updated 2026-06-30)
 | 260811-b69 | Harden client-side data removal on leave — full localStorage/sessionStorage wipe, guarded IndexedDB/Cache sweeps, COI-gated SW unregister, opt-in Clear-Site-Data leave endpoint + footer toggle, honest privacy §3(3)(4) | 2026-08-11 | e097453 | [260811-b69-client-side-data-removal-on-leave-harden](./quick/260811-b69-client-side-data-removal-on-leave-harden/) |
 | 18 | Typeset: real Plex Mono italic for mobile-H; drop italic on not-present note | 2026-08-31 | 6d212f9 | — |
 | 260902-gxx | b-layer sub-token modelled as a double bond (new `bondStereo` SubHover kind, `BLayerText`, canvas spec lights both ends + bond, canonical-parity card; `?` bonds neutral) + `setInchiData` clears `hoverIdx`/`subHover` (REVIEW W-01). 726 tests | 2026-09-02 | 09dc51a | [260902-gxx-fix-the-b-layer-sub-token-model-and-rese](./quick/260902-gxx-fix-the-b-layer-sub-token-model-and-rese/) |
+| 260902-hrp | Lint to 0 warnings; `.nvmrc`/`engines` pin Node 22 and `npm test` passes `--no-experimental-webstorage` (suite green on Node 25 without env fiddling); `npm audit fix` → 0 vulnerabilities (browserslist, nanoid, dev-only) | 2026-09-02 | 73359c3 | [260902-hrp-pin-node-22-clear-lint-warnings-audit-fi](./quick/260902-hrp-pin-node-22-clear-lint-warnings-audit-fi/) |
 
 ## Deferred Items
 
@@ -120,18 +121,18 @@ Items acknowledged and deferred at v1.3 milestone close on 2026-06-19 (same v1.0
 
 - Resolved 2026-09-02: the repository is public (`gh repo view` → PUBLIC), so the
   in-app Limitations link and Send feedback button no longer 404.
-- Local dev environment: Node v25 shadows happy-dom's `localStorage`; run tests as
-  `NODE_OPTIONS=--no-experimental-webstorage npx vitest run` (Dockerfile is Node 22,
-  unaffected). Pin Node 22 (`.nvmrc`/`engines`) or bake the flag into `npm test`.
+- Local dev environment: Node v25 shadows happy-dom's `localStorage`. Handled in
+  260902-hrp: `.nvmrc`/`engines` say 22 and `npm test` passes the flag; a bare
+  `npx vitest run` on Node 25 still needs `NODE_OPTIONS=--no-experimental-webstorage`.
 - Deployment drift: live assets are dated 2026-08-13; the 8 commits of 2026-08-26,
-  the 2026-08-31 italic fix, and quick task 260902-gxx are NOT live.
+  the 2026-08-31 italic fix, and quick tasks 260902-gxx/-hrp are NOT live.
 
 ## Current Position
 
 Phase: 19
 Plan: Not started
 Status: Ready to execute
-Last activity: 2026-09-02 — Completed quick task 260902-gxx: b-layer sub-token model fixed (open defect since 2026-08-26) + setInchiData hover reset. HEAD 09dc51a
+Last activity: 2026-09-02 — Completed quick task 260902-gxx: b-layer sub-token model fixed (open defect since 2026-08-26) + setInchiData hover reset. HEAD 73359c3
 
 ## Operator Next Steps
 
