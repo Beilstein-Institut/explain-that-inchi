@@ -85,3 +85,28 @@ describe('a legend row responds to tap, not only hover and focus', () => {
     }
   });
 });
+
+// quick 260902-hzh: with nothing drawn every row is "absent" and the card is already
+// saying "draw a molecule". A stray hover must not swap that for per-layer static info.
+describe('the legend is inert while the canvas is empty', () => {
+  it('hover, focus and tap write nothing to the store when there are no layers', () => {
+    mockLayers = [];
+    render(<Legend activeType={undefined} />);
+    for (const name of ['Connection', 'Hydrogen']) {
+      const target = screen.getByText(name).closest('div[tabindex]') as HTMLElement;
+      fireEvent.mouseEnter(target);
+      fireEvent.focus(target);
+      fireEvent.click(target);
+    }
+    expect(spies.setLegendHover).not.toHaveBeenCalled();
+    expect(spies.setHover).not.toHaveBeenCalled();
+    expect(spies.setSubHover).not.toHaveBeenCalled();
+  });
+
+  it('comes back to life as soon as a molecule is drawn', () => {
+    mockLayers = BENZENE;
+    render(<Legend activeType={undefined} />);
+    fireEvent.mouseEnter(screen.getByText('Connection').closest('div[tabindex]') as HTMLElement);
+    expect(spies.setLegendHover).toHaveBeenCalled();
+  });
+});

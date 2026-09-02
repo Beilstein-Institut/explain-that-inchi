@@ -61,6 +61,10 @@ export function Legend({ activeType }: LegendProps) {
         const layerIdx = layerIndexByType.get(l.type);
         // One handler for hover, focus and tap — the three ways in must not drift.
         const show = () => {
+          // Empty canvas: every row is "absent", and the card is telling the visitor to
+          // draw something. Swapping that for per-layer static info on a stray hover
+          // reads as the page reacting to a molecule that does not exist — stay inert.
+          if (layers.length === 0) return;
           setSubHover(null);
           setLegendHover({ type: l.type, eg: l.eg });
           if (present && layerIdx !== undefined) setHover(layerIdx);
