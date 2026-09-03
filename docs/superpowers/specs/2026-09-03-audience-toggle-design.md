@@ -256,3 +256,10 @@ User request: the tooltip also opens on hover and closes when the pointer
 leaves the word. Click makes it sticky (survives mouseleave); a second click,
 Escape, outside click, text change, scroll or resize closes it. Focus and
 blur mirror hover and leave for keyboard users. No delays.
+
+## Amendment 5 (2026-09-03)
+
+User request: InChIKey segments are pinnable like InChI layers (click to
+freeze the card, click anywhere or Esc to release), so glossary terms in
+the key card can be reached. One pin at a time across layers and key.
+Invariant #2 unchanged: a key pin never drives canvas highlights.
