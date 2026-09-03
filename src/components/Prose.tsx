@@ -3,7 +3,7 @@
 // leave (and gives touch devices, which never hover, the same affordance).
 // .card is overflow:hidden, so the tooltip is portaled into <body> and placed
 // fixed from the word's rect — no ancestor can clip or offset it.
-import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { GLOSSARY, markTerms } from '../lib/glossary';
 import styles from './Prose.module.css';
@@ -17,8 +17,7 @@ interface ProseProps {
 
 const ESCAPE = 'Escape';
 const GAP = 6; // px between the word and the tooltip
-const TIP_MAX_HEIGHT = 120; // px of headroom needed to sit above the word
-const VIEWPORT_PAD = 8; // px kept clear of the window's left and right edges
+const VIEWPORT_PAD = 8; // px kept clear of every window edge
 
 // The open definition keeps both the glossary key and the surface text the
 // reader clicked, so the heading prints "E/Z", not a capitalised key ("E/z").
@@ -29,16 +28,16 @@ type Open = { key: string; label: string; rect: DOMRect; sticky: boolean };
 /** How the tooltip was opened: hover/focus (transient) or click (sticky). */
 type Mode = 'transient' | 'sticky';
 
-// Vertical placement only; `left` is measured separately (see the layout effect).
-// Anchoring the bottom edge for "above" needs no knowledge of the tooltip's height.
-const placeY = (r: DOMRect): CSSProperties =>
-  r.top >= TIP_MAX_HEIGHT
-    ? { bottom: window.innerHeight - r.top + GAP }
-    : { top: r.bottom + GAP };
+// Keep one edge inside [PAD, extent - size - PAD]. A viewport smaller than the
+// tooltip itself falls back to the near edge rather than a negative offset.
+const clampPos = (v: number, size: number, extent: number) => {
+  const max = extent - size - VIEWPORT_PAD;
+  return max < VIEWPORT_PAD ? VIEWPORT_PAD : Math.min(Math.max(v, VIEWPORT_PAD), max);
+};
 
 export function Prose({ text, className, as = 'p' }: ProseProps) {
   const [open, setOpen] = useState<Open | null>(null);
-  const [left, setLeft] = useState<number | null>(null);
+  const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
   const rootRef = useRef<HTMLParagraphElement & HTMLSpanElement>(null);
   const tipRef = useRef<HTMLSpanElement>(null);
   const tipId = useId();
@@ -53,21 +52,28 @@ export function Prose({ text, className, as = 'p' }: ProseProps) {
     }
   }, [text]);
 
-  // Centre the tooltip on the word, then pull it back inside the window. The
-  // centring needs the tooltip's own width, which exists only once it has
-  // rendered, so it renders hidden and is placed here — useLayoutEffect runs
-  // before paint, so the reader never sees the unplaced position.
+  // Place the tooltip: centred on the word, above it by preference. Both axes
+  // need the tooltip's own size, which exists only once it has rendered, so it
+  // renders hidden and is positioned here — useLayoutEffect runs before paint,
+  // so the reader never sees the unplaced position.
   useLayoutEffect(() => {
     if (!open || !tipRef.current) {
-      setLeft(null);
+      setPos(null);
       return;
     }
-    const width = tipRef.current.getBoundingClientRect().width;
-    const centred = open.rect.left + open.rect.width / 2 - width / 2;
-    // max-width caps the tooltip at 100vw - 16px, so the clamp normally has
-    // room; a viewport narrower than the tooltip falls back to the left pad.
-    const max = window.innerWidth - width - VIEWPORT_PAD;
-    setLeft(max < VIEWPORT_PAD ? VIEWPORT_PAD : Math.min(Math.max(centred, VIEWPORT_PAD), max));
+    const { width, height } = tipRef.current.getBoundingClientRect();
+    const r = open.rect;
+
+    // Above unless the word sits too near the top; then below, unless that
+    // overflows too — in which case above wins and the clamp takes over.
+    const aboveFits = r.top - GAP - height >= VIEWPORT_PAD;
+    const belowFits = r.bottom + GAP + height <= window.innerHeight - VIEWPORT_PAD;
+    const top = !aboveFits && belowFits ? r.bottom + GAP : r.top - GAP - height;
+
+    setPos({
+      left: clampPos(r.left + r.width / 2 - width / 2, width, window.innerWidth),
+      top: clampPos(top, height, window.innerHeight),
+    });
   }, [open]);
 
   // Esc, outside click and any viewport shift close. Listeners exist only while
@@ -155,9 +161,9 @@ export function Prose({ text, className, as = 'p' }: ProseProps) {
             id={tipId}
             className={styles.tip}
             style={{
-              ...placeY(open.rect),
-              left: left ?? VIEWPORT_PAD,
-              visibility: left === null ? 'hidden' : undefined,
+              left: pos?.left ?? VIEWPORT_PAD,
+              top: pos?.top ?? VIEWPORT_PAD,
+              visibility: pos ? undefined : 'hidden',
             }}
           >
             <b>{open.label}</b> {GLOSSARY[open.key]}

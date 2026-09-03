@@ -133,47 +133,71 @@ describe('Prose', () => {
     expect(screen.queryByRole('tooltip')).toBeNull();
   });
 
-  // The tooltip is centred on the word, so a term near either window edge would
-  // hang outside it. happy-dom reports zero rects, so both edges are staged with
-  // a stubbed getBoundingClientRect and a known innerWidth.
+  // The tooltip is placed from the word's rect and its own measured size, so a
+  // term near any window edge would hang outside it. happy-dom reports zero
+  // rects, so every edge is staged with a stubbed getBoundingClientRect and a
+  // known viewport.
   describe('viewport clamping', () => {
     const VIEWPORT_WIDTH = 1000;
+    const VIEWPORT_HEIGHT = 800;
     const TIP_WIDTH = 300;
+    const TIP_HEIGHT = 60;
     const PAD = 8;
-    let realWidth: number;
+    const GAP = 6;
+    const BTN_HEIGHT = 20;
+    let realSize: { width: number; height: number };
 
-    const stageRects = (btnLeft: number) => {
-      realWidth = window.innerWidth;
+    // Stage one word: its left/top in the viewport. Everything else is fixed.
+    const stageRects = (btnLeft: number, btnTop: number) => {
+      realSize = { width: window.innerWidth, height: window.innerHeight };
       window.innerWidth = VIEWPORT_WIDTH;
+      window.innerHeight = VIEWPORT_HEIGHT;
       vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(
         function (this: Element) {
           const isTip = this.getAttribute('role') === 'tooltip';
           const box = isTip
-            ? { left: 0, width: TIP_WIDTH, top: 0, bottom: 40 }
-            : { left: btnLeft, width: 40, top: 500, bottom: 520 };
-          return { ...box, right: box.left + box.width, height: box.bottom - box.top } as DOMRect;
+            ? { left: 0, width: TIP_WIDTH, top: 0, height: TIP_HEIGHT }
+            : { left: btnLeft, width: 40, top: btnTop, height: BTN_HEIGHT };
+          return {
+            ...box,
+            right: box.left + box.width,
+            bottom: box.top + box.height,
+          } as DOMRect;
         },
       );
     };
 
+    const openTip = () => {
+      render(<Prose text={TEXT} />);
+      fireEvent.click(screen.getByRole('button', { name: 'atom' }));
+      return screen.getByRole('tooltip');
+    };
+
     afterEach(() => {
       vi.restoreAllMocks();
-      window.innerWidth = realWidth;
+      window.innerWidth = realSize.width;
+      window.innerHeight = realSize.height;
     });
 
     it('pulls a tooltip on a left-edge word back to the padding', () => {
-      stageRects(0);
-      render(<Prose text={TEXT} />);
-      fireEvent.click(screen.getByRole('button', { name: 'atom' }));
-      expect(screen.getByRole('tooltip').style.left).toBe(`${PAD}px`);
+      stageRects(0, 500);
+      expect(openTip().style.left).toBe(`${PAD}px`);
     });
 
     it('pulls a tooltip on a right-edge word back inside the window', () => {
-      stageRects(VIEWPORT_WIDTH - 10);
-      render(<Prose text={TEXT} />);
-      fireEvent.click(screen.getByRole('button', { name: 'atom' }));
+      stageRects(VIEWPORT_WIDTH - 10, 500);
       const expected = VIEWPORT_WIDTH - TIP_WIDTH - PAD; // 692
-      expect(screen.getByRole('tooltip').style.left).toBe(`${expected}px`);
+      expect(openTip().style.left).toBe(`${expected}px`);
+    });
+
+    it('sits above a word with headroom for its measured height', () => {
+      stageRects(400, 500);
+      expect(openTip().style.top).toBe(`${500 - GAP - TIP_HEIGHT}px`); // 434
+    });
+
+    it('flips below a word too near the top for its measured height', () => {
+      stageRects(400, 20);
+      expect(openTip().style.top).toBe(`${20 + BTN_HEIGHT + GAP}px`); // 46
     });
   });
 });
