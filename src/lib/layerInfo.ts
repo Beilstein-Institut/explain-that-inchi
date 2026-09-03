@@ -106,7 +106,7 @@ export const LAYER_INFO: Record<LayerType, LayerInfoEntry> = {
       chemist:
         'Configuration of stereogenic double bonds — what a name expresses with E/Z. Each entry names the two atoms of a double bond and a + or − parity. The parity is taken over canonical atom numbers, not CIP priorities, so it is not the E/Z stereodescriptor itself.',
       plain:
-        'Some double bonds hold their neighbouring groups rigidly on one side or the other. This layer records which side for each such bond, as a plus or minus. Swapping sides gives a different substance made of the same atoms.',
+        "Some double bonds hold their neighbouring groups rigidly on one side or the other. This layer records which side for each such bond, as a plus or minus. Swapping sides gives a different substance made of the same atoms. The plus or minus is InChI's own label, not the E or Z used in chemical names.",
     },
     egLabel: 'Reads as',
   },
@@ -118,7 +118,7 @@ export const LAYER_INFO: Record<LayerType, LayerInfoEntry> = {
       chemist:
         "Tetrahedral chirality centres, the stereogenic units of a name's R/S descriptors. Each entry is a canonical atom number followed by + or −: the parity of its four ligands under InChI's canonical ordering. It is not the CIP R/S stereodescriptor; /m and /s fix the absolute configuration.",
       plain:
-        'An atom joined to four different groups can be arranged two ways, like a left and a right hand. This layer lists such atoms with a plus or minus for their arrangement. The two mirror forms can behave very differently, for example in the body.',
+        "An atom joined to four different groups can be arranged two ways, like a left and a right hand. This layer lists such atoms with a plus or minus for their arrangement. The two mirror forms can behave very differently, for example in the body. The plus or minus is InChI's own label, not the R or S used in chemical names.",
     },
     egLabel: 'Reads as',
   },
@@ -135,7 +135,7 @@ export const LAYER_INFO: Record<LayerType, LayerInfoEntry> = {
     egLabel: 'Reads as',
   },
   s: {
-    // Blue Book P-93.1.1 absolute, P-93.1.2 relative ('rel'), P-91.2.1.1 racemate ('rac').
+    // Blue Book P-93.1.1 absolute, P-93.1.2 relative ('rel'), P-93.1.3 racemate ('rac').
     title: { chemist: 'Stereo flag', plain: 'How exact the 3-D shape is' },
     accent: 'var(--c-stereo)',
     blurb: {

@@ -17,7 +17,8 @@ export const SHARED_TAGLINE =
 // ---------------------------------------------------------------------------
 // KEY_ZONE_COPY — prose for all 4 hover zones.
 // Shape mirrors { label, title, body } expected by Explanation.tsx.
-// Voice: terse chemist-register, 1–3 sentences + tagline (D-05, D-07).
+// Voice: two registers (see lib/audience.ts) — chemist: terse, 1–3 sentences + tagline
+// (D-05, D-07); plain: same claims, no jargon.
 // ---------------------------------------------------------------------------
 
 // InChI-specific throughout: hashing has no IUPAC nomenclature term.

@@ -6,7 +6,7 @@ import { ALL_LAYERS } from '../../components/Legend';
 import type { Copy } from '../audience';
 
 // Words that mark the plain register as having leaked chemist jargon.
-const BANNED_IN_PLAIN = [/sp³/, /\bparit(y|ies)\b/, /stereodescriptor/, /\bcanonical\b/, /\bHill\b/, /\bCIP\b/, /\bligand/, /\btautomer/, /\benantiomer/];
+const BANNED_IN_PLAIN = [/sp³/i, /\bparit(y|ies)\b/i, /stereodescriptor/i, /\bcanonical\b/i, /\bHill\b/i, /\bCIP\b/i, /\bligand/i, /\btautomer/i, /\benantiomer/i];
 const MAX_PLAIN_SENTENCE_WORDS = 20;
 
 function allCopies(): [string, Copy][] {
