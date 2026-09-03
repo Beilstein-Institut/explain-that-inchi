@@ -241,3 +241,11 @@ language" labels). The header returns to its original two meta lines.
 Unchanged: mode ids `chemist` / `plain`, the store field, `?mode=plain`,
 the radiogroup semantics, and every copy table. Tour step 9 now introduces
 the toggle alongside Reset and Help.
+
+## Amendment 2 (2026-09-03)
+
+User request: the glossary definition is a floating tooltip over the clicked
+word, not an in-flow block. Implemented as a `position: fixed` element
+portaled to `document.body` (immune to the card's `overflow: hidden`),
+centred on the word, above it by default and below when there is no headroom.
+Scroll or resize closes it. Same open/close semantics otherwise (§4).
