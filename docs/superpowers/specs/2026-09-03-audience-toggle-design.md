@@ -249,3 +249,10 @@ word, not an in-flow block. Implemented as a `position: fixed` element
 portaled to `document.body` (immune to the card's `overflow: hidden`),
 centred on the word, above it by default and below when there is no headroom.
 Scroll or resize closes it. Same open/close semantics otherwise (§4).
+
+## Amendment 3 (2026-09-03)
+
+User request: the tooltip also opens on hover and closes when the pointer
+leaves the word. Click makes it sticky (survives mouseleave); a second click,
+Escape, outside click, text change, scroll or resize closes it. Focus and
+blur mirror hover and leave for keyboard users. No delays.
