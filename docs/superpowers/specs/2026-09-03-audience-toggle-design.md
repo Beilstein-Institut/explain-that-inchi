@@ -230,3 +230,14 @@ Modified: `store.ts`, `Header.tsx`, `styles.css`, `layerInfo.ts`,
   verify gate for copy before merge (lesson from Phase 15 — do not skip).
 - Implementation lane: Opus subagents per task; final review by
   fable-advisor before reporting done.
+
+## Amendment 2026-09-03 (during implementation)
+
+User request: the toggle sits on the section-label row, immediately left of
+the Help button, styled like the Reset / Help pills, with labels **Expert**
+and **Simple**. This replaces §2 (header placement, "Chemist" / "Plain
+language" labels). The header returns to its original two meta lines.
+
+Unchanged: mode ids `chemist` / `plain`, the store field, `?mode=plain`,
+the radiogroup semantics, and every copy table. Tour step 9 now introduces
+the toggle alongside Reset and Help.
