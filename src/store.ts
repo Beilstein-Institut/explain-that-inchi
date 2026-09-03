@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import type { Layer, AuxMap, SubHover, LayerType } from './lib/parseInchi';
+import type { Audience } from './lib/audience';
+import { readAudience, writeAudience } from './lib/audienceUrl';
 
 // All v1 fields defined here per D-02.
 // hoverIdx and subHover are null until Phase 3 writes them.
@@ -48,6 +50,9 @@ interface InchiState {
   // a message = the canvas holds a structure the generator would not accept. Without
   // this the strip told a user with a molecule on screen that they had drawn nothing.
   inchiError: string | null;
+  // Explanation register. A preference, not molecule data: resetAll and
+  // setInchiFailure leave it alone. Mirrored to ?mode= by setAudience.
+  audience: Audience;
   // Actions
   setInchiData: (inchi: string, layers: Layer[], auxMap: AuxMap, atomElements: Record<number, string>, hAtomPoolIds?: number[], inchiKey?: string) => void;
   // Blanks every data field and records why. Pass null for a genuinely empty canvas.
@@ -59,6 +64,7 @@ interface InchiState {
   setKeyHoverKind: (kind: KeyHoverZone | null) => void;
   setLegendHover: (hover: LegendHover | null) => void;
   resetAll: () => void;
+  setAudience: (audience: Audience) => void;
 }
 
 // Zustand 5 TypeScript pattern: create<State>()() — double-call required.
@@ -77,6 +83,7 @@ export const useInchiStore = create<InchiState>()(
       keyHoverKind: null,
       legendHover: null,
       inchiError: null,
+      audience: readAudience(),
       // CR-01: every transient hover field is dropped on a data transition. setInchiData
       // fires only after a debounced structure change; at that point a stale key-hover
       // (from an emptied key or a preset swap) must not mask the panel, and a stale
@@ -97,6 +104,7 @@ export const useInchiStore = create<InchiState>()(
       clearPinned: () => set({ pinned: null }),
       setKeyHoverKind: (kind) => set({ keyHoverKind: kind }),
       setLegendHover: (hover) => set({ legendHover: hover }),
+      setAudience: (audience) => { writeAudience(audience); set({ audience }); },
       // RESET-02/03: atomically resets ALL fields to idle in a single set() call.
       // Uses set() directly — do NOT call other actions from here (Zustand 5 anti-pattern).
       resetAll: () => set({

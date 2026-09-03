@@ -255,4 +255,16 @@ describe('useInchiStore', () => {
       expect(useInchiStore.getState().subHover).toEqual(hit);
     });
   });
+
+  describe('audience', () => {
+    it('defaults to chemist', () => {
+      expect(useInchiStore.getState().audience).toBe('chemist');
+    });
+    it('setAudience switches and resetAll leaves it alone', () => {
+      useInchiStore.getState().setAudience('plain');
+      useInchiStore.getState().resetAll();
+      expect(useInchiStore.getState().audience).toBe('plain');
+      useInchiStore.getState().setAudience('chemist');
+    });
+  });
 });
