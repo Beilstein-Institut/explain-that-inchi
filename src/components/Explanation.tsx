@@ -69,7 +69,7 @@ export function Explanation() {
   // SUBEX-09: copy is the pure-module projection of offset-only SubHover fields —
   // never reads layer.text, never reconstructs an InChI fragment. null for c-layer
   // kinds (bond/branch/atom) so the card falls through to the layer branch.
-  const subCopy = effSub ? subTokenInfo(effSub, atomElements) : null;
+  const subCopy = effSub ? subTokenInfo(effSub, atomElements, audience) : null;
   // D-01: the sub-token card inherits the PARENT layer's swatch via accentVar (already
   // derived from effIdx). D-01a: if effIdx is unresolvable (no layer), map the sub kind
   // to its layer type, then swatchVar — no store field added.

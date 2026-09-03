@@ -181,7 +181,7 @@ describe('Explanation — sub-token card branch (SUBEX-01/02/07)', () => {
     mock.subHover = { kind: 'element', el: 'C', canonRange: [1, 3] };
     mock.hoverIdx = FORMULA_IDX;
     render(<Explanation />);
-    const body = subTokenInfo(mock.subHover, mock.atomElements)!.body;
+    const body = subTokenInfo(mock.subHover, mock.atomElements, 'chemist')!.body;
     expect(body).toContain('this component');
     expect(body).toContain('Hill order');
     expect(screen.getByText(body)).toBeInTheDocument();
@@ -217,7 +217,7 @@ describe('Explanation — invariant guards (SUBEX-09 read-only + verbatim passth
     mock.subHover = { kind: 'mobileH', atoms: [5, 6] }; // projection of h '(H,5,6)'
     mock.hoverIdx = H_IDX;
     render(<Explanation />);
-    const body = subTokenInfo(mock.subHover, mock.atomElements)!.body;
+    const body = subTokenInfo(mock.subHover, mock.atomElements, 'chemist')!.body;
     expect(screen.getByText(body)).toBeInTheDocument();
   });
 });

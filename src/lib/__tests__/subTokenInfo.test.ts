@@ -39,27 +39,27 @@ describe('subTokenInfo — anti-fabrication fixture sanity (D-18)', () => {
 
 describe('subTokenInfo — element (SUBEX-07 copy, D-16/D-17)', () => {
   it('titles with looked-up name + symbol: Carbon (C)', () => {
-    const card = subTokenInfo({ kind: 'element', el: 'C' }, {})!;
+    const card = subTokenInfo({ kind: 'element', el: 'C' }, {}, 'chemist')!;
     expect(card.title).toBe('Carbon (C)');
   });
 
   it('carbon body carries the Hill-order note (D-17)', () => {
-    const card = subTokenInfo({ kind: 'element', el: 'C' }, {})!;
+    const card = subTokenInfo({ kind: 'element', el: 'C' }, {}, 'chemist')!;
     expect(card.body).toMatch(/hill/i);
   });
 
   it('hydrogen body carries the Hill-order note (D-17)', () => {
-    const card = subTokenInfo({ kind: 'element', el: 'H' }, {})!;
+    const card = subTokenInfo({ kind: 'element', el: 'H' }, {}, 'chemist')!;
     expect(card.body).toMatch(/hill/i);
   });
 
   it('non-organic element titles correctly: Potassium (K)', () => {
-    const card = subTokenInfo({ kind: 'element', el: 'K' }, {})!;
+    const card = subTokenInfo({ kind: 'element', el: 'K' }, {}, 'chemist')!;
     expect(card.title).toBe('Potassium (K)');
   });
 
   it('non-organic element omits the Hill-order note (D-17)', () => {
-    const card = subTokenInfo({ kind: 'element', el: 'K' }, {})!;
+    const card = subTokenInfo({ kind: 'element', el: 'K' }, {}, 'chemist')!;
     expect(card.body).not.toMatch(/hill/i);
   });
 
@@ -67,19 +67,19 @@ describe('subTokenInfo — element (SUBEX-07 copy, D-16/D-17)', () => {
     // Constructed SubHover literal — subTokenInfo consumes SubHover fields, not the
     // InChI string, so a literal is legitimate (not fabrication). Models the Na+/Cl-
     // -style scoping the SALT fixture documents.
-    const card = subTokenInfo({ kind: 'element', el: 'Na', canonRange: [4, 4] }, {})!;
+    const card = subTokenInfo({ kind: 'element', el: 'Na', canonRange: [4, 4] }, {}, 'chemist')!;
     expect(card.body).toMatch(/component/i);
   });
 
   it('single-fragment element (no canonRange) has no per-component scope clause (D-14)', () => {
-    const card = subTokenInfo({ kind: 'element', el: 'C' }, {})!;
+    const card = subTokenInfo({ kind: 'element', el: 'C' }, {}, 'chemist')!;
     expect(card.body).not.toMatch(/in this component/i);
   });
 });
 
 describe('subTokenInfo — hAtoms (SUBEX-03, D-08/D-09)', () => {
   // Alanine 1H3 token: atom 1 bears three hydrogens. The methyl trap.
-  const card = subTokenInfo({ kind: 'hAtoms', atoms: [1], count: 3 }, {})!;
+  const card = subTokenInfo({ kind: 'hAtoms', atoms: [1], count: 3 }, {}, 'chemist')!;
 
   it('returns a non-null card with title "Hydrogen count: N" carrying the count (D-16)', () => {
     expect(card.title).toBe('Hydrogen count: 3');
@@ -99,7 +99,7 @@ describe('subTokenInfo — hAtoms discrete-set enumeration (GAP-1, D-04 chemist 
   // set {3,4,7,8,15} (count 1). The SubHover literal below is the parsed projection of that
   // real fixture's h-layer — subTokenInfo consumes SubHover numeric fields, not the string
   // (same precedent as the SALT-derived literals above; legitimate, not fabrication).
-  const card = subTokenInfo({ kind: 'hAtoms', atoms: [3, 4, 7, 8, 15], count: 1 }, {})!;
+  const card = subTokenInfo({ kind: 'hAtoms', atoms: [3, 4, 7, 8, 15], count: 1 }, {}, 'chemist')!;
 
   it('enumerates the exact atom set "3, 4, 7, 8 and 15"', () => {
     expect(card.body).toContain('3, 4, 7, 8 and 15');
@@ -124,6 +124,7 @@ describe('subTokenInfo — multi-component de-offset (GAP-2, per-component numbe
     const card = subTokenInfo(
       { kind: 'hAtoms', atoms: [19, 20, 21, 22, 23], count: 1, fragmentOffset: 17, componentIndex: 1 },
       {},
+      'chemist',
     )!;
     expect(card.body).toContain('2, 3, 4, 5 and 6');
     expect(card.body).toContain('(component 2)');
@@ -136,13 +137,14 @@ describe('subTokenInfo — multi-component de-offset (GAP-2, per-component numbe
     const card = subTokenInfo(
       { kind: 'mobileH', atoms: [19, 20], fragmentOffset: 17, componentIndex: 1 },
       {},
+      'chemist',
     )!;
     expect(card.body).toContain('2 and 3');
     expect(card.body).not.toContain('19');
   });
 
   it('single-fragment hAtoms (no fragmentOffset) reads literal numbers, no marker', () => {
-    const card = subTokenInfo({ kind: 'hAtoms', atoms: [3, 4, 7, 8, 15], count: 1 }, {})!;
+    const card = subTokenInfo({ kind: 'hAtoms', atoms: [3, 4, 7, 8, 15], count: 1 }, {}, 'chemist')!;
     expect(card.body).toContain('3, 4, 7, 8 and 15');
     expect(card.body).not.toMatch(/component/i);
   });
@@ -150,7 +152,7 @@ describe('subTokenInfo — multi-component de-offset (GAP-2, per-component numbe
 
 describe('subTokenInfo — mobileH (SUBEX-04, D-10)', () => {
   // Alanine (H,5,6) carboxyl mobile proton: atoms only, no count.
-  const card = subTokenInfo({ kind: 'mobileH', atoms: [5, 6] }, {})!;
+  const card = subTokenInfo({ kind: 'mobileH', atoms: [5, 6] }, {}, 'chemist')!;
 
   it('returns a non-null card with title "Mobile hydrogen" (D-16)', () => {
     expect(card.title).toBe('Mobile hydrogen');
@@ -169,6 +171,7 @@ describe('subTokenInfo — mobileH (SUBEX-04, D-10)', () => {
     const multi = subTokenInfo(
       { kind: 'mobileH', atoms: [21, 22, 23, 26, 27] },
       {},
+      'chemist',
     )!;
     expect(multi.body).toContain('atoms 21, 22, 23, 26 and 27');
     expect(multi.body).not.toContain('21 and 22 and 23');
@@ -176,7 +179,7 @@ describe('subTokenInfo — mobileH (SUBEX-04, D-10)', () => {
 });
 
 describe('subTokenInfo — stereo (SUBEX-05/06, D-11/D-12/D-13)', () => {
-  const card = subTokenInfo({ kind: 'stereo', atom: 2, sign: '-' }, {})!;
+  const card = subTokenInfo({ kind: 'stereo', atom: 2, sign: '-' }, {}, 'chemist')!;
 
   it('returns a non-null card with title "Tetrahedral stereocenter" (D-16)', () => {
     expect(card.title).toBe('Tetrahedral stereocenter');
@@ -209,21 +212,21 @@ describe('subTokenInfo — stereo (SUBEX-05/06, D-11/D-12/D-13)', () => {
 // ---------------------------------------------------------------------------
 describe('subTokenInfo — c-layer kinds return cards (CONN-04: the reversed null contract)', () => {
   it('atom kind returns a non-null card', () => {
-    expect(subTokenInfo({ kind: 'atom', canonical: 1, incidentPairs: [[1, 2]] }, {})).not.toBeNull();
+    expect(subTokenInfo({ kind: 'atom', canonical: 1, incidentPairs: [[1, 2]] }, {}, 'chemist')).not.toBeNull();
   });
 
   it('bond kind returns a non-null card', () => {
-    expect(subTokenInfo({ kind: 'bond', endpointPairs: [[1, 2]] }, {})).not.toBeNull();
+    expect(subTokenInfo({ kind: 'bond', endpointPairs: [[1, 2]] }, {}, 'chemist')).not.toBeNull();
   });
 
   it('branch kind returns a non-null card', () => {
-    expect(subTokenInfo({ kind: 'branch', bondPairs: [[2, 4]], branchPoint: 2 }, {})).not.toBeNull();
+    expect(subTokenInfo({ kind: 'branch', bondPairs: [[2, 4]], branchPoint: 2 }, {}, 'chemist')).not.toBeNull();
   });
 });
 
 describe('subTokenInfo — atom card (CONN-01)', () => {
   // ALANINE `c1-2(4)3(5)6`: atom 2 is bonded to 1, 4 and 3 → deduped sorted neighbour set {1,3,4}.
-  const card = subTokenInfo({ kind: 'atom', canonical: 2, incidentPairs: [[1, 2], [2, 3], [2, 4]] }, {})!;
+  const card = subTokenInfo({ kind: 'atom', canonical: 2, incidentPairs: [[1, 2], [2, 3], [2, 4]] }, {}, 'chemist')!;
 
   it('titles "Connection layer - Atom"', () => {
     expect(card.title).toBe('Connection layer - Atom');
@@ -240,7 +243,7 @@ describe('subTokenInfo — atom card (CONN-01)', () => {
 
 describe('subTokenInfo — atom card empty-list guard (CONN-01 / WR-04)', () => {
   // A single-atom / isolated number with no incident bonds.
-  const card = subTokenInfo({ kind: 'atom', canonical: 4, incidentPairs: [] }, {})!;
+  const card = subTokenInfo({ kind: 'atom', canonical: 4, incidentPairs: [] }, {}, 'chemist')!;
 
   it('says "no bonds recorded"', () => {
     expect(card.body).toContain('no bonds recorded');
@@ -254,7 +257,7 @@ describe('subTokenInfo — atom card empty-list guard (CONN-01 / WR-04)', () => 
 
 describe('subTokenInfo — bond card (CONN-02)', () => {
   // ALANINE `1-2`: the hyphen joins canonical atoms 1 and 2.
-  const card = subTokenInfo({ kind: 'bond', endpointPairs: [[1, 2]] }, {})!;
+  const card = subTokenInfo({ kind: 'bond', endpointPairs: [[1, 2]] }, {}, 'chemist')!;
 
   it('titles "Connection layer - Bond"', () => {
     expect(card.title).toBe('Connection layer - Bond');
@@ -267,7 +270,7 @@ describe('subTokenInfo — bond card (CONN-02)', () => {
 
 describe('subTokenInfo — branch card (CONN-02)', () => {
   // ALANINE `2(4)`: branch off atom 2 encoding bond pair 2–4 (en-dash).
-  const card = subTokenInfo({ kind: 'branch', bondPairs: [[2, 4]], branchPoint: 2 }, {})!;
+  const card = subTokenInfo({ kind: 'branch', bondPairs: [[2, 4]], branchPoint: 2 }, {}, 'chemist')!;
 
   it('titles "Connection layer - Branch"', () => {
     expect(card.title).toBe('Connection layer - Branch');
@@ -288,6 +291,7 @@ describe('subTokenInfo — c-layer multi-component de-offset (CONN-03)', () => {
   const card = subTokenInfo(
     { kind: 'bond', endpointPairs: [[18, 24]], fragmentOffset: 17, componentIndex: 1 },
     {},
+    'chemist',
   )!;
 
   it('de-offsets to the printed per-component numbers "1 and 7"', () => {
@@ -305,9 +309,9 @@ describe('subTokenInfo — c-layer multi-component de-offset (CONN-03)', () => {
 });
 
 describe('subTokenInfo — c-layer copy safety (CONN-04)', () => {
-  const atomCard = subTokenInfo({ kind: 'atom', canonical: 2, incidentPairs: [[1, 2], [2, 3], [2, 4]] }, {})!;
-  const bondCard = subTokenInfo({ kind: 'bond', endpointPairs: [[1, 2]] }, {})!;
-  const branchCard = subTokenInfo({ kind: 'branch', bondPairs: [[2, 4]], branchPoint: 2 }, {})!;
+  const atomCard = subTokenInfo({ kind: 'atom', canonical: 2, incidentPairs: [[1, 2], [2, 3], [2, 4]] }, {}, 'chemist')!;
+  const bondCard = subTokenInfo({ kind: 'bond', endpointPairs: [[1, 2]] }, {}, 'chemist')!;
+  const branchCard = subTokenInfo({ kind: 'branch', bondPairs: [[2, 4]], branchPoint: 2 }, {}, 'chemist')!;
 
   it('no card makes a POSITIVE bond-order claim', () => {
     for (const c of [atomCard, bondCard, branchCard]) {
@@ -340,6 +344,7 @@ describe('subTokenInfo — c-layer N* atom card (CONN-01 / CONN-03, GAP-19)', ()
   const card = subTokenInfo(
     { kind: 'atom', canonical: 23, incidentPairs: [[22, 23], [23, 25]], fragmentOffset: 21, componentIndex: 2, fragMult: 2 },
     {},
+    'chemist',
   )!;
 
   it('shows the per-component LOCAL self number, not the global one', () => {
@@ -363,6 +368,7 @@ describe('subTokenInfo — c-layer N* bond card (CONN-02 / CONN-03, GAP-19)', ()
   const card = subTokenInfo(
     { kind: 'bond', endpointPairs: [[22, 23], [28, 29]], fragmentOffset: 21, componentIndex: 2, fragMult: 2 },
     {},
+    'chemist',
   )!;
 
   it('names the two atoms in local numbering and states the multiplicity', () => {
@@ -379,6 +385,7 @@ describe('subTokenInfo — h-layer N* hAtoms card (GAP-19, screenshot-1 regressi
   const card = subTokenInfo(
     { kind: 'hAtoms', atoms, count: 1, fragmentOffset: 21, componentIndex: 2, fragMult: 2 },
     {},
+    'chemist',
   )!;
 
   it('enumerates ONE fragment in local numbering (1-6), not both copies (1-12)', () => {
@@ -395,7 +402,7 @@ describe('subTokenInfo — h-layer N* hAtoms card (GAP-19, screenshot-1 regressi
 // between two methyls that both hang off the nitrogen and are not bonded to each other.
 describe('subTokenInfo — branch-list comma', () => {
   it('names both flanking atoms and denies a bond between them', () => {
-    const info = subTokenInfo({ kind: 'siblings', siblingPairs: [[2, 3]] }, {});
+    const info = subTokenInfo({ kind: 'siblings', siblingPairs: [[2, 3]] }, {}, 'chemist');
     expect(info).not.toBeNull();
     expect(info!.title).toMatch(/Connection layer/);
     expect(info!.body).toContain('2');
@@ -407,6 +414,7 @@ describe('subTokenInfo — branch-list comma', () => {
     const info = subTokenInfo(
       { kind: 'siblings', siblingPairs: [[9, 10]], fragmentOffset: 6, componentIndex: 1 },
       {},
+      'chemist',
     );
     expect(info!.body).toContain('3');
     expect(info!.body).toContain('4');
@@ -418,20 +426,20 @@ describe('subTokenInfo — branch-list comma', () => {
 // InChI=1S/C4H4O4/c5-3(6)1-2-4(7)8/h1-2H,(H,5,6)(H,7,8)/b2-1+ (maleic: /b2-1-).
 describe('subTokenInfo bondStereo', () => {
   it('names both atoms and calls the sign a canonical parity, not E/Z itself', () => {
-    const info = subTokenInfo({ kind: 'bondStereo', stereoBond: [2, 1], sign: '+' }, {});
+    const info = subTokenInfo({ kind: 'bondStereo', stereoBond: [2, 1], sign: '+' }, {}, 'chemist');
     expect(info).not.toBeNull();
     expect(info!.title).toMatch(/double-bond/i);
     expect(info!.body).toContain('Atoms 2 and 1');
     expect(info!.body).toMatch(/double bond/);
     expect(info!.body).toMatch(/canonical/);
-    expect(info!.body).toMatch(/NOT the E\/Z descriptor/);
+    expect(info!.body).toMatch(/NOT the E\/Z stereodescriptor/);
     // The v1.5 chemistry invariant, carried to the b-layer: never assert the sign IS a descriptor.
     expect(info!.body).not.toMatch(/\+ is E\b/);
     expect(info!.body).not.toMatch(/\bis Z\b/);
   });
 
   it('describes an unspecified bond for the ? sign', () => {
-    const info = subTokenInfo({ kind: 'bondStereo', stereoBond: [2, 1], sign: '?' }, {});
+    const info = subTokenInfo({ kind: 'bondStereo', stereoBond: [2, 1], sign: '?' }, {}, 'chemist');
     expect(info!.body).toMatch(/unspecified or unknown/);
   });
 
@@ -439,8 +447,43 @@ describe('subTokenInfo bondStereo', () => {
     const info = subTokenInfo(
       { kind: 'bondStereo', stereoBond: [6, 5], sign: '-', fragmentOffset: 4, componentIndex: 1 },
       {},
+      'chemist',
     );
     expect(info!.body).toContain('Atoms 2 and 1 (component 2)');
     expect(info!.body).not.toContain('6');
+  });
+});
+
+describe('plain register', () => {
+  // Same ALANINE projections used above: element C, hAtoms 2H, mobileH (H,5,6), stereo t2-.
+  const cases: [string, Parameters<typeof subTokenInfo>[0]][] = [
+    ['element', { kind: 'element', el: 'C' }],
+    ['hAtoms', { kind: 'hAtoms', atoms: [2], count: 1 }],
+    ['mobileH', { kind: 'mobileH', atoms: [5, 6] }],
+    ['stereo', { kind: 'stereo', sign: '-' }],
+    ['bondStereo', { kind: 'bondStereo', stereoBond: [6, 9], sign: '+' }],
+    ['atom', { kind: 'atom', canonical: 2, incidentPairs: [[1, 2], [2, 4], [2, 3]] }],
+    ['bond', { kind: 'bond', endpointPairs: [[1, 2]] }],
+    ['siblings', { kind: 'siblings', siblingPairs: [[4, 3]] }],
+    ['branch', { kind: 'branch', branchPoint: 2, bondPairs: [[2, 4]] }],
+  ];
+  it.each(cases)('%s: plain differs from chemist, both non-empty', (_name, sub) => {
+    const c = subTokenInfo(sub, {}, 'chemist')!;
+    const p = subTokenInfo(sub, {}, 'plain')!;
+    expect(c.body.length).toBeGreaterThan(0);
+    expect(p.body.length).toBeGreaterThan(0);
+    expect(p.body).not.toBe(c.body);
+  });
+
+  it('plain stereo keeps the not-R/S caveat and the sign', () => {
+    const p = subTokenInfo({ kind: 'stereo', sign: '-' }, {}, 'plain')!;
+    expect(p.body).toContain('-');
+    expect(p.body).toMatch(/not the R or S/);
+  });
+
+  it('plain atom card keeps the atom numbers', () => {
+    const p = subTokenInfo({ kind: 'atom', canonical: 2, incidentPairs: [[1, 2], [2, 4], [2, 3]] }, {}, 'plain')!;
+    expect(p.body).toContain('Atom 2');
+    expect(p.body).toContain('atoms 1, 3 and 4');
   });
 });
