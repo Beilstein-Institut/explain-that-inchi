@@ -36,6 +36,11 @@ Versions live in `package.json` — read them there, not here.
 - `oklch()` color space (Tailwind 3.x doesn't support oklch natively; Tailwind 4 does but adds migration cost)
 - ~60+ CSS custom properties as a structured token system
 - Precise typographic tokens (IBM Plex Sans/Serif/Mono via `@font-face` or Google Fonts)
+### Explanation register lives in the URL
+`?mode=plain` switches every explanation to the plain-language register
+(`src/lib/audienceUrl.ts`); the toggle is `src/components/AudienceToggle.tsx`,
+on the section-label row left of Help. Not localStorage: `leaveWipe.ts` clears
+all storage on leave and privacy policy §3 says nothing persists.
 ## Build and Deploy
 
 **One target:** Docker + nginx (`Dockerfile`, `nginx.conf`) →
