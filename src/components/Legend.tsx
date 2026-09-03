@@ -9,6 +9,7 @@ import { swatchVar, LAYER_KEY } from '../lib/layerInfo';
 import { pick } from '../lib/audience';
 import type { Copy } from '../lib/audience';
 import type { LayerType } from '../lib/parseInchi';
+import { Prose } from './Prose';
 import styles from './Legend.module.css';
 import expStyles from './Explanation.module.css';
 
@@ -115,7 +116,7 @@ export function Legend({ activeType }: LegendProps) {
             <span className={styles.sw} />
             <span className={styles.key}>{legendKey(l.type)}</span>
             <span className={styles.name}>{pick(l.name, audience)}</span>
-            <span className={styles.desc}>{pick(l.desc, audience)}</span>
+            <Prose as="span" className={styles.desc} text={pick(l.desc, audience)} />
           </div>
         );
       })}

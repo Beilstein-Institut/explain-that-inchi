@@ -1,0 +1,35 @@
+/* Glossary term: reads as text with a dotted underline; no button chrome. */
+.term {
+  all: unset;
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  color: inherit;
+  font: inherit;
+}
+.term:hover,
+.term[aria-expanded="true"] {
+  text-decoration-style: solid;
+}
+.term:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+  border-radius: 2px;
+}
+
+/* Definition block under the paragraph. In-flow, so nothing is clipped. */
+.def {
+  display: block;
+  margin-top: 6px;
+  padding: 6px 10px;
+  border-left: 2px solid var(--line-control);
+  font-size: var(--fs-micro);
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+.def b {
+  color: var(--ink);
+  font-weight: 500;
+  text-transform: capitalize;
+}

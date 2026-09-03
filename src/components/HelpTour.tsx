@@ -7,6 +7,7 @@ import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react
 import { useInchiStore } from '../store';
 import { pick } from '../lib/audience';
 import type { Copy } from '../lib/audience';
+import { Prose } from './Prose';
 import styles from './HelpTour.module.css';
 
 export interface HelpTourProps {
@@ -339,7 +340,7 @@ export function HelpTour({ open, onClose }: HelpTourProps) {
         </div>
 
         <h3 className={styles.stepTitle}>{pick(step.title, audience)}</h3>
-        <p className={styles.stepBody}>{pick(step.body, audience)}</p>
+        <Prose className={styles.stepBody} text={pick(step.body, audience)} />
 
         <div className={styles.controls}>
           <button

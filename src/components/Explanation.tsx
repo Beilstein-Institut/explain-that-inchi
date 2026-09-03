@@ -16,6 +16,7 @@ import { pick } from '../lib/audience';
 import type { SubHover, LayerType } from '../lib/parseInchi';
 import { KEY_ZONE_COPY } from '../lib/inchiKeyInfo';
 import { Legend } from './Legend';
+import { Prose } from './Prose';
 import styles from './Explanation.module.css';
 
 // D-01: Key-segment zone → accent token mapping (no new CSS tokens; reuses existing palette).
@@ -119,7 +120,7 @@ export function Explanation() {
           {/* UAT-13: unified card header — title only, no tag row and no swatch dot
               (consistent across all card states; the left accent strip carries colour). */}
           <h3 className={styles.layerTitle}>{pick(KEY_ZONE_COPY[keyHoverKind].title, audience)}</h3>
-          <p className={styles.layerBody}>{pick(KEY_ZONE_COPY[keyHoverKind].body, audience)}</p>
+          <Prose className={styles.layerBody} text={pick(KEY_ZONE_COPY[keyHoverKind].body, audience)} />
         </div>
       ) : subCopy ? (
         /* Phase 18 sub-token card (SUBEX-01/02/07). Guarded on subCopy (not effSub) so
@@ -133,7 +134,7 @@ export function Explanation() {
           style={{ '--accent': subAccent } as React.CSSProperties}
         >
           <h3 className={styles.layerTitle}>{subCopy.title}</h3>
-          <p className={styles.layerBody}>{subCopy.body}</p>
+          <Prose className={styles.layerBody} text={subCopy.body} />
         </div>
       ) : layer ? (
         /* Active state: a live InChI layer is hovered (InChI string or a present
@@ -144,7 +145,7 @@ export function Explanation() {
           style={{ '--accent': accentVar } as React.CSSProperties}
         >
           <h3 className={styles.layerTitle}>{pick(info!.title, audience)}</h3>
-          <p className={styles.layerBody}>{pick(info!.blurb, audience)}</p>
+          <Prose className={styles.layerBody} text={pick(info!.blurb, audience)} />
           <div className={styles.layerEg}>
             <span className={styles.lbl}>{info!.egLabel}</span>
             {/* D-09: innerHTML only for readingFor()/info.eg (emit known-safe <b>/<span> tags).
@@ -169,7 +170,7 @@ export function Explanation() {
           style={{ '--accent': legendAccent } as React.CSSProperties}
         >
           <h3 className={styles.layerTitle}>{pick(legendInfo!.title, audience)}</h3>
-          <p className={styles.layerBody}>{pick(legendInfo!.blurb, audience)}</p>
+          <Prose className={styles.layerBody} text={pick(legendInfo!.blurb, audience)} />
           {!presentTypes.has(legendHover.type) && (
             <p className={styles.notPresent}>Not present in this molecule.</p>
           )}
@@ -190,7 +191,7 @@ export function Explanation() {
           style={{ '--accent': 'var(--ink-faint)' } as React.CSSProperties}
         >
           <h3 className={styles.layerTitle}>{pick(idleInfo.title, audience)}</h3>
-          <p className={styles.layerBody}>{pick(idleInfo.blurb, audience)}</p>
+          <Prose className={styles.layerBody} text={pick(idleInfo.blurb, audience)} />
         </div>
       )}
 
