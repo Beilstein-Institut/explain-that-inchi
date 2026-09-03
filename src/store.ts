@@ -105,17 +105,22 @@ export const useInchiStore = create<InchiState>()(
         hoverIdx: null, subHover: null, pinned: null, keyPinned: null, keyHoverKind: null, legendHover: null,
         inchiError: message,
       }),
-      // Gate: while pinned is non-null, setHover/setSubHover are no-ops (single enforcement point).
-      setHover: (idx) => { if (get().pinned) return; set({ hoverIdx: idx }); },
-      setSubHover: (sub) => { if (get().pinned) return; set({ subHover: sub }); },
+      // Gate: while EITHER pin is set, setHover/setSubHover are no-ops (single
+      // enforcement point). A key pin freezes the canvas too — the card is showing a
+      // key zone, so a layer hover must not light up atoms the card is not talking
+      // about. The key pin still never CREATES a highlight (Invariant #2).
+      setHover: (idx) => { if (get().pinned || get().keyPinned) return; set({ hoverIdx: idx }); },
+      setSubHover: (sub) => { if (get().pinned || get().keyPinned) return; set({ subHover: sub }); },
       // One pin at a time: taking one pin drops the other, so the card never has to
       // arbitrate between a frozen layer and a frozen key zone.
       setPinned: (p) => set({ pinned: p, keyPinned: null }),
       clearPinned: () => set({ pinned: null }),
       // Same gate as setHover: while keyPinned is set, hover cannot move the card.
       setKeyHoverKind: (kind) => { if (get().keyPinned) return; set({ keyHoverKind: kind }); },
-      // Pinning also sets the hover kind so card and segment styling agree at once.
-      setKeyPinned: (zone) => set({ keyPinned: zone, keyHoverKind: zone, pinned: null }),
+      // Pinning also sets the hover kind so card and segment styling agree at once,
+      // and drops any live highlight in the SAME set() — the gate above would swallow
+      // a setHover(null) issued after this call.
+      setKeyPinned: (zone) => set({ keyPinned: zone, keyHoverKind: zone, pinned: null, hoverIdx: null, subHover: null }),
       clearKeyPinned: () => set({ keyPinned: null }),
       setLegendHover: (hover) => set({ legendHover: hover }),
       setAudience: (audience) => { writeAudience(audience); set({ audience }); },

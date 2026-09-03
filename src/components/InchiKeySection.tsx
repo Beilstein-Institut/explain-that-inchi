@@ -101,11 +101,9 @@ export function InchiKeySection() {
                   s.clearKeyPinned();
                   return;
                 }
+                // setKeyPinned drops any live layer highlight itself (WR-01) — calling
+                // setHover(null) after it would be swallowed by the store's own gate.
                 s.setKeyPinned(zone);
-                // Same null-only writes as onMouseEnter below (WR-01): they clear an
-                // InChI-layer hover, they never create a canvas highlight.
-                s.setHover(null);
-                s.setSubHover(null);
               };
               const tokenBase = SEGMENT_COLOR[seg.kind];
               const tokenColor = `var(${tokenBase})`;

@@ -299,6 +299,37 @@ describe('useInchiStore', () => {
       expect(state.subHover).toBeNull();
     });
 
+    it('setKeyPinned drops any live highlight target', () => {
+      const hit: SubHover = { kind: 'element', el: 'C' };
+      useInchiStore.setState({ hoverIdx: 2, subHover: hit });
+
+      useInchiStore.getState().setKeyPinned('hash');
+
+      const state = useInchiStore.getState();
+      expect(state.hoverIdx).toBeNull();
+      expect(state.subHover).toBeNull();
+    });
+
+    it('while key-pinned, setHover and setSubHover are no-ops', () => {
+      useInchiStore.getState().setKeyPinned('hash');
+
+      useInchiStore.getState().setHover(2);
+      useInchiStore.getState().setSubHover({ kind: 'element', el: 'C' });
+
+      const state = useInchiStore.getState();
+      expect(state.hoverIdx).toBeNull();
+      expect(state.subHover).toBeNull();
+    });
+
+    it('after clearKeyPinned, setHover works again', () => {
+      useInchiStore.getState().setKeyPinned('hash');
+      useInchiStore.getState().clearKeyPinned();
+
+      useInchiStore.getState().setHover(2);
+
+      expect(useInchiStore.getState().hoverIdx).toBe(2);
+    });
+
     it('one pin at a time: setKeyPinned drops a layer pin', () => {
       useInchiStore.getState().setPinned({ idx: 1, sub: null });
       useInchiStore.getState().setKeyPinned('hash');
