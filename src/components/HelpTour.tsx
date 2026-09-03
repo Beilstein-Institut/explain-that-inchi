@@ -4,6 +4,9 @@
 // Implements spec §Feature 2 — Guided Help Tour (lines 72-118).
 
 import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
+import { useInchiStore } from '../store';
+import { pick } from '../lib/audience';
+import type { Copy } from '../lib/audience';
 import styles from './HelpTour.module.css';
 
 export interface HelpTourProps {
@@ -12,8 +15,8 @@ export interface HelpTourProps {
 }
 
 export interface TourStep {
-  title: string;
-  body: string;
+  title: Copy;
+  body: Copy;
   /** CSS selector that locates the anchor DOM element for this step */
   selector: string;
 }
@@ -24,51 +27,78 @@ export interface TourStep {
 // '<n> of 8' assertions that were only ever restating this array.
 export const STEPS: TourStep[] = [
   {
-    title: 'The molecule editor',
-    body: 'Draw or edit a structure here. The InChI updates live as you draw.',
+    title: { chemist: 'The molecule editor', plain: 'The drawing area' },
+    body: {
+      chemist: 'Draw or edit a structure here. The InChI updates live as you draw.',
+      plain: 'Draw or change a molecule here. The text below updates as you draw.',
+    },
     selector: '[data-tour-id="editor"]',
   },
   {
-    title: 'Presets list',
-    body: 'Click an example molecule to load it instantly into the editor.',
+    title: { chemist: 'Presets list', plain: 'Example molecules' },
+    body: {
+      chemist: 'Click an example molecule to load it instantly into the editor.',
+      plain: 'Click a name to load a ready-made molecule.',
+    },
     selector: '.mol-list',
   },
   {
-    title: 'The InChI string',
-    body: 'The InChI is displayed here, colour-coded by layer. Each colour represents a different kind of chemical information.',
+    title: { chemist: 'The InChI string', plain: 'The InChI text' },
+    body: {
+      chemist: 'The InChI is displayed here, colour-coded by layer. Each colour represents a different kind of chemical information.',
+      plain: 'This is the molecule written as text. Each colour is one kind of information.',
+    },
     selector: '[data-tour-id="inchi-string"]',
   },
   {
-    title: 'Hovering',
-    body: 'Hover any coloured chunk to highlight the matching atoms or bonds in the drawing above.',
+    title: { chemist: 'Hovering', plain: 'Hovering' },
+    body: {
+      chemist: 'Hover any coloured chunk to highlight the matching atoms or bonds in the drawing above.',
+      plain: 'Point at a coloured piece to light up the matching atoms in the drawing.',
+    },
     selector: '[data-tour-id="inchi-string"]',
   },
   {
-    title: 'Pinning (click to freeze)',
-    body: 'Click a chunk to lock the highlight — the view freezes so you can inspect the drawing. Click anywhere or press Esc to release.',
+    title: { chemist: 'Pinning (click to freeze)', plain: 'Pinning' },
+    body: {
+      chemist: 'Click a chunk to lock the highlight — the view freezes so you can inspect the drawing. Click anywhere or press Esc to release.',
+      plain: 'Click a piece to freeze the highlight. Click anywhere or press Esc to release it.',
+    },
     selector: '[data-tour-id="inchi-string"]',
   },
   {
-    title: 'The InChIKey',
-    body: 'The InChIKey is a fixed-length, hashed form of the InChI — useful for database searches and comparisons.',
+    title: { chemist: 'The InChIKey', plain: 'The InChIKey' },
+    body: {
+      chemist: 'The InChIKey is a fixed-length, hashed form of the InChI — useful for database searches and comparisons.',
+      plain: 'A short fixed-length fingerprint of the text above, handy for searching databases.',
+    },
     selector: '[data-tour-id="inchikey"]',
   },
   {
     // Between the InChIKey and the legend, matching where the card sits on screen
     // — the tour reads down the page. It is also the step that explains where the
     // output of steps 4 and 5 actually appears, which was previously left implied.
-    title: 'The explanation card',
-    body: 'Whatever you point at is explained here — a whole layer, or a single character inside one. The text names the atoms it refers to, so you can read it against the drawing above.',
+    title: { chemist: 'The explanation card', plain: 'The explanation card' },
+    body: {
+      chemist: 'Whatever you point at is explained here — a whole layer, or a single character inside one. The text names the atoms it refers to, so you can read it against the drawing above. Click any underlined term for a definition.',
+      plain: 'Whatever you point at is explained here in plain words. The text names the atoms it means. Click any underlined word for its meaning.',
+    },
     selector: '[data-tour-id="explanation"]',
   },
   {
-    title: 'The legend',
-    body: 'Every layer type is listed here with its colour and a description of what chemical information it encodes. Hovering a row explains that layer in the card to its left, even for layers this molecule does not have.',
+    title: { chemist: 'The legend', plain: 'The legend' },
+    body: {
+      chemist: 'Every layer type is listed here with its colour and a description of what chemical information it encodes. Hovering a row explains that layer in the card to its left, even for layers this molecule does not have.',
+      plain: 'Every kind of layer is listed here with its colour. Hover a row to read about it, even if this molecule does not have it.',
+    },
     selector: '[data-tour-id="legend"]',
   },
   {
-    title: 'Reset / Help buttons',
-    body: 'Reset clears the canvas. Help reopens this tour at any time.',
+    title: { chemist: 'Reset / Help buttons', plain: 'Reset / Help buttons' },
+    body: {
+      chemist: 'Reset clears the canvas. Help reopens this tour at any time.',
+      plain: 'Reset clears the drawing. Help reopens this tour.',
+    },
     selector: '.section-label-actions',
   },
 ];
@@ -146,6 +176,7 @@ export function calloutPosition(
 }
 
 export function HelpTour({ open, onClose }: HelpTourProps) {
+  const audience = useInchiStore(state => state.audience);
   const [stepIndex, setStepIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
 
@@ -307,8 +338,8 @@ export function HelpTour({ open, onClose }: HelpTourProps) {
           </button>
         </div>
 
-        <h3 className={styles.stepTitle}>{step.title}</h3>
-        <p className={styles.stepBody}>{step.body}</p>
+        <h3 className={styles.stepTitle}>{pick(step.title, audience)}</h3>
+        <p className={styles.stepBody}>{pick(step.body, audience)}</p>
 
         <div className={styles.controls}>
           <button
