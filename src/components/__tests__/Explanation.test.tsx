@@ -44,6 +44,7 @@ var mock: {
   hoverIdx: number | null;
   atomElements: Record<number, string>;
   pinned: { idx: number; sub: SubHover | null } | null;
+  keyPinned: string | null;
   keyHoverKind: string | null;
   inchiKey: string;
   legendHover: { type: string; eg: string } | null;
@@ -54,6 +55,7 @@ var mock: {
   hoverIdx: null,
   atomElements: {},
   pinned: null,
+  keyPinned: null,
   keyHoverKind: null,
   inchiKey: '',
   legendHover: null,
@@ -88,6 +90,7 @@ vi.mock('../../store', () => {
     hoverIdx: m.hoverIdx ?? null,
     atomElements: m.atomElements ?? {},
     pinned: m.pinned ?? null,
+    keyPinned: m.keyPinned ?? null,
     keyHoverKind: m.keyHoverKind ?? null,
     inchiKey: m.inchiKey ?? '',
     legendHover: m.legendHover ?? null,
@@ -100,6 +103,8 @@ vi.mock('../../store', () => {
     setLegendHover: spies.setLegendHover,
     setPinned: vi.fn(),
     clearPinned: vi.fn(),
+    setKeyPinned: vi.fn(),
+    clearKeyPinned: vi.fn(),
     setInchiData: vi.fn(),
     };
   };
@@ -115,6 +120,7 @@ beforeEach(() => {
   mock.hoverIdx = null;
   mock.atomElements = { 1: 'C', 2: 'C', 3: 'C', 4: 'N', 5: 'O', 6: 'O' };
   mock.pinned = null;
+  mock.keyPinned = null;
   mock.keyHoverKind = null;
   mock.inchiKey = '';
   mock.legendHover = null;
@@ -276,6 +282,16 @@ describe('Explanation — audience register', () => {
     const chemist = readingHtml('chemist');
     expect(chemist).not.toBe('');
     expect(readingHtml('plain')).toBe(chemist);
+  });
+
+  // Task 13: a pinned key segment keeps its card up after the pointer leaves the strip
+  // — that frozen card is the only place its glossary terms are reachable.
+  it('a pinned key zone drives the card with no live key hover', () => {
+    mock.inchiKey = 'RYYVLZVUVIJVGH-UHFFFAOYSA-N';
+    mock.keyPinned = 'skeleton';
+    mock.keyHoverKind = null;
+    render(<Explanation />);
+    expect(screen.getByText(KEY_ZONE_COPY.skeleton.title.chemist)).toBeInTheDocument();
   });
 
   it('plain audience swaps the key-zone card', () => {

@@ -4,7 +4,7 @@
 // D-09: innerHTML for reading-code block (readingFor output).
 // D-10: Idle state shows DEFAULT_INFO.title when no layer hovered.
 // Pitfall 3: --accent always set — idle uses ink-faint, active uses layer accent.
-// D-04a: Precedence: keyHoverKind (key segment) → hoverIdx (InChI layer) → idle.
+// D-04a: Precedence: pinned key zone → keyHoverKind (key segment) → hoverIdx (InChI layer) → idle.
 // GUARDRAIL (Invariant #2): keyHoverKind branch is read-only; does NOT touch canvas highlights.
 
 import { useInchiStore } from '../store';
@@ -35,7 +35,11 @@ export function Explanation() {
   // Phase 16: read pinned; when set, it overrides hoverIdx for the explanation card.
   const pinned = useInchiStore(state => state.pinned);
   // D-04a: read keyHoverKind; treat undefined the same as null (falsy-safe for test mocks).
-  const rawKeyHoverKind = useInchiStore(state => state.keyHoverKind);
+  // Task 13: a pinned key zone outranks live key hover, mirroring pinned vs hoverIdx.
+  // Both are read unconditionally — a hook cannot sit behind a ??.
+  const keyHoverKindLive = useInchiStore(state => state.keyHoverKind);
+  const keyPinned = useInchiStore(state => state.keyPinned);
+  const rawKeyHoverKind = keyPinned ?? keyHoverKindLive;
   const inchiKey = useInchiStore(state => state.inchiKey);
   // CR-01 (defensive): an empty key can never show a key-segment card, even if a stale
   // keyHoverKind slips through. Primary fix is the keyHoverKind reset in setInchiData.

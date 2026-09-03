@@ -62,8 +62,8 @@ export const STEPS: TourStep[] = [
   {
     title: { chemist: 'Pinning (click to freeze)', plain: 'Pinning' },
     body: {
-      chemist: 'Click a chunk to lock the highlight — the view freezes so you can inspect the drawing. Click anywhere or press Esc to release.',
-      plain: 'Click a piece to freeze the highlight. Click anywhere or press Esc to release it.',
+      chemist: 'Click a chunk of the InChI, or a block of the InChIKey, to lock the highlight and freeze the card so you can read it. Click anywhere or press Esc to release.',
+      plain: 'Click a piece of the InChI, or a block of the key, to freeze the highlight and the card. Click anywhere or press Esc to release.',
     },
     selector: '[data-tour-id="inchi-string"]',
   },

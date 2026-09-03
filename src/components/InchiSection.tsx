@@ -12,6 +12,7 @@ import { swatchVar } from '../lib/layerInfo';
 import { formulaFragmentCounts } from '../lib/parseInchi';
 import { LayerText } from './LayerText';
 import { activateProps } from '../lib/keyboardProps';
+import { usePinRelease } from '../hooks/usePinRelease';
 import styles from './InchiSection.module.css';
 
 export function InchiSection() {
@@ -35,37 +36,8 @@ export function InchiSection() {
     return () => { mountedRef.current = false; };
   }, []);
 
-  // Phase 16: add click-anywhere and Esc listeners to release pin.
-  // Listeners are added only while pinned and removed on unpin (T-16-01 mitigation).
-  useEffect(() => {
-    if (!pinned) return;
-
-    const handleClickAnywhere = (e: MouseEvent) => {
-      // A glossary term (or its floating tooltip, portaled to <body>) is read
-      // *about* the pinned layer — clicking one must not throw the pin away.
-      const t = e.target as Element;
-      if (t.closest?.('[data-glossary-term]') || t.closest?.('[role="tooltip"]')) {
-        return;
-      }
-      useInchiStore.getState().clearPinned();
-    };
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        useInchiStore.getState().clearPinned();
-      }
-    };
-
-    // Use capture phase so the listener fires before any element's onClick.
-    // The layer span's onClick checks getState().pinned — which is already cleared by
-    // the time the bubble-phase handler runs — so no re-pin happens on the same gesture.
-    document.addEventListener('click', handleClickAnywhere, { capture: true });
-    window.addEventListener('keydown', handleEsc);
-
-    return () => {
-      document.removeEventListener('click', handleClickAnywhere, { capture: true });
-      window.removeEventListener('keydown', handleEsc);
-    };
-  }, [pinned]);
+  // Click-anywhere / Esc release, shared with the key pin (see hooks/usePinRelease).
+  usePinRelease();
 
   const isEmpty = layers.length === 0;
 
@@ -117,7 +89,7 @@ export function InchiSection() {
               };
               const activate = () => {
                 // Any click while pinned only releases — the document capture
-                // listener (added in the useEffect above) already called clearPinned()
+                // listener (added by usePinRelease) already called clearPinned()
                 // before this bubble-phase handler fires, so getState().pinned is null.
                 // On Enter/Space no capture listener runs, so this toggles the pin off.
                 if (useInchiStore.getState().pinned) {
