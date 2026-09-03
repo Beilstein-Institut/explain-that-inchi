@@ -11,20 +11,22 @@ import type { Layer } from '../lib/parseInchi';
 let mockLayers: Layer[] = [];
 let mockHoverIdx: number | null = null;
 let mockInchi = '';
+let mockPinned: { idx: number; sub: null } | null = null;
 
 const mockSetHover = vi.fn();
 const mockSetSubHover = vi.fn();
+const mockClearPinned = vi.fn();
 
 // Mock the store module — selector pattern matching InchiSection's usage
 vi.mock('../store', () => {
   const storeState = () => ({
     layers: mockLayers,
     hoverIdx: mockHoverIdx,
-    pinned: null as null | { idx: number; sub: null },
+    pinned: mockPinned,
     setHover: mockSetHover,
     setSubHover: mockSetSubHover,
     setPinned: vi.fn(),
-    clearPinned: vi.fn(),
+    clearPinned: mockClearPinned,
     inchi: mockInchi,
     auxMap: {},
     atomElements: {},
@@ -45,6 +47,7 @@ beforeEach(() => {
   mockLayers = [];
   mockHoverIdx = null;
   mockInchi = '';
+  mockPinned = null;
   vi.clearAllMocks();
 });
 
@@ -184,5 +187,42 @@ describe('PLSH-04: copy button', () => {
     });
     expect(screen.queryByText('Copied!')).not.toBeInTheDocument();
     vi.useRealTimers();
+  });
+});
+
+describe('InchiSection — pin survives glossary clicks', () => {
+  const BENZENE = 'InChI=1S/C6H6/c1-2-4-6-5-3-1/h1-6H';
+  const BENZENE_LAYERS: Layer[] = [
+    { type: 'formula', prefix: '', text: 'C6H6', atoms: [1, 2, 3, 4, 5, 6], bonds: [] },
+  ];
+
+  // Control: the click-anywhere handler does release the pin for ordinary clicks.
+  it('releases the pin on a click elsewhere in the page', () => {
+    mockInchi = BENZENE;
+    mockLayers = BENZENE_LAYERS;
+    mockPinned = { idx: 0, sub: null };
+    render(<div><InchiSection /><span>elsewhere</span></div>);
+    fireEvent.click(screen.getByText('elsewhere'));
+    expect(mockClearPinned).toHaveBeenCalled();
+  });
+
+  // Opening a glossary definition inside a pinned card must not unpin it — the
+  // reader clicked the word to read about the pin, not to throw it away.
+  it('keeps the pin when the click lands on a glossary term', () => {
+    mockInchi = BENZENE;
+    mockLayers = BENZENE_LAYERS;
+    mockPinned = { idx: 0, sub: null };
+    render(<div><InchiSection /><button data-glossary-term="">atom</button></div>);
+    fireEvent.click(screen.getByText('atom'));
+    expect(mockClearPinned).not.toHaveBeenCalled();
+  });
+
+  it('keeps the pin when the click lands inside the glossary tooltip', () => {
+    mockInchi = BENZENE;
+    mockLayers = BENZENE_LAYERS;
+    mockPinned = { idx: 0, sub: null };
+    render(<div><InchiSection /><span role="tooltip">a definition</span></div>);
+    fireEvent.click(screen.getByText('a definition'));
+    expect(mockClearPinned).not.toHaveBeenCalled();
   });
 });

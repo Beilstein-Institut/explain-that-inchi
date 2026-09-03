@@ -261,6 +261,23 @@ describe('Explanation — audience register', () => {
     expect(screen.queryByText(LAYER_INFO.formula.title.chemist)).toBeNull();
   });
 
+  // The "Reads as" block decodes the InChI itself, so it is register-free by
+  // construction (readingFor takes no audience). Locked here: a future register
+  // switch must not start rewriting the decoded string.
+  it('the Reads as block is identical in both registers', () => {
+    const readingHtml = (audience: 'chemist' | 'plain') => {
+      mock.audience = audience;
+      mock.hoverIdx = FORMULA_IDX;
+      // The dangerouslySetInnerHTML span is the unclassed sibling of the label.
+      const { container } = render(<Explanation />);
+      return container.querySelector('[class*="layerEg"] span:not([class])')!.innerHTML;
+    };
+
+    const chemist = readingHtml('chemist');
+    expect(chemist).not.toBe('');
+    expect(readingHtml('plain')).toBe(chemist);
+  });
+
   it('plain audience swaps the key-zone card', () => {
     mock.audience = 'plain';
     mock.inchiKey = 'RYYVLZVUVIJVGH-UHFFFAOYSA-N';

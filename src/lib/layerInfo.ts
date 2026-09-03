@@ -75,12 +75,12 @@ export const LAYER_INFO: Record<LayerType, LayerInfoEntry> = {
     egLabel: 'Reads as',
   },
   q: {
-    // Blue Book P-72 anions, P-73 cations, P-74 zwitterions.
+    // Blue Book P-72 anions, P-73 cations.
     title: { chemist: 'Net charge', plain: 'Overall charge' },
     accent: 'var(--c-charge)',
     blurb: {
       chemist:
-        'The net charge of the species — the sum of all formal charges, as carried by an anion, cation or zwitterion. Absent when the species is neutral.',
+        'The net charge of the species — the sum of all formal charges, as carried by an anion or cation. Absent when the species is neutral.',
       plain:
         'Molecules can carry an electric charge, positive or negative. This layer gives the total. It is left out when the molecule is neutral, which is the usual case.',
     },
@@ -128,7 +128,7 @@ export const LAYER_INFO: Record<LayerType, LayerInfoEntry> = {
     accent: 'var(--c-stereo)',
     blurb: {
       chemist:
-        "One bit choosing between the two enantiomers the /t parities could describe. '1' means the parities are as written; '0' means take the inverted set, the mirror image. Together with /s1 this fixes the absolute configuration.",
+        "One bit choosing between the two enantiomers the /t parities could describe. '0' means the parities are as written; '1' means take the inverted set, the mirror image. Together with /s1 this fixes the absolute configuration.",
       plain:
         'The layer before this can describe a molecule or its mirror image. This single digit says which one is meant. 0 and 1 are the two mirror twins.',
     },

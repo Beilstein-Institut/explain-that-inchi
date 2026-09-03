@@ -125,7 +125,7 @@ export function subTokenInfo(
       const sign = sub.sign ?? '';
       const body = pick({
         chemist:
-          `A chirality centre: a tetrahedral atom whose four distinguishable ligands make the molecule nonsuperposable on its mirror image. ` +
+          `A chirality centre: a tetrahedral atom whose four distinguishable ligands make its arrangement nonsuperposable on its mirror image. ` +
           `The ${sign} here is the parity of those ligands under InChI's canonical neighbour ordering — it is NOT the CIP R/S stereodescriptor (+ is not R, − is not S). ` +
           `The /m and /s layers fix which enantiomer this parity corresponds to.`,
         plain:

@@ -40,7 +40,13 @@ export function InchiSection() {
   useEffect(() => {
     if (!pinned) return;
 
-    const handleClickAnywhere = () => {
+    const handleClickAnywhere = (e: MouseEvent) => {
+      // A glossary term (or its floating tooltip, portaled to <body>) is read
+      // *about* the pinned layer — clicking one must not throw the pin away.
+      const t = e.target as Element;
+      if (t.closest?.('[data-glossary-term]') || t.closest?.('[role="tooltip"]')) {
+        return;
+      }
       useInchiStore.getState().clearPinned();
     };
     const handleEsc = (e: KeyboardEvent) => {
