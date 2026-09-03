@@ -15,7 +15,7 @@ var mockLayers: Layer[];
 
 vi.mock('../../store', () => {
   spies = { setHover: vi.fn(), setSubHover: vi.fn(), setLegendHover: vi.fn() };
-  const state = () => ({ layers: mockLayers ?? [], ...spies });
+  const state = () => ({ layers: mockLayers ?? [], audience: 'chemist' as const, ...spies });
   const useInchiStore = vi.fn((sel: (s: ReturnType<typeof state>) => unknown) => sel(state())) as
     ReturnType<typeof vi.fn> & { getState: () => ReturnType<typeof state> };
   useInchiStore.getState = () => state();
