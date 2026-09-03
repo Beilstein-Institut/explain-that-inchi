@@ -18,17 +18,25 @@
   border-radius: 2px;
 }
 
-/* Definition block under the paragraph. In-flow, so nothing is clipped. */
-.def {
-  display: block;
-  margin-top: 6px;
-  padding: 6px 10px;
-  border-left: 2px solid var(--line-control);
-  font-size: var(--fs-micro);
-  line-height: 1.5;
+/* Floating definition over the clicked word. Portaled to body + fixed, so the
+   card's overflow:hidden cannot clip it. Centred on the word via translateX. */
+.tip {
+  position: fixed;
+  transform: translateX(-50%);
+  z-index: 1002; /* above Ketcher's 1001 overlay, below the tour's 9997 */
+  max-width: min(280px, calc(100vw - 16px));
+  padding: 8px 10px;
+  border: 1px solid var(--line-control);
+  border-radius: 6px;
+  background: var(--bg-canvas);
   color: var(--ink-soft);
+  font-family: var(--font-sans);
+  font-size: var(--fs-ui);
+  line-height: 1.45;
+  box-shadow: 0 4px 14px oklch(0 0 0 / 0.12);
+  pointer-events: auto;
 }
-.def b {
+.tip b {
   color: var(--ink);
   font-weight: 500;
 }

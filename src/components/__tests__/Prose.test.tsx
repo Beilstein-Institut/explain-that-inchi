@@ -16,18 +16,18 @@ describe('Prose', () => {
     render(<Prose text={TEXT} />);
     const btn = screen.getByRole('button', { name: 'atom' });
     fireEvent.click(btn);
-    expect(screen.getByRole('note')).toHaveTextContent(GLOSSARY['atom']);
+    expect(screen.getByRole('tooltip')).toHaveTextContent(GLOSSARY['atom']);
     expect(btn).toHaveAttribute('aria-expanded', 'true');
     fireEvent.click(btn);
-    expect(screen.queryByRole('note')).toBeNull();
+    expect(screen.queryByRole('tooltip')).toBeNull();
   });
 
   it('only one definition open at a time', () => {
     render(<Prose text={TEXT} />);
     fireEvent.click(screen.getByRole('button', { name: 'atom' }));
     fireEvent.click(screen.getByRole('button', { name: 'bond' }));
-    expect(screen.getAllByRole('note')).toHaveLength(1);
-    expect(screen.getByRole('note')).toHaveTextContent(GLOSSARY['bond']);
+    expect(screen.getAllByRole('tooltip')).toHaveLength(1);
+    expect(screen.getByRole('tooltip')).toHaveTextContent(GLOSSARY['bond']);
   });
 
   it('Escape closes, and does not leak to the tour/pin handlers on window', () => {
@@ -41,7 +41,7 @@ describe('Prose', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'atom' }));
     fireEvent.keyDown(document, { key: 'Escape' });
-    expect(screen.queryByRole('note')).toBeNull();
+    expect(screen.queryByRole('tooltip')).toBeNull();
     expect(outer).toHaveBeenCalledTimes(1); // consumed by Prose
 
     window.removeEventListener('keydown', outer);
@@ -50,20 +50,86 @@ describe('Prose', () => {
   it('the definition heading prints the surface text, not the glossary key', () => {
     render(<Prose text="An E/Z label." />);
     fireEvent.click(screen.getByRole('button', { name: 'E/Z' }));
-    expect(screen.getByRole('note').querySelector('b')).toHaveTextContent('E/Z');
+    expect(screen.getByRole('tooltip').querySelector('b')).toHaveTextContent('E/Z');
   });
 
   it('click outside closes', () => {
     render(<div><Prose text={TEXT} /><span>outside</span></div>);
     fireEvent.click(screen.getByRole('button', { name: 'atom' }));
     fireEvent.mouseDown(screen.getByText('outside'));
-    expect(screen.queryByRole('note')).toBeNull();
+    expect(screen.queryByRole('tooltip')).toBeNull();
   });
 
   it('text change closes an open definition', () => {
     const { rerender } = render(<Prose text={TEXT} />);
     fireEvent.click(screen.getByRole('button', { name: 'atom' }));
     rerender(<Prose text="A bond." />);
-    expect(screen.queryByRole('note')).toBeNull();
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+
+  it('the tooltip is portaled to body, outside the prose element', () => {
+    const { container } = render(<Prose text={TEXT} />);
+    fireEvent.click(screen.getByRole('button', { name: 'atom' }));
+    const tip = screen.getByRole('tooltip');
+    expect(container.firstChild).not.toContainElement(tip);
+    expect(document.body).toContainElement(tip);
+  });
+
+  it('the open button describes itself by the tooltip id', () => {
+    render(<Prose text={TEXT} />);
+    const btn = screen.getByRole('button', { name: 'atom' });
+    expect(btn).not.toHaveAttribute('aria-describedby');
+    fireEvent.click(btn);
+    expect(btn.getAttribute('aria-describedby')).toBe(screen.getByRole('tooltip').id);
+  });
+
+  it('scrolling closes an open tooltip', () => {
+    render(<Prose text={TEXT} />);
+    fireEvent.click(screen.getByRole('button', { name: 'atom' }));
+    fireEvent.scroll(window);
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+
+  it('resizing closes an open tooltip', () => {
+    render(<Prose text={TEXT} />);
+    fireEvent.click(screen.getByRole('button', { name: 'atom' }));
+    fireEvent.resize(window);
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+
+  it('mousedown inside the tooltip does not close it', () => {
+    render(<Prose text={TEXT} />);
+    fireEvent.click(screen.getByRole('button', { name: 'atom' }));
+    fireEvent.mouseDown(screen.getByRole('tooltip'));
+    expect(screen.getByRole('tooltip')).toBeInTheDocument();
+  });
+
+  it('hover opens the tooltip and leaving the word closes it', () => {
+    render(<Prose text={TEXT} />);
+    const btn = screen.getByRole('button', { name: 'atom' });
+    fireEvent.mouseEnter(btn);
+    expect(screen.getByRole('tooltip')).toHaveTextContent(GLOSSARY['atom']);
+    fireEvent.mouseLeave(btn);
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+
+  it('a click on a hovered term sticks the tooltip past mouseleave', () => {
+    render(<Prose text={TEXT} />);
+    const btn = screen.getByRole('button', { name: 'atom' });
+    fireEvent.mouseEnter(btn);
+    fireEvent.click(btn);
+    fireEvent.mouseLeave(btn);
+    expect(screen.getByRole('tooltip')).toBeInTheDocument();
+    fireEvent.click(btn);
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+
+  it('focus opens the tooltip and blur closes it', () => {
+    render(<Prose text={TEXT} />);
+    const btn = screen.getByRole('button', { name: 'atom' });
+    fireEvent.focus(btn);
+    expect(screen.getByRole('tooltip')).toHaveTextContent(GLOSSARY['atom']);
+    fireEvent.blur(btn);
+    expect(screen.queryByRole('tooltip')).toBeNull();
   });
 });
