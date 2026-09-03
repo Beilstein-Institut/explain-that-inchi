@@ -46,6 +46,11 @@ export const GLOSSARY: Record<string, string> = {
   'configuration': 'The 3-D arrangement of the atoms in a molecule.',
   'absolute configuration': 'The true 3-D arrangement of a molecule, as opposed to only knowing how its parts relate.',
   'relative configuration': 'How the handed atoms in one molecule are arranged relative to each other, without knowing the true mirror form.',
+  // The legend's stereo-flag row and the s-layer copy use the bare adjectives,
+  // where the two-word keys above cannot match. Longest-first ordering in
+  // TERM_RE keeps "absolute configuration" winning wherever the phrase is whole.
+  'absolute': 'Said of a 3-D arrangement whose true form is known, not just how its parts relate. Short for absolute configuration.',
+  'relative': 'Said of a 3-D arrangement where only how the handed atoms relate to each other is known. Short for relative configuration.',
   'racemate': 'A 50:50 mixture of the two mirror-image forms of a molecule.',
   'racemic': 'A 50:50 mixture of the two mirror-image forms of a molecule.',
   'ligand': 'A group attached to an atom.',

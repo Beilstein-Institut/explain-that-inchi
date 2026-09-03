@@ -46,4 +46,20 @@ describe('markTerms', () => {
     const text = 'Atoms 1 and 2 share a double bond; the parity is not the E/Z stereodescriptor.';
     expect(markTerms(text).map(s => s.text).join('')).toBe(text);
   });
+
+  // The legend's stereo-flag row is the exact string a reader hovers; the
+  // two-word 'absolute configuration' key never matches it.
+  it("marks every word of the legend's stereo-flag row", () => {
+    const terms = markTerms('Absolute / relative / racemic')
+      .filter(s => s.term)
+      .map(s => s.term);
+    expect(terms).toEqual(['absolute', 'relative', 'racemic']);
+  });
+
+  it('the full phrase still beats the bare adjective', () => {
+    expect(markTerms('fixes the absolute configuration')).toContainEqual({
+      text: 'absolute configuration',
+      term: 'absolute configuration',
+    });
+  });
 });
