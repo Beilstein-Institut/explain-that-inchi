@@ -15,7 +15,7 @@ import { render, screen } from '@testing-library/react';
 import { Explanation } from '../Explanation';
 import { subTokenInfo } from '../../lib/subTokenInfo';
 import type { Layer, SubHover } from '../../lib/parseInchi';
-import { DEFAULT_INFO, EMPTY_INFO } from '../../lib/layerInfo';
+import { LAYER_INFO, DEFAULT_INFO, EMPTY_INFO } from '../../lib/layerInfo';
 
 const REAL_INCHI = 'InChI=1S/C3H7NO2/c1-2(4)3(5)6/h2H,4H2,1H3,(H,5,6)/t2-/m0/s1';
 
@@ -47,6 +47,7 @@ var mock: {
   inchiKey: string;
   legendHover: { type: string; eg: string } | null;
   subHover: SubHover | null;
+  audience: 'chemist' | 'plain';
 } = {
   layers: [],
   hoverIdx: null,
@@ -56,6 +57,7 @@ var mock: {
   inchiKey: '',
   legendHover: null,
   subHover: null,
+  audience: 'chemist',
 };
 
 // Setter spies live on a `var`-hoisted holder so they exist (as references) before the
@@ -89,7 +91,9 @@ vi.mock('../../store', () => {
     inchiKey: m.inchiKey ?? '',
     legendHover: m.legendHover ?? null,
     subHover: m.subHover ?? null,
+    audience: m.audience ?? 'chemist',
     setHover: spies.setHover,
+    setAudience: vi.fn(),
     setSubHover: spies.setSubHover,
     setKeyHoverKind: spies.setKeyHoverKind,
     setLegendHover: spies.setLegendHover,
@@ -114,6 +118,7 @@ beforeEach(() => {
   mock.inchiKey = '';
   mock.legendHover = null;
   mock.subHover = null;
+  mock.audience = 'chemist';
   vi.clearAllMocks();
 });
 
@@ -222,15 +227,15 @@ describe('Explanation — empty canvas', () => {
   it('asks for a molecule when no layers are parsed', () => {
     mock.layers = [];
     render(<Explanation />);
-    expect(screen.getByText(EMPTY_INFO.title)).toBeInTheDocument();
-    expect(screen.getByText(EMPTY_INFO.blurb)).toBeInTheDocument();
-    expect(screen.queryByText(DEFAULT_INFO.title)).not.toBeInTheDocument();
+    expect(screen.getByText(EMPTY_INFO.title.chemist)).toBeInTheDocument();
+    expect(screen.getByText(EMPTY_INFO.blurb.chemist)).toBeInTheDocument();
+    expect(screen.queryByText(DEFAULT_INFO.title.chemist)).not.toBeInTheDocument();
   });
 
   it('restores the hover prompt once a molecule is drawn', () => {
     render(<Explanation />); // beforeEach leaves ALANINE_LAYERS in place
-    expect(screen.getByText(DEFAULT_INFO.title)).toBeInTheDocument();
-    expect(screen.queryByText(EMPTY_INFO.title)).not.toBeInTheDocument();
+    expect(screen.getByText(DEFAULT_INFO.title.chemist)).toBeInTheDocument();
+    expect(screen.queryByText(EMPTY_INFO.title.chemist)).not.toBeInTheDocument();
   });
 
   // The two states share the idle branch, so the accent must not regress either.
@@ -242,5 +247,13 @@ describe('Explanation — empty canvas', () => {
       expect(card.style.getPropertyValue('--accent')).toBe('var(--ink-faint)');
       unmount();
     }
+  });
+
+  it('plain audience swaps the layer card title and blurb', () => {
+    mock.audience = 'plain';
+    mock.hoverIdx = FORMULA_IDX;
+    render(<Explanation />);
+    expect(screen.getByText(LAYER_INFO.formula.title.plain)).toBeInTheDocument();
+    expect(screen.queryByText(LAYER_INFO.formula.title.chemist)).toBeNull();
   });
 });

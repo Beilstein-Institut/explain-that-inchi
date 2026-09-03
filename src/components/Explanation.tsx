@@ -12,6 +12,7 @@ import type { KeyHoverZone } from '../store';
 import { formulaFragmentCounts } from '../lib/parseInchi';
 import { LAYER_INFO, DEFAULT_INFO, EMPTY_INFO, readingFor, swatchVar } from '../lib/layerInfo';
 import { subTokenInfo } from '../lib/subTokenInfo';
+import { pick } from '../lib/audience';
 import type { SubHover, LayerType } from '../lib/parseInchi';
 import { KEY_ZONE_COPY } from '../lib/inchiKeyInfo';
 import { Legend } from './Legend';
@@ -44,6 +45,9 @@ export function Explanation() {
   // Phase 18 (SUBEX-01/02): the hovered/pinned sub-token. Read-only — the card never
   // writes it back (mirrors the pinned/hoverIdx read pattern).
   const subHover = useInchiStore(state => state.subHover);
+
+  // Task 3: the card copy exists in both registers; the header toggle picks one.
+  const audience = useInchiStore(state => state.audience);
 
   // Phase 16: pinned wins over live hover (spec line 56).
   // The store gate freezes hoverIdx while pinned, so effIdx already equals the pinned
@@ -139,8 +143,8 @@ export function Explanation() {
           className={[styles.card, styles.active].join(' ')}
           style={{ '--accent': accentVar } as React.CSSProperties}
         >
-          <h3 className={styles.layerTitle}>{info!.title}</h3>
-          <p className={styles.layerBody}>{info!.blurb}</p>
+          <h3 className={styles.layerTitle}>{pick(info!.title, audience)}</h3>
+          <p className={styles.layerBody}>{pick(info!.blurb, audience)}</p>
           <div className={styles.layerEg}>
             <span className={styles.lbl}>{info!.egLabel}</span>
             {/* D-09: innerHTML only for readingFor()/info.eg (emit known-safe <b>/<span> tags).
@@ -164,8 +168,8 @@ export function Explanation() {
           className={[styles.card, styles.active].join(' ')}
           style={{ '--accent': legendAccent } as React.CSSProperties}
         >
-          <h3 className={styles.layerTitle}>{legendInfo!.title}</h3>
-          <p className={styles.layerBody}>{legendInfo!.blurb}</p>
+          <h3 className={styles.layerTitle}>{pick(legendInfo!.title, audience)}</h3>
+          <p className={styles.layerBody}>{pick(legendInfo!.blurb, audience)}</p>
           {!presentTypes.has(legendHover.type) && (
             <p className={styles.notPresent}>Not present in this molecule.</p>
           )}
@@ -185,8 +189,8 @@ export function Explanation() {
           className={styles.card}
           style={{ '--accent': 'var(--ink-faint)' } as React.CSSProperties}
         >
-          <h3 className={styles.layerTitle}>{idleInfo.title}</h3>
-          <p className={styles.layerBody}>{idleInfo.blurb}</p>
+          <h3 className={styles.layerTitle}>{pick(idleInfo.title, audience)}</h3>
+          <p className={styles.layerBody}>{pick(idleInfo.blurb, audience)}</p>
         </div>
       )}
 

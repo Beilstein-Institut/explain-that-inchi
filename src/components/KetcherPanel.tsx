@@ -114,7 +114,7 @@ export function KetcherPanel({
                       color: `var(--c-${swatchVar(m.layer)})`,
                       background: `var(--c-${swatchVar(m.layer)}-bg)`,
                     }}
-                    title={`Shows the ${LAYER_INFO[m.layer].title.toLowerCase()} layer`}
+                    title={`Shows the ${LAYER_INFO[m.layer].title.chemist.toLowerCase()} layer`}
                   >
                     {LAYER_KEY[m.layer]}
                   </span>

@@ -4,109 +4,174 @@
 // parseMobileHydrogens, parseConnectionBonds, parseStereoAtoms imported from parseInchi.ts (D-05).
 
 import type { Layer, LayerType } from './parseInchi';
+import type { Copy } from './audience';
 import { parseMobileHydrogens, parseConnectionBonds, parseStereoAtoms, expandLayerText } from './parseInchi';
 import { JMOL_COLORS } from './jmolColors';
 
 // ---------------------------------------------------------------------------
-// LAYER_INFO — verbatim from layers-info.js lines 1-81
+// LAYER_INFO — ported from layers-info.js lines 1-81; copy rewritten in two registers
 // ---------------------------------------------------------------------------
 
 export interface LayerInfoEntry {
-  title: string;
+  title: Copy;
   accent: string;
-  blurb: string;
+  blurb: Copy;
   egLabel: string;
   eg?: string;
 }
 
+// Chemist register cites the IUPAC Blue Book (2013) section that owns the term;
+// where the Blue Book has none the comment names the Gold Book term or says the
+// concept is InChI-specific. Plain register: same claims, no jargon.
 export const LAYER_INFO: Record<LayerType, LayerInfoEntry> = {
   version: {
-    title: 'Version',
+    // InChI-specific: no IUPAC nomenclature term.
+    title: { chemist: 'Version', plain: 'Version' },
     accent: 'var(--c-version)',
-    blurb:
-      "Identifies the InChI version. '1' is version 1; the trailing 'S' marks the Standard InChI — the canonical form most databases use.",
+    blurb: {
+      chemist:
+        "Identifies the InChI version. '1' is version 1; the trailing 'S' marks the Standard InChI — the fixed option set most databases store.",
+      plain:
+        "Which edition of the InChI rules made this text. The 1 is the version. The S means the standard settings were used, which is what most databases store.",
+    },
     egLabel: 'Reads as',
     eg: 'version <b>1</b>, <b>S</b>tandard',
   },
   formula: {
-    title: 'Molecular formula',
+    // Gold Book: molecular formula. Hill order is a CAS convention, not IUPAC.
+    title: { chemist: 'Molecular formula', plain: 'What it is made of' },
     accent: 'var(--c-formula)',
-    blurb:
-      'The Hill-system formula of the heavy atoms (plus total H count). Carbon first, then hydrogen, then the rest alphabetically. This layer answers the question "what is in the molecule" before any structure is described.',
+    blurb: {
+      chemist:
+        'The molecular formula of every atom, hydrogen included, in Hill order: carbon first, then hydrogen, then the remaining elements alphabetically. It states what the molecule contains before any structure is described.',
+      plain:
+        'A list of the atoms in the molecule. Each capital letter, or letter pair, is one element, such as C for carbon. The number after it says how many of that atom there are. No number means one.',
+    },
     egLabel: 'Reads as',
   },
   c: {
-    title: 'Connection layer',
+    // InChI-specific: canonical numbering and the connection layer have no
+    // nomenclature counterpart. Gold Book: connectivity.
+    title: { chemist: 'Connection layer', plain: 'How the atoms are joined' },
     accent: 'var(--c-conn)',
-    blurb:
-      'How the heavy atoms are connected, using canonical atom numbers. Hyphens represent bonds; parentheses open and close branches. Hydrogens are normally left out here and counted in the h-layer instead — the exception is a hydrogen bonded to two atoms at once, such as the bridging H of a borane: it cannot be written as a per-atom count, so it gets its own canonical number and appears in this layer.',
+    blurb: {
+      chemist:
+        'The connectivity of the non-hydrogen atoms, using canonical atom numbers. Hyphens represent bonds; parentheses open and close branches. Hydrogens are normally left out here and counted in the h-layer instead — the exception is a hydrogen bonded to two atoms at once, such as the bridging H of a borane: it cannot be written as a per-atom count, so it gets its own canonical number and appears in this layer.',
+      plain:
+        'Every atom except hydrogen gets a number. This layer lists which numbered atoms are joined. A dash is a bond. Brackets mark a side branch. Hover a number to light up that atom in the drawing.',
+    },
     egLabel: 'Reads as',
   },
   h: {
-    title: 'Hydrogen layer',
+    // Gold Book: tautomerism. InChI-specific: the per-atom H count.
+    title: { chemist: 'Hydrogen layer', plain: 'Where the hydrogens are' },
     accent: 'var(--c-hydro)',
-    blurb:
-      "Where the hydrogens left out of the connection layer are recorded — as a count stored per atom, not something you deduce from valence rules. '1H3' means atom 1 carries three H. Ranges like '1-6H' indicate that atoms 1-6 each carry one H. Parenthesised groups like '(H,3,4)' are mobile (tautomeric) protons shared between atoms. Hydrogens you have not drawn are shown as badges on the canvas when you hover this layer.",
+    blurb: {
+      chemist:
+        "Where the hydrogens left out of the connection layer are recorded — as a count stored per atom, not something you deduce from valence. '1H3' means atom 1 carries three H. Ranges like '1-6H' indicate that atoms 1-6 each carry one H. Parenthesised groups like '(H,3,4)' are mobile hydrogens: tautomerism lets them sit on any of the listed atoms, so InChI records them as shared. Hydrogens you have not drawn are shown as badges on the canvas when you hover this layer.",
+      plain:
+        "Hydrogen atoms are not in the layer above, so this layer counts them. '1H3' means atom 1 has three hydrogens. '1-6H' means atoms 1 to 6 have one each. A group in brackets like '(H,3,4)' is a hydrogen that can move between the listed atoms. Hover to see them as badges on the drawing.",
+    },
     egLabel: 'Reads as',
   },
   q: {
-    title: 'Net charge',
+    // Blue Book P-72 anions, P-73 cations, P-74 zwitterions.
+    title: { chemist: 'Net charge', plain: 'Overall charge' },
     accent: 'var(--c-charge)',
-    blurb: 'The overall formal charge of the molecule. Absent when the species is neutral.',
+    blurb: {
+      chemist:
+        'The net charge of the species — the sum of all formal charges, as carried by an anion, cation or zwitterion. Absent when the species is neutral.',
+      plain:
+        'Molecules can carry an electric charge, positive or negative. This layer gives the total. It is left out when the molecule is neutral, which is the usual case.',
+    },
     egLabel: 'Reads as',
   },
   p: {
-    title: 'Proton balance',
+    // Blue Book P-81.3 Table 8.1: 'hydron' is the generic H⁺; 'proton' is ¹H⁺.
+    title: { chemist: 'Proton balance', plain: 'Hydrogen ions gained or lost' },
     accent: 'var(--c-proton)',
-    blurb:
-      'Adjustments to the proton count relative to the neutral form — used for ionised and zwitterionic species.',
+    blurb: {
+      chemist:
+        "Hydrons (H⁺) added to or removed from the neutral form: 'p+1' is one added, 'p-1' one removed. A protonated or deprotonated species thereby shares every other layer with its neutral parent.",
+      plain:
+        "Some molecules have gained or lost a hydrogen ion, which gives them a charge. This layer says how many. 'p+1' means one gained, 'p-1' means one lost. Everything else is written as if the molecule were neutral.",
+    },
     egLabel: 'Reads as',
   },
   b: {
-    title: 'Double-bond stereo',
+    // Blue Book P-93.4.2.1.1: 'E'/'Z' stereodescriptors for double bonds.
+    title: { chemist: 'Double-bond stereo', plain: 'Which side of a double bond' },
     accent: 'var(--c-stereo)',
-    blurb:
-      'Geometry around stereogenic double bonds (E/Z, cis/trans). Each entry names the two atoms defining a double bond and a + or – sign for its parity.',
+    blurb: {
+      chemist:
+        'Configuration of stereogenic double bonds — what a name expresses with E/Z. Each entry names the two atoms of a double bond and a + or − parity. The parity is taken over canonical atom numbers, not CIP priorities, so it is not the E/Z stereodescriptor itself.',
+      plain:
+        'Some double bonds hold their neighbouring groups rigidly on one side or the other. This layer records which side for each such bond, as a plus or minus. Swapping sides gives a different substance made of the same atoms.',
+    },
     egLabel: 'Reads as',
   },
   t: {
-    title: 'Tetrahedral stereo',
+    // Blue Book P-92.1.1 chirality centre; P-91.2.1.1 R/S stereodescriptors.
+    title: { chemist: 'Tetrahedral stereo', plain: 'Left- or right-handed atoms' },
     accent: 'var(--c-stereo)',
-    blurb:
-      'Tetrahedral (sp³) stereocenters. Each entry is an atom number followed by + or – — the parity of the four-substituent arrangement under the canonical ordering.',
+    blurb: {
+      chemist:
+        "Tetrahedral chirality centres, the stereogenic units of a name's R/S descriptors. Each entry is a canonical atom number followed by + or −: the parity of its four ligands under InChI's canonical ordering. It is not the CIP R/S stereodescriptor; /m and /s fix the absolute configuration.",
+      plain:
+        'An atom joined to four different groups can be arranged two ways, like a left and a right hand. This layer lists such atoms with a plus or minus for their arrangement. The two mirror forms can behave very differently, for example in the body.',
+    },
     egLabel: 'Reads as',
   },
   m: {
-    title: 'Enantiomer marker',
+    // Blue Book P-93.1.1 absolute configuration; Gold Book: enantiomer.
+    title: { chemist: 'Enantiomer marker', plain: 'Mirror-image flag' },
     accent: 'var(--c-stereo)',
-    blurb:
-      "A single bit (0 or 1) that disambiguates which enantiomer the t-layer parities describe. '1' means the parities are as written; '0' means take the mirror image.",
+    blurb: {
+      chemist:
+        "One bit choosing between the two enantiomers the /t parities could describe. '1' means the parities are as written; '0' means take the inverted set, the mirror image. Together with /s1 this fixes the absolute configuration.",
+      plain:
+        'The layer before this can describe a molecule or its mirror image. This single digit says which one is meant. 0 and 1 are the two mirror twins.',
+    },
     egLabel: 'Reads as',
   },
   s: {
-    title: 'Stereo flag',
+    // Blue Book P-93.1.1 absolute, P-93.1.2 relative ('rel'), P-91.2.1.1 racemate ('rac').
+    title: { chemist: 'Stereo flag', plain: 'How exact the 3-D shape is' },
     accent: 'var(--c-stereo)',
-    blurb:
-      "How the stereo information should be interpreted. '1' = absolute, '2' = relative, '3' = racemic.",
+    blurb: {
+      chemist:
+        "How the stereo layers are to be read. '1' = absolute configuration; '2' = relative configuration, the 'rel' of a name; '3' = racemate, the 'rac' of a name.",
+      plain:
+        'Says how to read the handedness information. 1: the exact 3-D form is known. 2: only how the handed atoms relate to each other is known. 3: a 50:50 mix of both mirror forms.',
+    },
     egLabel: 'Reads as',
   },
   i: {
-    title: 'Isotope layer',
+    // Blue Book P-82 isotopically substituted compounds; P-81.4 natural composition.
+    title: { chemist: 'Isotope layer', plain: 'Heavier or lighter atoms' },
     accent: 'var(--c-isotope)',
-    blurb:
-      'Non-natural isotopic substitutions — deuterium, ¹³C, and so on. Atoms not mentioned have natural isotopic abundance.',
+    blurb: {
+      chemist:
+        'Isotopic substitution: atoms whose nuclide differs from natural composition — deuterium (D), tritium (T), or a mass shift such as +1 for ¹³C. Atoms not listed have natural isotopic composition.',
+      plain:
+        'Atoms of one element can come in slightly different weights, called isotopes. This layer lists atoms that are not the everyday kind, such as heavy hydrogen (D). Any atom not listed is the ordinary kind.',
+    },
     egLabel: 'Reads as',
   },
 };
 
 // ---------------------------------------------------------------------------
-// DEFAULT_INFO — verbatim from layers-info.js lines 83-89
+// DEFAULT_INFO — ported from layers-info.js lines 83-89
 // ---------------------------------------------------------------------------
 
 export const DEFAULT_INFO = {
-  title: 'Hover any layer',
-  blurb:
-    'Move your cursor over a coloured layer of the InChI string above to see what it encodes and watch the structure light up.',
+  title: { chemist: 'Hover any layer', plain: 'Hover any layer' },
+  blurb: {
+    chemist:
+      'Move your cursor over a coloured layer of the InChI string above to see what it encodes and watch the structure light up.',
+    plain:
+      'Move your mouse over a coloured part of the InChI text above. This card explains it and the drawing lights up.',
+  },
   accent: 'var(--ink-faint)',
 };
 
@@ -115,9 +180,13 @@ export const DEFAULT_INFO = {
 // that cannot succeed. Deliberately not a second copy of the InChI box's placeholder
 // — that one promises the string, this one promises the explanation.
 export const EMPTY_INFO = {
-  title: 'Nothing to explain yet',
-  blurb:
-    'Draw a molecule in the editor above. Its InChI appears below, split into colour-coded layers — hover any one to see what it encodes.',
+  title: { chemist: 'Nothing to explain yet', plain: 'Nothing to explain yet' },
+  blurb: {
+    chemist:
+      'Draw a molecule in the editor above. Its InChI appears below, split into colour-coded layers — hover any one to see what it encodes.',
+    plain:
+      'Draw a molecule in the editor above. Its InChI text appears below in coloured pieces. Hover a piece to learn what it means.',
+  },
   accent: 'var(--ink-faint)',
 };
 
