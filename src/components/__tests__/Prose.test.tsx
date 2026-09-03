@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { Prose } from '../Prose';
 import { GLOSSARY } from '../../lib/glossary';
 
@@ -30,19 +32,28 @@ describe('Prose', () => {
     expect(screen.getByRole('tooltip')).toHaveTextContent(GLOSSARY['bond']);
   });
 
-  it('Escape closes, and does not leak to the tour/pin handlers on window', () => {
+  it('Escape closes, and only a sticky tooltip consumes the press', () => {
     const outer = vi.fn();
     window.addEventListener('keydown', outer);
     render(<Prose text={TEXT} />);
+    const btn = screen.getByRole('button', { name: 'atom' });
 
     // Nothing open: Esc belongs to whoever else wants it.
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(outer).toHaveBeenCalledTimes(1);
 
-    fireEvent.click(screen.getByRole('button', { name: 'atom' }));
+    // Merely hovered: the tooltip closes, but the pin and the tour still get
+    // their Esc — resting the pointer on a word must not disarm the key.
+    fireEvent.mouseEnter(btn);
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByRole('tooltip')).toBeNull();
-    expect(outer).toHaveBeenCalledTimes(1); // consumed by Prose
+    expect(outer).toHaveBeenCalledTimes(2);
+
+    // Clicked open: the reader's active thing, so Esc stops here.
+    fireEvent.click(btn);
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('tooltip')).toBeNull();
+    expect(outer).toHaveBeenCalledTimes(2); // consumed by Prose
 
     window.removeEventListener('keydown', outer);
   });
@@ -199,5 +210,19 @@ describe('Prose', () => {
       stageRects(400, 20);
       expect(openTip().style.top).toBe(`${20 + BTN_HEIGHT + GAP}px`); // 46
     });
+  });
+
+  // The tour's step bodies render through Prose, so a tooltip opened inside the
+  // callout must paint over it. Both values are plain CSS, invisible to
+  // happy-dom's stub of CSS Modules, so the files are compared directly
+  // (precedent: src/__tests__/tokenContrast.test.ts).
+  it('the tooltip paints above every Help tour layer', () => {
+    const zIndexes = (file: string) =>
+      [...readFileSync(resolve(__dirname, '..', file), 'utf8').matchAll(/z-index:\s*(\d+)/g)]
+        .map(m => Number(m[1]));
+
+    const tour = Math.max(...zIndexes('HelpTour.module.css'));
+    expect(tour).toBeGreaterThan(0); // the tour really does stack
+    expect(Math.max(...zIndexes('Prose.module.css'))).toBeGreaterThan(tour);
   });
 });

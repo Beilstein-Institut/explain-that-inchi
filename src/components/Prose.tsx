@@ -83,13 +83,17 @@ export function Prose({ text, className, as = 'p' }: ProseProps) {
       return;
     }
     // Esc is also the tour's close key and the pin's release key (both on
-    // window, which is downstream of document): stop it so one press closes
-    // only the definition.
+    // window, which is downstream of document). A sticky tooltip is what the
+    // reader last acted on, so it consumes the press. A merely hovered one is
+    // incidental — it closes, but Esc goes on to the pin and the tour.
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === ESCAPE) {
-        e.stopPropagation();
-        setOpen(null);
+      if (e.key !== ESCAPE) {
+        return;
       }
+      if (open.sticky) {
+        e.stopPropagation();
+      }
+      setOpen(null);
     };
     const onDown = (e: MouseEvent) => {
       const t = e.target as Node;

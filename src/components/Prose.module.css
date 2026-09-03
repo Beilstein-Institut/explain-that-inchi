@@ -23,7 +23,7 @@
    centres on the word, clamped to the window, so no transform is involved. */
 .tip {
   position: fixed;
-  z-index: 1002; /* above Ketcher's 1001 overlay, below the tour's 9997 */
+  z-index: 10000; /* above the tour callout at 9999, the highest layer in the app */
   max-width: min(280px, calc(100vw - 16px));
   padding: 8px 10px;
   border: 1px solid var(--line-control);
