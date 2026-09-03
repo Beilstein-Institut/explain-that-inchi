@@ -55,6 +55,23 @@ describe('usePinRelease', () => {
     expect(useInchiStore.getState().keyPinned).toBe('hash');
   });
 
+  // The pinned element's own onClick owns the toggle. Releasing here as well meant the
+  // bubble-phase handler saw a cleared pin and pinned it straight back.
+  it('a click on a pin target releases neither pin', () => {
+    const seg = document.createElement('span');
+    seg.setAttribute('data-pin-target', '');
+    document.body.appendChild(seg);
+
+    useInchiStore.getState().setPinned(LAYER_PIN);
+    renderHook(() => usePinRelease());
+    clickOn(seg);
+    expect(useInchiStore.getState().pinned).toEqual(LAYER_PIN);
+
+    act(() => useInchiStore.getState().setKeyPinned('hash'));
+    clickOn(seg);
+    expect(useInchiStore.getState().keyPinned).toBe('hash');
+  });
+
   it('Esc releases either pin', () => {
     useInchiStore.getState().setPinned(LAYER_PIN);
     renderHook(() => usePinRelease());

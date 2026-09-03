@@ -6,6 +6,16 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { useInchiStore } from '../store';
 import { InchiKeySection } from '../components/InchiKeySection';
+import { usePinRelease } from '../hooks/usePinRelease';
+
+// The release listener lives in a hook that App mounts via InchiSection, so a strip
+// rendered alone never sees it — and the capture-phase ordering it introduces is
+// exactly what broke releasing a pin by clicking its own segment. Every pin test
+// below renders the strip WITH the hook.
+function Strip() {
+  usePinRelease();
+  return <InchiKeySection />;
+}
 
 // Caffeine, real getInchi() output (Invariant #1 — never fabricated).
 const CAFFEINE_KEY = 'RYYVLZVUVIJVGH-UHFFFAOYSA-N';
@@ -19,7 +29,7 @@ beforeEach(() => {
 
 describe('InchiKeySection — pinning', () => {
   it('a click pins the segment and freezes its card', () => {
-    render(<InchiKeySection />);
+    render(<Strip />);
 
     fireEvent.click(screen.getByText(SKELETON));
 
@@ -29,7 +39,7 @@ describe('InchiKeySection — pinning', () => {
   });
 
   it('the pinned zone survives leaving the strip', () => {
-    render(<InchiKeySection />);
+    render(<Strip />);
     const seg = screen.getByText(SKELETON);
 
     fireEvent.click(seg);
@@ -40,7 +50,7 @@ describe('InchiKeySection — pinning', () => {
   });
 
   it('clicking the pinned segment again releases it', () => {
-    render(<InchiKeySection />);
+    render(<Strip />);
     const seg = screen.getByText(HASH);
 
     fireEvent.click(seg);
@@ -49,8 +59,22 @@ describe('InchiKeySection — pinning', () => {
     expect(useInchiStore.getState().keyPinned).toBeNull();
   });
 
+  it('clicking another segment moves the pin in one click', () => {
+    render(<Strip />);
+
+    fireEvent.click(screen.getByText(HASH));
+    fireEvent.click(screen.getByText(SKELETON));
+
+    expect(useInchiStore.getState().keyPinned).toBe('skeleton');
+  });
+
+  it('names each segment for a screen reader', () => {
+    render(<Strip />);
+    expect(screen.getByText(SKELETON)).toHaveAttribute('aria-label', 'InChIKey skeleton hash');
+  });
+
   it('Enter pins the focused segment', () => {
-    render(<InchiKeySection />);
+    render(<Strip />);
 
     fireEvent.keyDown(screen.getByText(HASH), { key: 'Enter' });
 
@@ -58,7 +82,7 @@ describe('InchiKeySection — pinning', () => {
   });
 
   it('pinning creates no canvas highlight (Invariant #2)', () => {
-    render(<InchiKeySection />);
+    render(<Strip />);
 
     fireEvent.click(screen.getByText(SKELETON));
 
@@ -69,7 +93,7 @@ describe('InchiKeySection — pinning', () => {
   });
 
   it('marks the pinned segment pressed and shows the release hint', () => {
-    render(<InchiKeySection />);
+    render(<Strip />);
     const seg = screen.getByText(SKELETON);
     expect(seg).toHaveAttribute('aria-pressed', 'false');
     expect(screen.queryByText(/Pinned —/)).not.toBeInTheDocument();

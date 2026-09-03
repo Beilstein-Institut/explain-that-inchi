@@ -15,7 +15,11 @@ let mockPinned: { idx: number; sub: null } | null = null;
 
 const mockSetHover = vi.fn();
 const mockSetSubHover = vi.fn();
-const mockClearPinned = vi.fn();
+// These mutate mockPinned as the real store would: the pin toggle reads
+// getState().pinned back, so a spy that records and does nothing would hide the
+// capture-phase ordering these tests exist to pin down.
+const mockClearPinned = vi.fn(() => { mockPinned = null; });
+const mockSetPinned = vi.fn((p: { idx: number; sub: null }) => { mockPinned = p; });
 
 // Mock the store module — selector pattern matching InchiSection's usage
 vi.mock('../store', () => {
@@ -26,7 +30,7 @@ vi.mock('../store', () => {
     keyPinned: null,
     setHover: mockSetHover,
     setSubHover: mockSetSubHover,
-    setPinned: vi.fn(),
+    setPinned: mockSetPinned,
     clearPinned: mockClearPinned,
     clearKeyPinned: vi.fn(),
     inchi: mockInchi,
@@ -206,6 +210,57 @@ describe('InchiSection — pin survives glossary clicks', () => {
     render(<div><InchiSection /><span>elsewhere</span></div>);
     fireEvent.click(screen.getByText('elsewhere'));
     expect(mockClearPinned).toHaveBeenCalled();
+  });
+
+  // The capture-phase release listener used to fire on the segment's own click too,
+  // so the bubble-phase handler saw pinned === null and pinned it straight back —
+  // a pinned chunk could not be released by clicking it. The listener now leaves
+  // anything inside a [data-pin-target] to that element's own toggle.
+  const ALANINE_LAYERS: Layer[] = [
+    { type: 'formula', prefix: '', text: 'C3H7NO2', atoms: [1, 2, 3, 4, 5, 6], bonds: [] },
+    { type: 'c', prefix: 'c', text: '1-2(4)3(5)6', atoms: [1, 2, 3, 4, 5, 6], bonds: [[1, 2]] },
+  ];
+
+  it('releases the pin when the click lands on the pinned chunk itself', () => {
+    mockInchi = 'InChI=1S/C3H7NO2/c1-2(4)3(5)6/h2H,4H2,1H3,(H,5,6)/t2-/m0/s1';
+    mockLayers = ALANINE_LAYERS;
+    mockPinned = { idx: 0, sub: null };
+    render(<InchiSection />);
+
+    fireEvent.click(screen.getByLabelText(/C3H7NO2 — formula layer/));
+
+    expect(mockClearPinned).toHaveBeenCalled();
+    expect(mockSetPinned).not.toHaveBeenCalled();
+  });
+
+  it('moves the pin in one click when another chunk is clicked', () => {
+    mockInchi = 'InChI=1S/C3H7NO2/c1-2(4)3(5)6/h2H,4H2,1H3,(H,5,6)/t2-/m0/s1';
+    mockLayers = ALANINE_LAYERS;
+    mockPinned = { idx: 0, sub: null };
+    render(<InchiSection />);
+
+    fireEvent.click(screen.getByLabelText(/c1-2\(4\)3\(5\)6 — c layer/));
+
+    expect(mockSetPinned).toHaveBeenCalledWith({ idx: 1, sub: null });
+  });
+
+  // Sub-tokens carry their own pin (LayerText), and they had the same wart.
+  it('releases the pin when the click lands on the pinned sub-token itself', () => {
+    mockInchi = 'InChI=1S/C3H7NO2/c1-2(4)3(5)6/h2H,4H2,1H3,(H,5,6)/t2-/m0/s1';
+    mockLayers = ALANINE_LAYERS;
+    mockPinned = null;
+    const { unmount } = render(<InchiSection />);
+    fireEvent.click(screen.getByText('C3'));
+    // Pin whatever that click asked for — no fixture guesswork about the payload.
+    mockPinned = mockSetPinned.mock.calls[0][0];
+    unmount();
+    mockSetPinned.mockClear();
+
+    render(<InchiSection />);
+    fireEvent.click(screen.getByText('C3'));
+
+    expect(mockClearPinned).toHaveBeenCalled();
+    expect(mockSetPinned).not.toHaveBeenCalled();
   });
 
   // Opening a glossary definition inside a pinned card must not unpin it — the

@@ -12,6 +12,7 @@ import { useInchiStore } from '../store';
 import type { KeyHoverZone } from '../store';
 import { parseInchiKey } from '../lib/parseInchiKey';
 import { activateProps } from '../lib/keyboardProps';
+import { KEY_ZONE_COPY } from '../lib/inchiKeyInfo';
 import type { InchiKeySegmentKind } from '../lib/parseInchiKey';
 import styles from './InchiKeySection.module.css';
 
@@ -92,18 +93,19 @@ export function InchiKeySection() {
               const isDim = effZone !== null && effZone !== zone;
               const isPinned = keyPinned === zone;
               const activate = () => {
-                // Mirrors InchiSection's activate: while pinned, a click only releases
-                // (usePinRelease already cleared it in capture phase, so this branch is
-                // reached by Enter/Space) — otherwise pin this zone.
-                if (useInchiStore.getState().keyPinned) {
-                  useInchiStore.getState().clearKeyPinned();
+                // Mirrors InchiSection's activate: toggle on the EXACT zone, so
+                // clicking the pinned segment releases and clicking another moves the
+                // pin in one click. usePinRelease skips clicks inside a pin target.
+                const s = useInchiStore.getState();
+                if (s.keyPinned === zone) {
+                  s.clearKeyPinned();
                   return;
                 }
-                useInchiStore.getState().setKeyPinned(zone);
+                s.setKeyPinned(zone);
                 // Same null-only writes as onMouseEnter below (WR-01): they clear an
                 // InChI-layer hover, they never create a canvas highlight.
-                useInchiStore.getState().setHover(null);
-                useInchiStore.getState().setSubHover(null);
+                s.setHover(null);
+                s.setSubHover(null);
               };
               const tokenBase = SEGMENT_COLOR[seg.kind];
               const tokenColor = `var(${tokenBase})`;
@@ -133,8 +135,12 @@ export function InchiKeySection() {
                     // (INKEY-09). Tab reaches them, Enter/Space pins, focus alone shows
                     // the card — activateProps supplies the button semantics aria-pressed
                     // needs; there are no sub-tokens here for its arrow keys to walk.
+                    data-pin-target=""
                     {...activateProps(activate)}
                     aria-pressed={isPinned}
+                    // The raw hash characters are no name at all read aloud; the zone's
+                    // short label is (mirrors the layer span's aria-label).
+                    aria-label={`InChIKey ${KEY_ZONE_COPY[zone].label}`}
                     onClick={activate}
                     onBlur={() => useInchiStore.getState().setKeyHoverKind(null)}
                     onFocus={() => {

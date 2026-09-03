@@ -67,7 +67,7 @@ interface InchiState {
   setPinned: (p: { idx: number; sub: SubHover | null } | null) => void;
   clearPinned: () => void;
   setKeyHoverKind: (kind: KeyHoverZone | null) => void;
-  setKeyPinned: (zone: KeyHoverZone | null) => void;
+  setKeyPinned: (zone: KeyHoverZone) => void;
   clearKeyPinned: () => void;
   setLegendHover: (hover: LegendHover | null) => void;
   resetAll: () => void;

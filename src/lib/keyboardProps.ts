@@ -14,7 +14,7 @@
 //   ArrowRight     — steps into, then along, that layer's sub-tokens
 //   ArrowLeft      — steps back, and out to the layer chunk
 //   Enter / Space  — pins whatever is focused; pressing again releases
-//   Escape         — releases the pin (handled globally in InchiSection)
+//   Escape         — releases the pin (handled globally in hooks/usePinRelease)
 //
 // Callers pair these props with onFocus/onBlur mirroring onMouseEnter/onMouseLeave,
 // so focusing a token does exactly what hovering it does.

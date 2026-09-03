@@ -35,13 +35,15 @@ function subHoverProps(hit: SubHover, layerIdx: number) {
   const leave = () => useInchiStore.getState().setSubHover(null);
   const activate = (e: React.SyntheticEvent) => {
     // stopPropagation so the layer-level handler in InchiSection does NOT also fire.
-    // The document capture listener already cleared the pin (if any) before bubbling,
-    // so getState().pinned is null by the time this bubble-phase handler runs.
-    // On Enter/Space there is no capture listener, so pinned is still set and the
-    // key toggles the pin off — same mental model, different input.
+    // Toggle on the EXACT sub-token only (isSubPinned): clicking the pinned one
+    // releases, clicking any other moves the pin in a single click. The layer span's
+    // [data-pin-target] covers these children, so usePinRelease leaves them alone.
     e.stopPropagation();
     const s = useInchiStore.getState();
-    if (s.pinned) { s.clearPinned(); return; }
+    if (s.pinned && s.pinned.idx === layerIdx && isSubPinned(hit, s.pinned.sub)) {
+      s.clearPinned();
+      return;
+    }
     s.setPinned({ idx: layerIdx, sub: hit });
   };
   return {
