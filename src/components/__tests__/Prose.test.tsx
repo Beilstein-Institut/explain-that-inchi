@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Prose } from '../Prose';
 import { GLOSSARY } from '../../lib/glossary';
@@ -131,5 +131,49 @@ describe('Prose', () => {
     expect(screen.getByRole('tooltip')).toHaveTextContent(GLOSSARY['atom']);
     fireEvent.blur(btn);
     expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+
+  // The tooltip is centred on the word, so a term near either window edge would
+  // hang outside it. happy-dom reports zero rects, so both edges are staged with
+  // a stubbed getBoundingClientRect and a known innerWidth.
+  describe('viewport clamping', () => {
+    const VIEWPORT_WIDTH = 1000;
+    const TIP_WIDTH = 300;
+    const PAD = 8;
+    let realWidth: number;
+
+    const stageRects = (btnLeft: number) => {
+      realWidth = window.innerWidth;
+      window.innerWidth = VIEWPORT_WIDTH;
+      vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(
+        function (this: Element) {
+          const isTip = this.getAttribute('role') === 'tooltip';
+          const box = isTip
+            ? { left: 0, width: TIP_WIDTH, top: 0, bottom: 40 }
+            : { left: btnLeft, width: 40, top: 500, bottom: 520 };
+          return { ...box, right: box.left + box.width, height: box.bottom - box.top } as DOMRect;
+        },
+      );
+    };
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+      window.innerWidth = realWidth;
+    });
+
+    it('pulls a tooltip on a left-edge word back to the padding', () => {
+      stageRects(0);
+      render(<Prose text={TEXT} />);
+      fireEvent.click(screen.getByRole('button', { name: 'atom' }));
+      expect(screen.getByRole('tooltip').style.left).toBe(`${PAD}px`);
+    });
+
+    it('pulls a tooltip on a right-edge word back inside the window', () => {
+      stageRects(VIEWPORT_WIDTH - 10);
+      render(<Prose text={TEXT} />);
+      fireEvent.click(screen.getByRole('button', { name: 'atom' }));
+      const expected = VIEWPORT_WIDTH - TIP_WIDTH - PAD; // 692
+      expect(screen.getByRole('tooltip').style.left).toBe(`${expected}px`);
+    });
   });
 });

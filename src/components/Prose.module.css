@@ -19,10 +19,10 @@
 }
 
 /* Floating definition over the clicked word. Portaled to body + fixed, so the
-   card's overflow:hidden cannot clip it. Centred on the word via translateX. */
+   card's overflow:hidden cannot clip it. `left` is measured in Prose.tsx: it
+   centres on the word, clamped to the window, so no transform is involved. */
 .tip {
   position: fixed;
-  transform: translateX(-50%);
   z-index: 1002; /* above Ketcher's 1001 overlay, below the tour's 9997 */
   max-width: min(280px, calc(100vw - 16px));
   padding: 8px 10px;
