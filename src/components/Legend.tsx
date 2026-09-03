@@ -26,7 +26,7 @@ interface LegendLayerDef {
 // cannot name the same layer differently. The '…' suffix on the nine letter
 // layers is presentation — it says "prefix plus content", which is true here
 // and not on a chip.
-const ALL_LAYERS: LegendLayerDef[] = [
+export const ALL_LAYERS: LegendLayerDef[] = [
   { type: 'version', name: { chemist: 'Version',           plain: 'Version' },        desc: { chemist: 'Which InChI specification',     plain: 'Which rule set' },               eg: '1S' },
   { type: 'formula', name: { chemist: 'Formula',           plain: 'Ingredients' },    desc: { chemist: 'Atoms by element & count',      plain: 'Which atoms, how many' },        eg: 'C8H10N4O2' },
   { type: 'c',       name: { chemist: 'Connection',        plain: 'Joins' },          desc: { chemist: 'Heavy-atom connectivity',       plain: 'Which atoms are bonded' },       eg: 'c1-2(4)3-5' },
