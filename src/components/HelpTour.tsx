@@ -81,8 +81,8 @@ export const STEPS: TourStep[] = [
     // output of steps 4 and 5 actually appears, which was previously left implied.
     title: { chemist: 'The explanation card', plain: 'The explanation card' },
     body: {
-      chemist: 'Whatever you point at is explained here — a whole layer, or a single character inside one. The text names the atoms it refers to, so you can read it against the drawing above. Click any underlined term for a definition.',
-      plain: 'Whatever you point at is explained here in plain words. The text names the atoms it means. Click any underlined word for its meaning.',
+      chemist: 'Whatever you point at is explained here — a whole layer, or a single character inside one. The text names the atoms it refers to, so you can read it against the drawing above. Pin a layer by clicking it, then click any underlined term for a definition.',
+      plain: 'Whatever you point at is explained here in plain words. The text names the atoms it means. Pin a layer by clicking it, then click any underlined word for its meaning.',
     },
     selector: '[data-tour-id="explanation"]',
   },

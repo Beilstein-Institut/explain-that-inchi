@@ -14,20 +14,35 @@ interface ProseProps {
 
 const ESCAPE = 'Escape';
 
+// The open definition keeps both the glossary key and the surface text the
+// reader clicked, so the heading prints "E/Z", not a capitalised key ("E/z").
+type Open = { key: string; label: string };
+
 export function Prose({ text, className, as = 'p' }: ProseProps) {
-  const [open, setOpen] = useState<string | null>(null);
+  const [open, setOpen] = useState<Open | null>(null);
   const rootRef = useRef<HTMLParagraphElement & HTMLSpanElement>(null);
 
   // New text = new card; an open definition from the old card must not linger.
-  useEffect(() => setOpen(null), [text]);
+  // Guarded through a ref so mounting writes no state (nothing to reset yet).
+  const openRef = useRef<Open | null>(null);
+  openRef.current = open;
+  useEffect(() => {
+    if (openRef.current) {
+      setOpen(null);
+    }
+  }, [text]);
 
   // Esc and outside click close. Listeners exist only while something is open.
   useEffect(() => {
     if (!open) {
       return;
     }
+    // Esc is also the tour's close key and the pin's release key (both on
+    // window, which is downstream of document): stop it so one press closes
+    // only the definition.
     const onKey = (e: KeyboardEvent) => {
       if (e.key === ESCAPE) {
+        e.stopPropagation();
         setOpen(null);
       }
     };
@@ -55,8 +70,8 @@ export function Prose({ text, className, as = 'p' }: ProseProps) {
             key={i}
             type="button"
             className={styles.term}
-            aria-expanded={open === s.term}
-            onClick={() => setOpen(open === s.term ? null : s.term!)}
+            aria-expanded={open?.key === s.term}
+            onClick={() => setOpen(open?.key === s.term ? null : { key: s.term!, label: s.text })}
           >
             {s.text}
           </button>
@@ -66,7 +81,7 @@ export function Prose({ text, className, as = 'p' }: ProseProps) {
       )}
       {open && (
         <span role="note" className={styles.def}>
-          <b>{open}</b> {GLOSSARY[open]}
+          <b>{open.label}</b> {GLOSSARY[open.key]}
         </span>
       )}
     </Tag>

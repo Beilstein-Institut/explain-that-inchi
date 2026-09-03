@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Prose } from '../Prose';
 import { GLOSSARY } from '../../lib/glossary';
@@ -30,11 +30,27 @@ describe('Prose', () => {
     expect(screen.getByRole('note')).toHaveTextContent(GLOSSARY['bond']);
   });
 
-  it('Escape closes', () => {
+  it('Escape closes, and does not leak to the tour/pin handlers on window', () => {
+    const outer = vi.fn();
+    window.addEventListener('keydown', outer);
     render(<Prose text={TEXT} />);
+
+    // Nothing open: Esc belongs to whoever else wants it.
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(outer).toHaveBeenCalledTimes(1);
+
     fireEvent.click(screen.getByRole('button', { name: 'atom' }));
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByRole('note')).toBeNull();
+    expect(outer).toHaveBeenCalledTimes(1); // consumed by Prose
+
+    window.removeEventListener('keydown', outer);
+  });
+
+  it('the definition heading prints the surface text, not the glossary key', () => {
+    render(<Prose text="An E/Z label." />);
+    fireEvent.click(screen.getByRole('button', { name: 'E/Z' }));
+    expect(screen.getByRole('note').querySelector('b')).toHaveTextContent('E/Z');
   });
 
   it('click outside closes', () => {
