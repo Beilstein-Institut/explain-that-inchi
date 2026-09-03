@@ -94,10 +94,10 @@ export const STEPS: TourStep[] = [
     selector: '[data-tour-id="legend"]',
   },
   {
-    title: { chemist: 'Reset / Help buttons', plain: 'Reset / Help buttons' },
+    title: { chemist: 'Expert / Simple, Reset, Help', plain: 'Expert / Simple, Reset, Help' },
     body: {
-      chemist: 'Reset clears the canvas. Help reopens this tour at any time.',
-      plain: 'Reset clears the drawing. Help reopens this tour.',
+      chemist: 'Expert / Simple sets how much chemistry the explanations assume. Reset clears the canvas. Help reopens this tour at any time.',
+      plain: 'Expert / Simple picks how the explanations are written. Reset clears the drawing. Help reopens this tour.',
     },
     selector: '.section-label-actions',
   },

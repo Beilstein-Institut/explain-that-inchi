@@ -85,7 +85,7 @@ describe('HelpTour — step navigation', () => {
     expect(screen.getByText('Finish')).toBeInTheDocument();
     expect(screen.queryByText('Next')).not.toBeInTheDocument();
     expect(screen.getByText(`${TOTAL} of ${TOTAL}`)).toBeInTheDocument();
-    expect(screen.getByText('Reset / Help buttons')).toBeInTheDocument();
+    expect(screen.getByText('Expert / Simple, Reset, Help')).toBeInTheDocument();
   });
 
   it('step counter updates correctly through every step', () => {
