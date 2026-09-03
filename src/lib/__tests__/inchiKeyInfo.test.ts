@@ -24,13 +24,13 @@ describe('KEY_ZONE_COPY — all zones present', () => {
 
   it('each entry has a non-empty title', () => {
     for (const key of ZONE_KEYS) {
-      expect(KEY_ZONE_COPY[key].title.length).toBeGreaterThan(0);
+      expect(KEY_ZONE_COPY[key].title.chemist.length).toBeGreaterThan(0);
     }
   });
 
   it('each entry has a non-empty body', () => {
     for (const key of ZONE_KEYS) {
-      expect(KEY_ZONE_COPY[key].body.length).toBeGreaterThan(0);
+      expect(KEY_ZONE_COPY[key].body.chemist.length).toBeGreaterThan(0);
     }
   });
 });
@@ -101,15 +101,15 @@ describe('SC-1 — zone labels map to correct segment offsets', () => {
 
 describe('SC-1 — block-size consistency: zone body cites correct char counts', () => {
   it('skeleton body includes "14" (14-char skeleton hash, INKEY-07)', () => {
-    expect(KEY_ZONE_COPY.skeleton.body).toContain('14');
+    expect(KEY_ZONE_COPY.skeleton.body.chemist).toContain('14');
   });
 
   it('skeleton body includes "27" (27-char full key, INKEY-08)', () => {
-    expect(KEY_ZONE_COPY.skeleton.body).toContain('27');
+    expect(KEY_ZONE_COPY.skeleton.body.chemist).toContain('27');
   });
 
   it('hash body includes "8" (8-char remaining-layers hash, INKEY-07)', () => {
-    expect(KEY_ZONE_COPY.hash.body).toContain('8');
+    expect(KEY_ZONE_COPY.hash.body.chemist).toContain('8');
   });
 });
 
@@ -118,19 +118,19 @@ describe('SC-1 — SHARED_TAGLINE present on every zone (INKEY-09 / D-02)', () =
   const taglinePrefix = SHARED_TAGLINE.slice(0, 20);
 
   it('skeleton body includes the shared tagline', () => {
-    expect(KEY_ZONE_COPY.skeleton.body).toContain(taglinePrefix);
+    expect(KEY_ZONE_COPY.skeleton.body.chemist).toContain(taglinePrefix);
   });
 
   it('hash body includes the shared tagline', () => {
-    expect(KEY_ZONE_COPY.hash.body).toContain(taglinePrefix);
+    expect(KEY_ZONE_COPY.hash.body.chemist).toContain(taglinePrefix);
   });
 
   it('flagVersion body includes the shared tagline', () => {
-    expect(KEY_ZONE_COPY.flagVersion.body).toContain(taglinePrefix);
+    expect(KEY_ZONE_COPY.flagVersion.body.chemist).toContain(taglinePrefix);
   });
 
   it('protonation body includes the shared tagline', () => {
-    expect(KEY_ZONE_COPY.protonation.body).toContain(taglinePrefix);
+    expect(KEY_ZONE_COPY.protonation.body.chemist).toContain(taglinePrefix);
   });
 });
 
@@ -139,13 +139,27 @@ describe('D-07 — no reversibility/identity claims', () => {
 
   it('no zone body contains "reverse"', () => {
     for (const key of ZONE_KEYS) {
-      expect(KEY_ZONE_COPY[key].body).not.toContain('reverse');
+      expect(KEY_ZONE_COPY[key].body.chemist).not.toContain('reverse');
     }
   });
 
   it('no zone body matches /unique identifier/i', () => {
     for (const key of ZONE_KEYS) {
-      expect(KEY_ZONE_COPY[key].body).not.toMatch(/unique identifier/i);
+      expect(KEY_ZONE_COPY[key].body.chemist).not.toMatch(/unique identifier/i);
     }
+  });
+});
+
+describe('plain register', () => {
+  it('every zone has a distinct non-empty plain title and body', () => {
+    for (const key of Object.keys(KEY_ZONE_COPY) as (keyof typeof KEY_ZONE_COPY)[]) {
+      expect(KEY_ZONE_COPY[key].title.plain.length).toBeGreaterThan(0);
+      expect(KEY_ZONE_COPY[key].body.plain.length).toBeGreaterThan(0);
+      expect(KEY_ZONE_COPY[key].body.plain).not.toBe(KEY_ZONE_COPY[key].body.chemist);
+    }
+  });
+
+  it('plain skeleton body still states the 14-character block', () => {
+    expect(KEY_ZONE_COPY.skeleton.body.plain).toContain('14');
   });
 });

@@ -16,6 +16,7 @@ import { Explanation } from '../Explanation';
 import { subTokenInfo } from '../../lib/subTokenInfo';
 import type { Layer, SubHover } from '../../lib/parseInchi';
 import { LAYER_INFO, DEFAULT_INFO, EMPTY_INFO } from '../../lib/layerInfo';
+import { KEY_ZONE_COPY } from '../../lib/inchiKeyInfo';
 
 const REAL_INCHI = 'InChI=1S/C3H7NO2/c1-2(4)3(5)6/h2H,4H2,1H3,(H,5,6)/t2-/m0/s1';
 
@@ -248,12 +249,22 @@ describe('Explanation — empty canvas', () => {
       unmount();
     }
   });
+});
 
+describe('Explanation — audience register', () => {
   it('plain audience swaps the layer card title and blurb', () => {
     mock.audience = 'plain';
     mock.hoverIdx = FORMULA_IDX;
     render(<Explanation />);
     expect(screen.getByText(LAYER_INFO.formula.title.plain)).toBeInTheDocument();
     expect(screen.queryByText(LAYER_INFO.formula.title.chemist)).toBeNull();
+  });
+
+  it('plain audience swaps the key-zone card', () => {
+    mock.audience = 'plain';
+    mock.inchiKey = 'RYYVLZVUVIJVGH-UHFFFAOYSA-N';
+    mock.keyHoverKind = 'skeleton';
+    render(<Explanation />);
+    expect(screen.getByText(KEY_ZONE_COPY.skeleton.title.plain)).toBeInTheDocument();
   });
 });

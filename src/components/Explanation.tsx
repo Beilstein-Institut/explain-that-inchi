@@ -118,8 +118,8 @@ export function Explanation() {
         >
           {/* UAT-13: unified card header — title only, no tag row and no swatch dot
               (consistent across all card states; the left accent strip carries colour). */}
-          <h3 className={styles.layerTitle}>{KEY_ZONE_COPY[keyHoverKind].title}</h3>
-          <p className={styles.layerBody}>{KEY_ZONE_COPY[keyHoverKind].body}</p>
+          <h3 className={styles.layerTitle}>{pick(KEY_ZONE_COPY[keyHoverKind].title, audience)}</h3>
+          <p className={styles.layerBody}>{pick(KEY_ZONE_COPY[keyHoverKind].body, audience)}</p>
         </div>
       ) : subCopy ? (
         /* Phase 18 sub-token card (SUBEX-01/02/07). Guarded on subCopy (not effSub) so
