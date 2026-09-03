@@ -9,7 +9,8 @@
 //
 // Voice: two registers (see lib/audience.ts). Chemist: Blue Book terms, caveats
 // first. Plain: same claims, no jargon. Both registers of one template sit side
-// by side. Chemical-accuracy caveats always win over length (D-05). Plain
+// by side. The stereo primer stays the one student-friendly concession (D-15),
+// and chemical-accuracy caveats always win over length (D-05). Plain
 // HTML-free strings only (D-07 / security) — Phase 18 renders them as React
 // text children.
 

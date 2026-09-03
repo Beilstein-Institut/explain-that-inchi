@@ -455,16 +455,21 @@ describe('subTokenInfo bondStereo', () => {
 });
 
 describe('plain register', () => {
-  // Same ALANINE projections used above: element C, hAtoms 2H, mobileH (H,5,6), stereo t2-.
+  // Every fixture is a projection reused verbatim from a describe above — no new literals.
+  // ALANINE (`C3H7NO2/c1-2(4)3(5)6/h2H,4H2,1H3,(H,5,6)/t2-`): element C, hAtoms 2H,
+  // mobileH (H,5,6), stereo t2-, atom 2, bond 1-2, branch 2(4). Alanine has no /b layer
+  // and no branch-list comma, so those two kinds borrow the fixtures they were proven on:
+  //  - bondStereo: fumaric acid `/b2-1+` (see the bondStereo describe).
+  //  - siblings: choline `c1-6(2,3)4-5-7` (see the branch-list comma describe).
   const cases: [string, Parameters<typeof subTokenInfo>[0]][] = [
     ['element', { kind: 'element', el: 'C' }],
     ['hAtoms', { kind: 'hAtoms', atoms: [2], count: 1 }],
     ['mobileH', { kind: 'mobileH', atoms: [5, 6] }],
     ['stereo', { kind: 'stereo', sign: '-' }],
-    ['bondStereo', { kind: 'bondStereo', stereoBond: [6, 9], sign: '+' }],
+    ['bondStereo', { kind: 'bondStereo', stereoBond: [2, 1], sign: '+' }],
     ['atom', { kind: 'atom', canonical: 2, incidentPairs: [[1, 2], [2, 4], [2, 3]] }],
     ['bond', { kind: 'bond', endpointPairs: [[1, 2]] }],
-    ['siblings', { kind: 'siblings', siblingPairs: [[4, 3]] }],
+    ['siblings', { kind: 'siblings', siblingPairs: [[2, 3]] }],
     ['branch', { kind: 'branch', branchPoint: 2, bondPairs: [[2, 4]] }],
   ];
   it.each(cases)('%s: plain differs from chemist, both non-empty', (_name, sub) => {
@@ -477,7 +482,7 @@ describe('plain register', () => {
 
   it('plain stereo keeps the not-R/S caveat and the sign', () => {
     const p = subTokenInfo({ kind: 'stereo', sign: '-' }, {}, 'plain')!;
-    expect(p.body).toContain('-');
+    expect(p.body).toContain('The - records');
     expect(p.body).toMatch(/not the R or S/);
   });
 
