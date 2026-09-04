@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import type { LegalDoc } from '../lib/legalRoutes';
+import { BrandLogo } from './BrandLogo';
 
 // Standalone legal page (Impressum / Privacy / Terms), reached via a hash route.
 // Body is a developer-authored constant string, so dangerouslySetInnerHTML is
@@ -15,12 +16,12 @@ export function LegalPage({ doc }: { doc: LegalDoc }) {
 
   return (
     <div className="legal-page">
-      {/* No publisher mark here: SiteFooter renders on every route (see Root),
-          so these documents carry the Beilstein-Institut identification in the
-          footer. A masthead as well would be the same logo twice on one page. */}
-      <a className="legal-back" href={import.meta.env.BASE_URL}>
-        ← Back to Explain that InChI
-      </a>
+      <div className="legal-top">
+        <a className="legal-back" href={import.meta.env.BASE_URL}>
+          ← Back to Explain that InChI
+        </a>
+        <BrandLogo className="legal-logo" />
+      </div>
       <article
         className="legal-content"
         dangerouslySetInnerHTML={{ __html: doc.html }}
