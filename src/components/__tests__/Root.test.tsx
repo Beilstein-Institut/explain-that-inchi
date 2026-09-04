@@ -82,13 +82,13 @@ describe('Root hash router', () => {
       },
     );
 
-    it.each(['', '#privacy'])('identifies the Beilstein-Institut at hash "%s"', (hash) => {
+    it.each(['', '#privacy'])('links the InChI Trust at hash "%s"', (hash) => {
       window.location.hash = hash;
       render(<Root><MainApp /></Root>);
       const mark = within(screen.getByRole('contentinfo')).getByRole('link', {
-        name: 'Beilstein-Institut',
+        name: 'International Chemical Identifier',
       });
-      expect(mark).toHaveAttribute('href', 'https://www.beilstein-institut.de/en/');
+      expect(mark).toHaveAttribute('href', 'https://www.inchi-trust.org/');
     });
 
     it('survives a route change without unmounting the links', () => {
