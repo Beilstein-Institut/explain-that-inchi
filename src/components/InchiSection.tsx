@@ -12,6 +12,7 @@ import { swatchVar } from '../lib/layerInfo';
 import { formulaFragmentCounts } from '../lib/parseInchi';
 import { LayerText } from './LayerText';
 import { activateProps } from '../lib/keyboardProps';
+import { usePinRelease } from '../hooks/usePinRelease';
 import styles from './InchiSection.module.css';
 
 export function InchiSection() {
@@ -35,31 +36,8 @@ export function InchiSection() {
     return () => { mountedRef.current = false; };
   }, []);
 
-  // Phase 16: add click-anywhere and Esc listeners to release pin.
-  // Listeners are added only while pinned and removed on unpin (T-16-01 mitigation).
-  useEffect(() => {
-    if (!pinned) return;
-
-    const handleClickAnywhere = () => {
-      useInchiStore.getState().clearPinned();
-    };
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        useInchiStore.getState().clearPinned();
-      }
-    };
-
-    // Use capture phase so the listener fires before any element's onClick.
-    // The layer span's onClick checks getState().pinned — which is already cleared by
-    // the time the bubble-phase handler runs — so no re-pin happens on the same gesture.
-    document.addEventListener('click', handleClickAnywhere, { capture: true });
-    window.addEventListener('keydown', handleEsc);
-
-    return () => {
-      document.removeEventListener('click', handleClickAnywhere, { capture: true });
-      window.removeEventListener('keydown', handleEsc);
-    };
-  }, [pinned]);
+  // Click-anywhere / Esc release, shared with the key pin (see hooks/usePinRelease).
+  usePinRelease();
 
   const isEmpty = layers.length === 0;
 
@@ -110,15 +88,16 @@ export function InchiSection() {
                 useInchiStore.getState().setKeyHoverKind(null);
               };
               const activate = () => {
-                // Any click while pinned only releases — the document capture
-                // listener (added in the useEffect above) already called clearPinned()
-                // before this bubble-phase handler fires, so getState().pinned is null.
-                // On Enter/Space no capture listener runs, so this toggles the pin off.
-                if (useInchiStore.getState().pinned) {
-                  useInchiStore.getState().clearPinned();
+                // Toggle on the EXACT target only: clicking this layer while it is
+                // pinned releases, clicking any other one moves the pin in a single
+                // click. usePinRelease skips clicks inside [data-pin-target] so the
+                // decision lives here, for pointer and Enter/Space alike.
+                const s = useInchiStore.getState();
+                if (s.pinned && s.pinned.idx === i && s.pinned.sub === null) {
+                  s.clearPinned();
                   return;
                 }
-                useInchiStore.getState().setPinned({ idx: i, sub: null });
+                s.setPinned({ idx: i, sub: null });
               };
               return (
                 <React.Fragment key={i}>
@@ -131,6 +110,7 @@ export function InchiSection() {
                       isLayerPinned ? styles.pinned : '',
                     ].filter(Boolean).join(' ')}
                     data-layer={l.type}
+                    data-pin-target=""
                     style={{
                       color: tokenColor,
                       ...(isActive ? { background: bgColor } : {}),

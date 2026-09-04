@@ -15,7 +15,8 @@ import { render, screen } from '@testing-library/react';
 import { Explanation } from '../Explanation';
 import { subTokenInfo } from '../../lib/subTokenInfo';
 import type { Layer, SubHover } from '../../lib/parseInchi';
-import { DEFAULT_INFO, EMPTY_INFO } from '../../lib/layerInfo';
+import { LAYER_INFO, DEFAULT_INFO, EMPTY_INFO } from '../../lib/layerInfo';
+import { KEY_ZONE_COPY } from '../../lib/inchiKeyInfo';
 
 const REAL_INCHI = 'InChI=1S/C3H7NO2/c1-2(4)3(5)6/h2H,4H2,1H3,(H,5,6)/t2-/m0/s1';
 
@@ -43,19 +44,23 @@ var mock: {
   hoverIdx: number | null;
   atomElements: Record<number, string>;
   pinned: { idx: number; sub: SubHover | null } | null;
+  keyPinned: string | null;
   keyHoverKind: string | null;
   inchiKey: string;
   legendHover: { type: string; eg: string } | null;
   subHover: SubHover | null;
+  audience: 'chemist' | 'plain';
 } = {
   layers: [],
   hoverIdx: null,
   atomElements: {},
   pinned: null,
+  keyPinned: null,
   keyHoverKind: null,
   inchiKey: '',
   legendHover: null,
   subHover: null,
+  audience: 'chemist',
 };
 
 // Setter spies live on a `var`-hoisted holder so they exist (as references) before the
@@ -85,16 +90,21 @@ vi.mock('../../store', () => {
     hoverIdx: m.hoverIdx ?? null,
     atomElements: m.atomElements ?? {},
     pinned: m.pinned ?? null,
+    keyPinned: m.keyPinned ?? null,
     keyHoverKind: m.keyHoverKind ?? null,
     inchiKey: m.inchiKey ?? '',
     legendHover: m.legendHover ?? null,
     subHover: m.subHover ?? null,
+    audience: m.audience ?? 'chemist',
     setHover: spies.setHover,
+    setAudience: vi.fn(),
     setSubHover: spies.setSubHover,
     setKeyHoverKind: spies.setKeyHoverKind,
     setLegendHover: spies.setLegendHover,
     setPinned: vi.fn(),
     clearPinned: vi.fn(),
+    setKeyPinned: vi.fn(),
+    clearKeyPinned: vi.fn(),
     setInchiData: vi.fn(),
     };
   };
@@ -110,10 +120,12 @@ beforeEach(() => {
   mock.hoverIdx = null;
   mock.atomElements = { 1: 'C', 2: 'C', 3: 'C', 4: 'N', 5: 'O', 6: 'O' };
   mock.pinned = null;
+  mock.keyPinned = null;
   mock.keyHoverKind = null;
   mock.inchiKey = '';
   mock.legendHover = null;
   mock.subHover = null;
+  mock.audience = 'chemist';
   vi.clearAllMocks();
 });
 
@@ -174,11 +186,12 @@ describe('Explanation — sub-token card branch (SUBEX-01/02/07)', () => {
   it('Test F: element sub-token with canonRange shows component + Hill-order copy', () => {
     mock.subHover = { kind: 'element', el: 'C', canonRange: [1, 3] };
     mock.hoverIdx = FORMULA_IDX;
-    render(<Explanation />);
-    const body = subTokenInfo(mock.subHover, mock.atomElements)!.body;
+    const { container } = render(<Explanation />);
+    const body = subTokenInfo(mock.subHover, mock.atomElements, 'chemist')!.body;
     expect(body).toContain('this component');
     expect(body).toContain('Hill order');
-    expect(screen.getByText(body)).toBeInTheDocument();
+    // Glossary terms split the body across spans and buttons; read it concatenated.
+    expect(container.querySelector('[class*="layerBody"]')).toHaveTextContent(body);
   });
 
   // Test G (D-01 accent): sub-token card inherits parent h-layer swatch (var(--c-hydro)).
@@ -210,9 +223,9 @@ describe('Explanation — invariant guards (SUBEX-09 read-only + verbatim passth
   it('renders the card body verbatim from subTokenInfo output', () => {
     mock.subHover = { kind: 'mobileH', atoms: [5, 6] }; // projection of h '(H,5,6)'
     mock.hoverIdx = H_IDX;
-    render(<Explanation />);
-    const body = subTokenInfo(mock.subHover, mock.atomElements)!.body;
-    expect(screen.getByText(body)).toBeInTheDocument();
+    const { container } = render(<Explanation />);
+    const body = subTokenInfo(mock.subHover, mock.atomElements, 'chemist')!.body;
+    expect(container.querySelector('[class*="layerBody"]')).toHaveTextContent(body);
   });
 });
 
@@ -222,15 +235,15 @@ describe('Explanation — empty canvas', () => {
   it('asks for a molecule when no layers are parsed', () => {
     mock.layers = [];
     render(<Explanation />);
-    expect(screen.getByText(EMPTY_INFO.title)).toBeInTheDocument();
-    expect(screen.getByText(EMPTY_INFO.blurb)).toBeInTheDocument();
-    expect(screen.queryByText(DEFAULT_INFO.title)).not.toBeInTheDocument();
+    expect(screen.getByText(EMPTY_INFO.title.chemist)).toBeInTheDocument();
+    expect(screen.getByText(EMPTY_INFO.blurb.chemist)).toBeInTheDocument();
+    expect(screen.queryByText(DEFAULT_INFO.title.chemist)).not.toBeInTheDocument();
   });
 
   it('restores the hover prompt once a molecule is drawn', () => {
     render(<Explanation />); // beforeEach leaves ALANINE_LAYERS in place
-    expect(screen.getByText(DEFAULT_INFO.title)).toBeInTheDocument();
-    expect(screen.queryByText(EMPTY_INFO.title)).not.toBeInTheDocument();
+    expect(screen.getByText(DEFAULT_INFO.title.chemist)).toBeInTheDocument();
+    expect(screen.queryByText(EMPTY_INFO.title.chemist)).not.toBeInTheDocument();
   });
 
   // The two states share the idle branch, so the accent must not regress either.
@@ -242,5 +255,50 @@ describe('Explanation — empty canvas', () => {
       expect(card.style.getPropertyValue('--accent')).toBe('var(--ink-faint)');
       unmount();
     }
+  });
+});
+
+describe('Explanation — audience register', () => {
+  it('plain audience swaps the layer card title and blurb', () => {
+    mock.audience = 'plain';
+    mock.hoverIdx = FORMULA_IDX;
+    render(<Explanation />);
+    expect(screen.getByText(LAYER_INFO.formula.title.plain)).toBeInTheDocument();
+    expect(screen.queryByText(LAYER_INFO.formula.title.chemist)).toBeNull();
+  });
+
+  // The "Reads as" block decodes the InChI itself, so it is register-free by
+  // construction (readingFor takes no audience). Locked here: a future register
+  // switch must not start rewriting the decoded string.
+  it('the Reads as block is identical in both registers', () => {
+    const readingHtml = (audience: 'chemist' | 'plain') => {
+      mock.audience = audience;
+      mock.hoverIdx = FORMULA_IDX;
+      // The dangerouslySetInnerHTML span is the unclassed sibling of the label.
+      const { container } = render(<Explanation />);
+      return container.querySelector('[class*="layerEg"] span:not([class])')!.innerHTML;
+    };
+
+    const chemist = readingHtml('chemist');
+    expect(chemist).not.toBe('');
+    expect(readingHtml('plain')).toBe(chemist);
+  });
+
+  // Task 13: a pinned key segment keeps its card up after the pointer leaves the strip
+  // — that frozen card is the only place its glossary terms are reachable.
+  it('a pinned key zone drives the card with no live key hover', () => {
+    mock.inchiKey = 'RYYVLZVUVIJVGH-UHFFFAOYSA-N';
+    mock.keyPinned = 'skeleton';
+    mock.keyHoverKind = null;
+    render(<Explanation />);
+    expect(screen.getByText(KEY_ZONE_COPY.skeleton.title.chemist)).toBeInTheDocument();
+  });
+
+  it('plain audience swaps the key-zone card', () => {
+    mock.audience = 'plain';
+    mock.inchiKey = 'RYYVLZVUVIJVGH-UHFFFAOYSA-N';
+    mock.keyHoverKind = 'skeleton';
+    render(<Explanation />);
+    expect(screen.getByText(KEY_ZONE_COPY.skeleton.title.plain)).toBeInTheDocument();
   });
 });

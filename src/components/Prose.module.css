@@ -1,0 +1,42 @@
+/* Glossary term: reads as text with a dotted underline; no button chrome. */
+.term {
+  all: unset;
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  color: inherit;
+  font: inherit;
+}
+.term:hover,
+.term[aria-expanded="true"] {
+  text-decoration-style: solid;
+}
+.term:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+  border-radius: 2px;
+}
+
+/* Floating definition over the clicked word. Portaled to body + fixed, so the
+   card's overflow:hidden cannot clip it. `left` is measured in Prose.tsx: it
+   centres on the word, clamped to the window, so no transform is involved. */
+.tip {
+  position: fixed;
+  z-index: 10000; /* above the tour callout at 9999, the highest layer in the app */
+  max-width: min(280px, calc(100vw - 16px));
+  padding: 8px 10px;
+  border: 1px solid var(--line-control);
+  border-radius: 6px;
+  background: var(--bg-canvas);
+  color: var(--ink-soft);
+  font-family: var(--font-sans);
+  font-size: var(--fs-ui);
+  line-height: 1.45;
+  box-shadow: 0 4px 14px oklch(0 0 0 / 0.12);
+  pointer-events: auto;
+}
+.tip b {
+  color: var(--ink);
+  font-weight: 500;
+}

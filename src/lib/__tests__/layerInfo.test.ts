@@ -192,14 +192,28 @@ describe('LAYER_INFO', () => {
     const expected = ['version','formula','c','h','q','p','b','t','m','s','i'];
     for (const key of expected) {
       expect(LAYER_INFO).toHaveProperty(key);
-      expect(LAYER_INFO[key as keyof typeof LAYER_INFO].title).toBeTruthy();
+      expect(LAYER_INFO[key as keyof typeof LAYER_INFO].title.chemist).toBeTruthy();
+    }
+  });
+
+  it('has an entry for every layer type with both registers', () => {
+    for (const key of Object.keys(LAYER_INFO)) {
+      const e = LAYER_INFO[key as keyof typeof LAYER_INFO];
+      expect(e.title.chemist).toBeTruthy();
+      expect(e.title.plain).toBeTruthy();
+      expect(e.blurb.chemist.length).toBeGreaterThan(10);
+      expect(e.blurb.plain.length).toBeGreaterThan(10);
+      expect(e.blurb.plain).not.toBe(e.blurb.chemist);
     }
   });
 });
 
 describe('DEFAULT_INFO', () => {
-  it('has title "Hover any layer"', () => expect(DEFAULT_INFO.title).toBe('Hover any layer'));
-  it('has non-empty blurb', () => expect(DEFAULT_INFO.blurb.length).toBeGreaterThan(10));
+  it('has title "Hover any layer"', () => expect(DEFAULT_INFO.title.chemist).toBe('Hover any layer'));
+  it('has non-empty blurbs', () => {
+    expect(DEFAULT_INFO.blurb.chemist.length).toBeGreaterThan(10);
+    expect(DEFAULT_INFO.blurb.plain.length).toBeGreaterThan(10);
+  });
 });
 
 describe('ELEMENT_NAMES — D-19 full periodic table', () => {

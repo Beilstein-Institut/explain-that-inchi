@@ -124,7 +124,38 @@
   pointer-events: none;
 }
 
-/* Key segments are focusable text (INKEY-09: no pin, no canvas highlight). */
+/* Pinned key segment — same locked cue as a pinned InChI layer (D-03). */
+.inchiLayer.pinned {
+  box-shadow: 0 0 0 2px currentColor;
+  border-radius: 3px;
+}
+
+/* While-pinned release hint — copied from InchiSection.module.css. */
+.pinnedHint {
+  display: block;
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--ink-faint);
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+
+.hintTouch {
+  display: none;
+}
+
+@media (hover: none) {
+  .hintPointer {
+    display: none;
+  }
+  .hintTouch {
+    display: inline;
+  }
+}
+
+/* Key segments are focusable (INKEY-09: pin, but never a canvas highlight). */
 .inchiLayer:focus-visible {
   outline: 2px solid var(--ink);
   outline-offset: 1px;

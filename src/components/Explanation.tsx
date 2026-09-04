@@ -4,7 +4,7 @@
 // D-09: innerHTML for reading-code block (readingFor output).
 // D-10: Idle state shows DEFAULT_INFO.title when no layer hovered.
 // Pitfall 3: --accent always set — idle uses ink-faint, active uses layer accent.
-// D-04a: Precedence: keyHoverKind (key segment) → hoverIdx (InChI layer) → idle.
+// D-04a: Precedence: pinned key zone → keyHoverKind (key segment) → hoverIdx (InChI layer) → idle.
 // GUARDRAIL (Invariant #2): keyHoverKind branch is read-only; does NOT touch canvas highlights.
 
 import { useInchiStore } from '../store';
@@ -12,9 +12,11 @@ import type { KeyHoverZone } from '../store';
 import { formulaFragmentCounts } from '../lib/parseInchi';
 import { LAYER_INFO, DEFAULT_INFO, EMPTY_INFO, readingFor, swatchVar } from '../lib/layerInfo';
 import { subTokenInfo } from '../lib/subTokenInfo';
+import { pick } from '../lib/audience';
 import type { SubHover, LayerType } from '../lib/parseInchi';
 import { KEY_ZONE_COPY } from '../lib/inchiKeyInfo';
 import { Legend } from './Legend';
+import { Prose } from './Prose';
 import styles from './Explanation.module.css';
 
 // D-01: Key-segment zone → accent token mapping (no new CSS tokens; reuses existing palette).
@@ -33,7 +35,11 @@ export function Explanation() {
   // Phase 16: read pinned; when set, it overrides hoverIdx for the explanation card.
   const pinned = useInchiStore(state => state.pinned);
   // D-04a: read keyHoverKind; treat undefined the same as null (falsy-safe for test mocks).
-  const rawKeyHoverKind = useInchiStore(state => state.keyHoverKind);
+  // Task 13: a pinned key zone outranks live key hover, mirroring pinned vs hoverIdx.
+  // Both are read unconditionally — a hook cannot sit behind a ??.
+  const keyHoverKindLive = useInchiStore(state => state.keyHoverKind);
+  const keyPinned = useInchiStore(state => state.keyPinned);
+  const rawKeyHoverKind = keyPinned ?? keyHoverKindLive;
   const inchiKey = useInchiStore(state => state.inchiKey);
   // CR-01 (defensive): an empty key can never show a key-segment card, even if a stale
   // keyHoverKind slips through. Primary fix is the keyHoverKind reset in setInchiData.
@@ -44,6 +50,9 @@ export function Explanation() {
   // Phase 18 (SUBEX-01/02): the hovered/pinned sub-token. Read-only — the card never
   // writes it back (mirrors the pinned/hoverIdx read pattern).
   const subHover = useInchiStore(state => state.subHover);
+
+  // Task 3: the card copy exists in both registers; the header toggle picks one.
+  const audience = useInchiStore(state => state.audience);
 
   // Phase 16: pinned wins over live hover (spec line 56).
   // The store gate freezes hoverIdx while pinned, so effIdx already equals the pinned
@@ -65,7 +74,7 @@ export function Explanation() {
   // SUBEX-09: copy is the pure-module projection of offset-only SubHover fields —
   // never reads layer.text, never reconstructs an InChI fragment. null for c-layer
   // kinds (bond/branch/atom) so the card falls through to the layer branch.
-  const subCopy = effSub ? subTokenInfo(effSub, atomElements) : null;
+  const subCopy = effSub ? subTokenInfo(effSub, atomElements, audience) : null;
   // D-01: the sub-token card inherits the PARENT layer's swatch via accentVar (already
   // derived from effIdx). D-01a: if effIdx is unresolvable (no layer), map the sub kind
   // to its layer type, then swatchVar — no store field added.
@@ -114,8 +123,8 @@ export function Explanation() {
         >
           {/* UAT-13: unified card header — title only, no tag row and no swatch dot
               (consistent across all card states; the left accent strip carries colour). */}
-          <h3 className={styles.layerTitle}>{KEY_ZONE_COPY[keyHoverKind].title}</h3>
-          <p className={styles.layerBody}>{KEY_ZONE_COPY[keyHoverKind].body}</p>
+          <h3 className={styles.layerTitle}>{pick(KEY_ZONE_COPY[keyHoverKind].title, audience)}</h3>
+          <Prose className={styles.layerBody} text={pick(KEY_ZONE_COPY[keyHoverKind].body, audience)} />
         </div>
       ) : subCopy ? (
         /* Phase 18 sub-token card (SUBEX-01/02/07). Guarded on subCopy (not effSub) so
@@ -129,7 +138,7 @@ export function Explanation() {
           style={{ '--accent': subAccent } as React.CSSProperties}
         >
           <h3 className={styles.layerTitle}>{subCopy.title}</h3>
-          <p className={styles.layerBody}>{subCopy.body}</p>
+          <Prose className={styles.layerBody} text={subCopy.body} />
         </div>
       ) : layer ? (
         /* Active state: a live InChI layer is hovered (InChI string or a present
@@ -139,8 +148,8 @@ export function Explanation() {
           className={[styles.card, styles.active].join(' ')}
           style={{ '--accent': accentVar } as React.CSSProperties}
         >
-          <h3 className={styles.layerTitle}>{info!.title}</h3>
-          <p className={styles.layerBody}>{info!.blurb}</p>
+          <h3 className={styles.layerTitle}>{pick(info!.title, audience)}</h3>
+          <Prose className={styles.layerBody} text={pick(info!.blurb, audience)} />
           <div className={styles.layerEg}>
             <span className={styles.lbl}>{info!.egLabel}</span>
             {/* D-09: innerHTML only for readingFor()/info.eg (emit known-safe <b>/<span> tags).
@@ -164,8 +173,8 @@ export function Explanation() {
           className={[styles.card, styles.active].join(' ')}
           style={{ '--accent': legendAccent } as React.CSSProperties}
         >
-          <h3 className={styles.layerTitle}>{legendInfo!.title}</h3>
-          <p className={styles.layerBody}>{legendInfo!.blurb}</p>
+          <h3 className={styles.layerTitle}>{pick(legendInfo!.title, audience)}</h3>
+          <Prose className={styles.layerBody} text={pick(legendInfo!.blurb, audience)} />
           {!presentTypes.has(legendHover.type) && (
             <p className={styles.notPresent}>Not present in this molecule.</p>
           )}
@@ -185,8 +194,8 @@ export function Explanation() {
           className={styles.card}
           style={{ '--accent': 'var(--ink-faint)' } as React.CSSProperties}
         >
-          <h3 className={styles.layerTitle}>{idleInfo.title}</h3>
-          <p className={styles.layerBody}>{idleInfo.blurb}</p>
+          <h3 className={styles.layerTitle}>{pick(idleInfo.title, audience)}</h3>
+          <Prose className={styles.layerBody} text={pick(idleInfo.blurb, audience)} />
         </div>
       )}
 

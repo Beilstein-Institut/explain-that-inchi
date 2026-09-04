@@ -23,7 +23,10 @@ describe('KetcherPanel action row', () => {
       />,
     );
     const row = screen.getByRole('button', { name: 'Reset' }).parentElement!;
-    const names = Array.from(row.querySelectorAll('button')).map((b) => b.textContent);
+    // The AudienceToggle's radios share the row; only the action pills count.
+    const names = Array.from(row.querySelectorAll('button:not([role="radio"])')).map(
+      (b) => b.textContent,
+    );
     expect(names).toEqual(['Reset', 'Limitations', 'Help', 'Send feedback']);
   });
 });

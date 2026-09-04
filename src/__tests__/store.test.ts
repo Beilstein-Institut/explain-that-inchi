@@ -17,6 +17,7 @@ describe('useInchiStore', () => {
       hoverIdx: null,
       subHover: null,
       pinned: null,
+      keyPinned: null,
       keyHoverKind: null,
       legendHover: null,
     });
@@ -253,6 +254,120 @@ describe('useInchiStore', () => {
       useInchiStore.getState().setSubHover(hit);
 
       expect(useInchiStore.getState().subHover).toEqual(hit);
+    });
+  });
+
+  // Task 13: a key segment can be pinned so its card (and its glossary terms) stay
+  // readable. The key pin NEVER touches hoverIdx/subHover — Invariant #2.
+  describe('keyPinned state machine', () => {
+    beforeEach(() => {
+      useInchiStore.setState({ keyPinned: null, keyHoverKind: null, pinned: null });
+    });
+
+    it('starts null', () => {
+      expect(useInchiStore.getState().keyPinned).toBeNull();
+    });
+
+    it('setKeyPinned stores the zone and mirrors it into keyHoverKind', () => {
+      useInchiStore.getState().setKeyPinned('hash');
+      const state = useInchiStore.getState();
+      expect(state.keyPinned).toBe('hash');
+      expect(state.keyHoverKind).toBe('hash');
+    });
+
+    it('while key-pinned, setKeyHoverKind is a no-op', () => {
+      useInchiStore.getState().setKeyPinned('skeleton');
+      useInchiStore.getState().setKeyHoverKind('protonation');
+      expect(useInchiStore.getState().keyHoverKind).toBe('skeleton');
+      useInchiStore.getState().setKeyHoverKind(null);
+      expect(useInchiStore.getState().keyHoverKind).toBe('skeleton');
+    });
+
+    it('clearKeyPinned lets setKeyHoverKind through again', () => {
+      useInchiStore.getState().setKeyPinned('skeleton');
+      useInchiStore.getState().clearKeyPinned();
+      expect(useInchiStore.getState().keyPinned).toBeNull();
+      useInchiStore.getState().setKeyHoverKind('hash');
+      expect(useInchiStore.getState().keyHoverKind).toBe('hash');
+    });
+
+    it('setKeyPinned never writes a highlight target (Invariant #2)', () => {
+      useInchiStore.setState({ hoverIdx: null, subHover: null });
+      useInchiStore.getState().setKeyPinned('flagVersion');
+      const state = useInchiStore.getState();
+      expect(state.hoverIdx).toBeNull();
+      expect(state.subHover).toBeNull();
+    });
+
+    it('setKeyPinned drops any live highlight target', () => {
+      const hit: SubHover = { kind: 'element', el: 'C' };
+      useInchiStore.setState({ hoverIdx: 2, subHover: hit });
+
+      useInchiStore.getState().setKeyPinned('hash');
+
+      const state = useInchiStore.getState();
+      expect(state.hoverIdx).toBeNull();
+      expect(state.subHover).toBeNull();
+    });
+
+    it('while key-pinned, setHover and setSubHover are no-ops', () => {
+      useInchiStore.getState().setKeyPinned('hash');
+
+      useInchiStore.getState().setHover(2);
+      useInchiStore.getState().setSubHover({ kind: 'element', el: 'C' });
+
+      const state = useInchiStore.getState();
+      expect(state.hoverIdx).toBeNull();
+      expect(state.subHover).toBeNull();
+    });
+
+    it('after clearKeyPinned, setHover works again', () => {
+      useInchiStore.getState().setKeyPinned('hash');
+      useInchiStore.getState().clearKeyPinned();
+
+      useInchiStore.getState().setHover(2);
+
+      expect(useInchiStore.getState().hoverIdx).toBe(2);
+    });
+
+    it('one pin at a time: setKeyPinned drops a layer pin', () => {
+      useInchiStore.getState().setPinned({ idx: 1, sub: null });
+      useInchiStore.getState().setKeyPinned('hash');
+      expect(useInchiStore.getState().pinned).toBeNull();
+    });
+
+    it('one pin at a time: setPinned drops a key pin', () => {
+      useInchiStore.getState().setKeyPinned('hash');
+      useInchiStore.getState().setPinned({ idx: 1, sub: null });
+      expect(useInchiStore.getState().keyPinned).toBeNull();
+    });
+
+    it('a data transition drops the key pin', () => {
+      useInchiStore.getState().setKeyPinned('hash');
+      useInchiStore.getState().setInchiData('InChI=1S/CH4/h1H4', [], {}, {});
+      expect(useInchiStore.getState().keyPinned).toBeNull();
+    });
+
+    it('setInchiFailure and resetAll drop the key pin', () => {
+      useInchiStore.getState().setKeyPinned('hash');
+      useInchiStore.getState().setInchiFailure('nope');
+      expect(useInchiStore.getState().keyPinned).toBeNull();
+
+      useInchiStore.getState().setKeyPinned('hash');
+      useInchiStore.getState().resetAll();
+      expect(useInchiStore.getState().keyPinned).toBeNull();
+    });
+  });
+
+  describe('audience', () => {
+    it('defaults to chemist', () => {
+      expect(useInchiStore.getState().audience).toBe('chemist');
+    });
+    it('setAudience switches and resetAll leaves it alone', () => {
+      useInchiStore.getState().setAudience('plain');
+      useInchiStore.getState().resetAll();
+      expect(useInchiStore.getState().audience).toBe('plain');
+      useInchiStore.getState().setAudience('chemist');
     });
   });
 });

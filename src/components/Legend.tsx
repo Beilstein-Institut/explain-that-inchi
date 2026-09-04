@@ -6,7 +6,10 @@
 import type React from 'react';
 import { useInchiStore } from '../store';
 import { swatchVar, LAYER_KEY } from '../lib/layerInfo';
+import { pick } from '../lib/audience';
+import type { Copy } from '../lib/audience';
 import type { LayerType } from '../lib/parseInchi';
+import { Prose } from './Prose';
 import styles from './Legend.module.css';
 import expStyles from './Explanation.module.css';
 
@@ -14,8 +17,8 @@ const { setHover, setSubHover, setLegendHover } = useInchiStore.getState();
 
 interface LegendLayerDef {
   type: LayerType;
-  name: string;
-  desc: string;
+  name: Copy;
+  desc: Copy;
   eg: string;
 }
 
@@ -24,18 +27,18 @@ interface LegendLayerDef {
 // cannot name the same layer differently. The '…' suffix on the nine letter
 // layers is presentation — it says "prefix plus content", which is true here
 // and not on a chip.
-const ALL_LAYERS: LegendLayerDef[] = [
-  { type: 'version', name: 'Version',            desc: 'Which InChI specification',      eg: '1S' },
-  { type: 'formula', name: 'Formula',            desc: 'Atoms by element & count',       eg: 'C8H10N4O2' },
-  { type: 'c',       name: 'Connection',     desc: 'Heavy-atom skeleton',             eg: 'c1-2(4)3-5' },
-  { type: 'h',       name: 'Hydrogen',       desc: 'H count per atom + mobile H',    eg: 'h2H,1H3,(H,3,4)' },
-  { type: 'q',       name: 'Charge',         desc: 'Net formal charge',               eg: 'q+1' },
-  { type: 'p',       name: 'Proton',         desc: 'Proton balance',                  eg: 'p+1' },
-  { type: 'b',       name: 'Double-bond stereo', desc: 'E/Z geometry',               eg: 'b6-9+' },
-  { type: 't',       name: 'Tetrahedral',    desc: 'sp³ stereocenters',         eg: 't2-,4+' },
-  { type: 'm',       name: 'Enantiomer',     desc: 'Mirror-image flag',               eg: 'm0 or m1' },
-  { type: 's',       name: 'Stereo flag',    desc: 'Absolute / relative / racemic',  eg: 's1' },
-  { type: 'i',       name: 'Isotope',        desc: 'Non-natural isotopes',            eg: 'i2D,5+1' },
+export const ALL_LAYERS: LegendLayerDef[] = [
+  { type: 'version', name: { chemist: 'Version',           plain: 'Version' },        desc: { chemist: 'Which InChI specification',     plain: 'Which rule set' },               eg: '1S' },
+  { type: 'formula', name: { chemist: 'Formula',           plain: 'Ingredients' },    desc: { chemist: 'Atoms by element & count',      plain: 'Which atoms, how many' },        eg: 'C8H10N4O2' },
+  { type: 'c',       name: { chemist: 'Connection',        plain: 'Joins' },          desc: { chemist: 'Heavy-atom connectivity',       plain: 'Which atoms are bonded' },       eg: 'c1-2(4)3-5' },
+  { type: 'h',       name: { chemist: 'Hydrogen',          plain: 'Hydrogens' },      desc: { chemist: 'H count per atom + mobile H',   plain: 'Hydrogen count per atom' },      eg: 'h2H,1H3,(H,3,4)' },
+  { type: 'q',       name: { chemist: 'Charge',            plain: 'Charge' },         desc: { chemist: 'Net formal charge',             plain: 'Overall electric charge' },      eg: 'q+1' },
+  { type: 'p',       name: { chemist: 'Proton',            plain: 'Hydrogen ions' },  desc: { chemist: 'Hydrons added or removed',      plain: 'Gained or lost H⁺' },            eg: 'p+1' },
+  { type: 'b',       name: { chemist: 'Double-bond stereo', plain: 'Double-bond sides' }, desc: { chemist: 'E/Z configuration',         plain: 'Which side groups sit' },        eg: 'b6-9+' },
+  { type: 't',       name: { chemist: 'Tetrahedral',       plain: 'Handedness' },     desc: { chemist: 'Chirality centres',             plain: 'Left- or right-handed atoms' },  eg: 't2-,4+' },
+  { type: 'm',       name: { chemist: 'Enantiomer',        plain: 'Mirror image' },   desc: { chemist: 'Mirror-image choice',           plain: 'Which twin is meant' },          eg: 'm0 or m1' },
+  { type: 's',       name: { chemist: 'Stereo flag',       plain: 'Shape certainty' }, desc: { chemist: 'Absolute / relative / racemic', plain: 'Exact, relative or mixed' },    eg: 's1' },
+  { type: 'i',       name: { chemist: 'Isotope',           plain: 'Isotopes' },       desc: { chemist: 'Isotopic substitution',         plain: 'Unusual atom weights' },         eg: 'i2D,5+1' },
 ];
 
 /** Legend key column: 'c' → 'c…', but '1S' and 'Hill' stay as they are. */
@@ -48,6 +51,7 @@ interface LegendProps {
 
 export function Legend({ activeType }: LegendProps) {
   const layers = useInchiStore(state => state.layers);
+  const audience = useInchiStore(state => state.audience);
   const presentTypes = new Set(layers.map(l => l.type));
   const layerIndexByType = new Map(layers.map((l, i) => [l.type, i]));
   // Empty canvas: the legend is inert (see `show`), and the string boxes above already
@@ -111,8 +115,8 @@ export function Legend({ activeType }: LegendProps) {
           >
             <span className={styles.sw} />
             <span className={styles.key}>{legendKey(l.type)}</span>
-            <span className={styles.name}>{l.name}</span>
-            <span className={styles.desc}>{l.desc}</span>
+            <span className={styles.name}>{pick(l.name, audience)}</span>
+            <Prose as="span" className={styles.desc} text={pick(l.desc, audience)} />
           </div>
         );
       })}

@@ -1,4 +1,5 @@
 import { Editor } from 'ketcher-react';
+import { AudienceToggle } from './AudienceToggle';
 import type { Ketcher, StructServiceProvider } from 'ketcher-core';
 import { MOLECULES } from '../data/molecules';
 import { swatchVar, LAYER_KEY, LAYER_INFO } from '../lib/layerInfo';
@@ -15,7 +16,7 @@ interface KetcherPanelProps {
   onFeedbackClick?: () => void;
   /** Clears the canvas and resets all app state to idle. Rendered to the left of Send feedback. */
   onResetClick?: () => void;
-  /** Opens the guided Help tour. Rendered next to Reset on the section-label row. */
+  /** Opens the guided Help tour. Rendered right of the Expert/Simple toggle, next to Reset. */
   onHelpClick?: () => void;
   /** Opens the Limitations dialog. Rendered immediately left of Send feedback. */
   onLimitationsClick?: () => void;
@@ -43,6 +44,7 @@ export function KetcherPanel({
     <section aria-labelledby="editor-heading">
       <div className="section-label">
         <div className="section-label-actions">
+          <AudienceToggle />
           {onResetClick && (
             <button type="button" className="reset-trigger" onClick={onResetClick}>
               Reset
@@ -113,7 +115,7 @@ export function KetcherPanel({
                       color: `var(--c-${swatchVar(m.layer)})`,
                       background: `var(--c-${swatchVar(m.layer)}-bg)`,
                     }}
-                    title={`Shows the ${LAYER_INFO[m.layer].title.toLowerCase()} layer`}
+                    title={`Shows the ${LAYER_INFO[m.layer].title.chemist.toLowerCase()} layer`}
                   >
                     {LAYER_KEY[m.layer]}
                   </span>

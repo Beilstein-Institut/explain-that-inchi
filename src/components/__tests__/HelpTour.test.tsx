@@ -8,6 +8,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { globSync } from 'node:fs';
 import { HelpTour, STEPS } from '../HelpTour';
+import { useInchiStore } from '../../store';
 
 const TOTAL = STEPS.length;
 
@@ -37,7 +38,7 @@ describe('HelpTour — step navigation', () => {
     const onClose = vi.fn();
     const { rerender } = render(<HelpTour open={true} onClose={onClose} />);
 
-    const expectedTitles = STEPS.map(s => s.title);
+    const expectedTitles = STEPS.map(s => s.title.chemist);
 
     // First step already rendered
     expect(screen.getByText(expectedTitles[0])).toBeInTheDocument();
@@ -84,7 +85,7 @@ describe('HelpTour — step navigation', () => {
     expect(screen.getByText('Finish')).toBeInTheDocument();
     expect(screen.queryByText('Next')).not.toBeInTheDocument();
     expect(screen.getByText(`${TOTAL} of ${TOTAL}`)).toBeInTheDocument();
-    expect(screen.getByText('Reset / Help buttons')).toBeInTheDocument();
+    expect(screen.getByText('Expert / Simple, Reset, Help')).toBeInTheDocument();
   });
 
   it('step counter updates correctly through every step', () => {
@@ -100,6 +101,15 @@ describe('HelpTour — step navigation', () => {
       }
     }
     expect(screen.getByText(`${TOTAL} of ${TOTAL}`)).toBeInTheDocument();
+  });
+});
+
+describe('HelpTour — plain register', () => {
+  it('shows the plain title when the store audience is plain', () => {
+    useInchiStore.getState().setAudience('plain');
+    render(<HelpTour open={true} onClose={vi.fn()} />);
+    expect(screen.getByText(STEPS[0].title.plain)).toBeInTheDocument();
+    useInchiStore.getState().setAudience('chemist');
   });
 });
 
@@ -245,7 +255,7 @@ describe('tour anchors exist in the app', () => {
     .map((f) => readFileSync(resolve(SRC, f), 'utf8'))
     .join('\n');
 
-  it.each(STEPS.map((s) => [s.title, s.selector]))(
+  it.each(STEPS.map((s) => [s.title.chemist, s.selector]))(
     'step "%s" targets an anchor that exists: %s',
     (_title, selector) => {
       const tourId = selector.match(/\[data-tour-id="([^"]+)"\]/)?.[1];
