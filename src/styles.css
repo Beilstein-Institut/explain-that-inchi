@@ -198,10 +198,13 @@ body {
   transition: opacity 120ms ease;
 }
 .header-logo:hover img,
-.header-logo:focus-visible img {
+.header-logo:focus-visible img,
+.legal-logo:hover img,
+.legal-logo:focus-visible img {
   opacity: 1;
 }
-.header-logo:focus-visible {
+.header-logo:focus-visible,
+.legal-logo:focus-visible {
   outline: 2px solid var(--c-formula);
   outline-offset: 4px;
   border-radius: 2px;
@@ -522,9 +525,23 @@ body {
   color: var(--ink);
   line-height: 1.6;
 }
+/* Back link left, publisher mark right, on one row above the document. */
+.legal-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+.legal-logo img {
+  display: block;
+  height: 36px;
+  width: auto;
+  opacity: 0.75;
+  transition: opacity 120ms ease;
+}
 .legal-back {
   display: inline-block;
-  margin-bottom: 24px;
   font-size: var(--fs-ui);
   color: var(--ink-soft);
   text-decoration: none;
