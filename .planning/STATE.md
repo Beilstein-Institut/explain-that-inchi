@@ -4,10 +4,10 @@ milestone: v1.6
 milestone_name: unmilestoned
 current_phase: 19
 status: milestone_shipped
-stopped_at: Session paused 2026-08-26 — 8 commits on dev, HEAD 6914965, both remotes synced, tree clean, 712 tests green. Nothing live; browser verification of the new wasm load path is the blocking human action
-last_updated: "2026-08-31T07:28:25.981Z"
-last_activity: 2026-09-02
-last_activity_desc: Quick task 260902-gxx — b-layer sub-token modelled as a double bond; setInchiData clears hover state. HEAD 6292eee
+stopped_at: Session paused 2026-09-03 — feature branch feat/audience-toggle (30 commits, HEAD e31863d) pushed to both remotes, PR #3 open against dev; 1036 tests green; browser checklist is the blocking human action
+last_updated: "2026-09-03T00:00:00.000Z"
+last_activity: 2026-09-03
+last_activity_desc: Expert / Simple register toggle + glossary tooltips + pinnable InChIKey on feat/audience-toggle (PR #3). Built with Superpowers SDD at user request
 progress:
   total_phases: 6
   completed_phases: 6

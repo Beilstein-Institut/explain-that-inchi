@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "timestamp": "2026-09-02T12:34:24.898Z",
+  "timestamp": "2026-09-03T13:10:39Z",
   "phase": null,
   "phase_name": null,
   "phase_dir": null,
@@ -9,113 +9,58 @@
   "total_tasks": null,
   "status": "paused",
   "context": "default",
-  "context_reason": "No active milestone since v1.6 shipped. Work since the 2026-08-26 handoff was five /gsd-quick tasks on dev (13 commits, HEAD b6dbf9b, pushed to BOTH remotes (origin = cm-beilstein, beilstein = Beilstein-Institut org)). Tree clean except three untracked files. tsc -b clean, lint 0 problems, 731 tests green, npm audit 0 vulnerabilities. master still at 2b7720d.",
+  "context_reason": "No active GSD milestone. This session built the audience-register feature on branch feat/audience-toggle (off dev, 30 commits, HEAD e31863d) via Superpowers brainstorming -> spec -> plan -> subagent-driven development, at the user's explicit choice. PR #3 is open against dev on Beilstein-Institut. dev itself is unchanged at bf78f0d apart from this handoff commit. 1036 tests, tsc/lint/build clean on the branch.",
   "completed_tasks": [
-    {
-      "id": "18",
-      "name": "Typeset the mobile-H token in a real Plex Mono italic; drop italic on the not-present note",
-      "status": "done",
-      "commit": "6d212f9"
-    },
-    {
-      "id": "260902-gxx",
-      "name": "b-layer sub-token modelled as a double bond: new SubHover kind 'bondStereo' ([a1,a2] + sign), BLayerText replaces ParityText for case 'b', canvas lights both ends and the bond, 'Double-bond stereo' card says canonical parity and NOT E/Z, '?' bonds go to the neutral stereo colour. Fixes REVIEW H-01 / W-03",
-      "status": "done",
-      "commit": "27663f9"
-    },
-    {
-      "id": "260902-gxx",
-      "name": "setInchiData clears hoverIdx and subHover so a molecule swap cannot leave the InChI strip fully dimmed. Fixes REVIEW W-01",
-      "status": "done",
-      "commit": "09dc51a"
-    },
-    {
-      "id": "260902-hrp",
-      "name": "Lint to 0 warnings (useKetcherHighlights deps listed; stale eslint-disable in ketcherEditor.ts removed)",
-      "status": "done",
-      "commit": "9806032"
-    },
-    {
-      "id": "260902-hrp",
-      "name": ".nvmrc = 22, engines.node = 22.x (matches Dockerfile node:22-bookworm-slim); npm test passes NODE_OPTIONS=--no-experimental-webstorage so the suite is green on Node 25 without env fiddling",
-      "status": "done",
-      "commit": "af47f98"
-    },
-    {
-      "id": "260902-hrp",
-      "name": "npm audit fix, lockfile only (browserslist, nanoid, dev tree) -> 0 vulnerabilities",
-      "status": "done",
-      "commit": "73359c3"
-    },
-    {
-      "id": "260902-hzh",
-      "name": "Legend inert while canvas is empty: Legend.tsx show handler returns early when layers.length === 0, before any store write. User report: hovering a legend row with no molecule changed the explanation card",
-      "status": "done",
-      "commit": "4c53ba7"
-    },
-    {
-      "id": "260902-i2t",
-      "name": "Legend greyed out while canvas is empty: data-empty attribute on the legend card, rows tabIndex -1, CSS mirrors .inchiDisplay[data-empty] (opacity .45, --line-soft border, pointer-events none). cssProbe.rule() now escapes regex metacharacters and accepts a rule after a comment",
-      "status": "done",
-      "commit": "6292eee"
-    }
+    { "id": "spec", "name": "Design spec with 5 amendments: docs/superpowers/specs/2026-09-03-audience-toggle-design.md", "status": "done", "commit": "0a2b0a8" },
+    { "id": "plan", "name": "Implementation plan (11 tasks): docs/superpowers/plans/2026-09-03-audience-toggle.md", "status": "done", "commit": "cc3fb7b" },
+    { "id": "T1", "name": "Store field audience ('chemist'|'plain') synced to ?mode=plain via src/lib/audienceUrl.ts; no browser storage", "status": "done", "commit": "2b66e1f" },
+    { "id": "T2/2b", "name": "Expert / Simple radiogroup (src/components/AudienceToggle.tsx) on the section-label row left of Help, pill style like Reset/Help", "status": "done", "commit": "872b4e5" },
+    { "id": "T3-T7", "name": "Every copy table as { chemist, plain } pairs: LAYER_INFO/DEFAULT/EMPTY, KEY_ZONE_COPY, subTokenInfo(sub, atoms, audience), tour STEPS, legend ALL_LAYERS; chemist entries cite Blue Book sections", "status": "done", "commit": "365db2a" },
+    { "id": "T8", "name": "copyTables.test.ts enforces plain register: banned jargon (case-insensitive), <= 20 words per sentence, registers differ", "status": "done", "commit": "3753ab2" },
+    { "id": "T9", "name": "src/lib/glossary.ts: ~60 plain definitions + markTerms() (longest-first, whole word + plural, first occurrence)", "status": "done", "commit": "cbc0a16" },
+    { "id": "T10/12", "name": "Prose component: underlined terms; tooltip portaled to body, fixed, clamped to viewport, flips by measured height, z-index 10000; hover/focus opens, click sticks; Escape stops propagation only when sticky", "status": "done", "commit": "3b05f16" },
+    { "id": "T11", "name": "Copy fixes from review (plain b/t caveats, m-layer 0/1 flipped, q-layer drops zwitterion, stereo meso wording, racemate cite P-93.1.3); CLAUDE.md documents ?mode", "status": "done", "commit": "0d446b3" },
+    { "id": "T13", "name": "InChIKey segments pinnable (keyPinned in store, usePinRelease hook shared with layers); clicking a pinned target releases it (also fixed pre-existing layer/sub-token re-pin); setHover/setSubHover gated on either pin", "status": "done", "commit": "e31863d" }
   ],
   "remaining_tasks": [],
   "blockers": [],
   "human_actions_pending": [
     {
-      "action": "Browser-verify the b-layer hover on fumaric/maleic acid and prostaglandin E2 presets: one hover target per bond token, both atoms plus the bond lit in the parity colour, card says canonical parity not E/Z",
-      "context": "Quick 260902-gxx is unit-tested against real getInchi() fixtures but the live Ketcher canvas was never driven in this environment",
-      "blocking": false
-    },
-    {
-      "action": "Browser-verify the empty-canvas legend: greyed at 0.45 with ring swatches still discernible, rows skipped by Tab, hover does nothing until a molecule exists",
-      "context": "Quick 260902-hzh + 260902-i2t; the swatch legibility under the card-level opacity is a screen judgement",
-      "blocking": false
-    },
-    {
-      "action": "Browser-verify the binary Indigo wasm load path (aa60971, from the 2026-08-26 session) still works in a fresh profile with COOP/COEP headers",
-      "context": "Carried over from the previous handoff; still the only unverified runtime change with failure potential",
+      "action": "Walk the 11-item browser checklist in .superpowers/sdd/2026-09-03-audience-toggle/task-11-report.md (toggle + URL round-trip, both registers on caffeine / L-alanine / melatonin+toluene, tooltip hover/click/Esc, key-segment pinning, keyboard, ~400px width)",
+      "context": "No headless browser in the dev environment; every behaviour is unit-tested but the live app was only partially exercised by the user mid-session (tooltip edge clipping was found and fixed that way)",
       "blocking": true
     },
     {
-      "action": "Decide what to do with three untracked files: .planning/REVIEW.md (2026-06-15 full-tree code review; H-01, W-01, W-03 are now fixed by 260902-gxx), docs/cicag-distillate-article.md and .docx (draft CICAG article about the tool)",
-      "context": "Left untracked on purpose by this handoff; commit, move, or drop is the author's call",
+      "action": "Approve the private -> exported change of ALL_LAYERS in src/components/Legend.tsx (needed by copyTables.test.ts)",
+      "context": "User rule: visibility changes need explicit approval; flagged in PR #3",
       "blocking": false
     },
     {
-      "action": "Merge or fast-forward master from dev when the browser checks pass, then rebuild the Docker image and redeploy by hand",
-      "context": "master is at 2b7720d; everything since 2026-08 lives only on dev. No CI deploy exists",
+      "action": "Review and merge PR #3 (feat/audience-toggle -> dev), then delete .superpowers/sdd/2026-09-03-audience-toggle/ (gitignored SDD ledger + reports)",
+      "context": "https://github.com/Beilstein-Institut/explain-that-inchi/pull/3",
+      "blocking": false
+    },
+    {
+      "action": "Decide on deferred minors listed in the PR body and the SDD ledger: hover-intent grace for glossary terms on the pure hover path, radiogroup arrow-key roving, WCAG 1.4.13 hoverable tooltips, plain c/h bridging-H caveat, key-hover-while-layer-pinned card swap, duplicated pinnedHint CSS",
+      "context": "All ruled non-blocking by task reviews and the fable-advisor whole-branch review",
+      "blocking": false
+    },
+    {
+      "action": "Carried over: browser-verify the binary Indigo wasm load path (aa60971) in a fresh profile; merge/fast-forward master from dev after browser checks, rebuild Docker image, redeploy by hand",
+      "context": "master still at 2b7720d",
       "blocking": false
     }
   ],
   "decisions": [
-    {
-      "decision": "b-layer token is ONE hover target carrying both bond ends (kind 'bondStereo'), not two 'stereo' atoms",
-      "rationale": "The '-' between atom numbers in /b is a separator, not a parity sign; ParityText mis-signed the first atom of every pair (REVIEW H-01)",
-      "phase": "quick-260902-gxx"
-    },
-    {
-      "decision": "The /b card calls the sign a canonical parity and explicitly says it is NOT the E/Z descriptor",
-      "rationale": "Same chemical-correctness rule as /t: parity comes from canonical numbering + geometry, not CIP",
-      "phase": "quick-260902-gxx"
-    },
-    {
-      "decision": "Empty-canvas legend is both inert (handler guard) and visibly greyed (CSS), mirroring the InChI box; the explanation card itself is untouched",
-      "rationale": "Two separate user reports; the guard fixes behaviour, the greying communicates it. Card precedence logic must stay identical once a molecule exists (UAT-13)",
-      "phase": "quick-260902-hzh/i2t"
-    },
-    {
-      "decision": "Pin Node 22 in .nvmrc/engines and bake --no-experimental-webstorage into npm test",
-      "rationale": "Node 25 ships a global localStorage that shadows happy-dom's and breaks the leaveWipe tests",
-      "phase": "quick-260902-hrp"
-    }
+    { "decision": "Register preference lives in the URL (?mode=plain), never in browser storage", "rationale": "leaveWipe.ts clears all storage on pagehide and privacy policy s3 promises nothing persists", "phase": "audience-toggle" },
+    { "decision": "Internal ids stay 'chemist' / 'plain'; UI labels are Expert / Simple", "rationale": "User renamed labels mid-run; renaming ids would churn every copy table and test for no functional gain", "phase": "audience-toggle" },
+    { "decision": "Chemist register follows the IUPAC Blue Book (P-7/P-8/P-9) where it has a term; Gold Book or 'InChI-specific' otherwise; Technical Manual is a cross-check only", "rationale": "User instruction; Technical Manual judged stale. Text extracts of P7/P8/P9 were used for citation checks", "phase": "audience-toggle" },
+    { "decision": "Glossary tooltips: hover/focus opens, click makes sticky; on the pure hover path terms are reachable only after pinning (tour step 7 says 'pin first'); no 300 ms hover-grace added", "rationale": "Leaving the InChI string swaps the card before the pointer arrives; grace would touch 3 leave handlers + 4 enter paths + ~10 tests. fable-advisor concurred", "phase": "audience-toggle" },
+    { "decision": "m-layer text: '0' = parities as written, '1' = inverted", "rationale": "Real InChIs: L-alanine /t2-/m0/s1 vs D-alanine /t2-/m1/s1 share /t2-. Previous copy had it reversed", "phase": "audience-toggle" },
+    { "decision": "Pin targets ([data-pin-target]) and glossary terms/tooltips are exempt from the capture-phase click-anywhere release; each target's own onClick toggles by exact match", "rationale": "Capture-clear then bubble-re-pin made a click on a pinned item a no-op for layers, sub-tokens and key segments alike", "phase": "audience-toggle" },
+    { "decision": "Superpowers SDD workflow used instead of GSD for this feature", "rationale": "User chose it explicitly ('use superpowers-skills, write spec, write-plans, implement using opus, review with fable')", "phase": "audience-toggle" }
   ],
-  "uncommitted_files": [
-    ".planning/REVIEW.md (untracked)",
-    "docs/cicag-distillate-article.md (untracked)",
-    "docs/cicag-distillate-article.docx (untracked)"
-  ],
-  "next_action": "Run the app (npm run dev) and do the browser checks listed in human_actions_pending, starting with the wasm load path and the fumaric acid /b hover. Then decide on the three untracked files.",
-  "context_notes": "Session was a run of small /gsd-quick tasks driven by user reports and the old REVIEW.md, not milestone work. Every quick task has PLAN + SUMMARY under .planning/quick/260902-*/ and a row in STATE.md's Quick Tasks table. Nothing is half-finished. The three blocking constraints from the 2026-08-26 handoff still apply and are repeated in .continue-here.md. Two independent GitHub remotes exist (origin=cm-beilstein, beilstein=Beilstein-Institut); the org one was missing from this clone until 2026-09-02 and must be pushed explicitly."
+  "uncommitted_files": [],
+  "next_action": "Check out feat/audience-toggle, run npm run dev, walk the browser checklist in .superpowers/sdd/2026-09-03-audience-toggle/task-11-report.md, then review/merge PR #3.",
+  "context_notes": "Remotes: origin = Beilstein-Institut org, cm-beilstein = personal mirror; push both. The SDD ledger with every ruling and deferred minor is .superpowers/sdd/2026-09-03-audience-toggle/progress.md (gitignored, local only). Blue Book PDF text extracts live in the session scratchpad and are not preserved; re-run pdftotext on https://iupac.qmul.ac.uk/BlueBook/PDF/P9.pdf etc. if citations need re-checking. The three blocking constraints from the 2026-08-26 handoff still apply (see .continue-here.md)."
 }

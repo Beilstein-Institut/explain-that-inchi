@@ -44,11 +44,11 @@ describe('KetcherPanel editor-failure notice', () => {
     expect(alert.textContent).toBe('The molecule editor could not start.');
   });
 
-  // The notice must sit with the canvas it describes, not above the section heading —
-  // an alert that precedes the h2 separates the heading from its own section.
-  it('renders after the section heading, not before it', () => {
+  // The notice must sit with the canvas it describes, not above the action row —
+  // an alert that precedes it separates the row from its own section.
+  it('renders after the action row, not before it', () => {
     const { container } = renderPanel({ editorError: 'boom' });
-    const heading = container.querySelector('#editor-heading')!;
+    const heading = container.querySelector('.section-label')!;
     const alert = screen.getByRole('alert');
     expect(heading.compareDocumentPosition(alert) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });

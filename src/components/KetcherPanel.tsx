@@ -43,14 +43,8 @@ export function KetcherPanel({
   return (
     <section aria-labelledby="editor-heading">
       <div className="section-label">
-        <h2 id="editor-heading">Draw a molecule to learn more about its InChI</h2>
         <div className="section-label-actions">
           <AudienceToggle />
-          {onHelpClick && (
-            <button type="button" className="help-trigger" onClick={onHelpClick}>
-              Help
-            </button>
-          )}
           {onResetClick && (
             <button type="button" className="reset-trigger" onClick={onResetClick}>
               Reset
@@ -59,6 +53,11 @@ export function KetcherPanel({
           {onLimitationsClick && (
             <button type="button" className="limitations-trigger" onClick={onLimitationsClick}>
               Limitations
+            </button>
+          )}
+          {onHelpClick && (
+            <button type="button" className="help-trigger" onClick={onHelpClick}>
+              Help
             </button>
           )}
           {onFeedbackClick && (

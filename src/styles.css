@@ -75,6 +75,10 @@
   --c-alert: oklch(0.52 0.19 25);
   --c-alert-bg: oklch(0.97 0.03 25);
 
+  /* Beilstein navy, sampled from the wordmark in the header logo (#001E5F).
+     Primary-action pill only; 15:1 on --bg-canvas. */
+  --c-brand: oklch(0.27 0.12 262);
+
   --font-sans: "IBM Plex Sans", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
@@ -89,7 +93,8 @@
   --fs-string: 1.1875rem;   /* 19px — the InChI / InChIKey itself: the subject */
   --fs-subtitle: 1.1875rem; /* 19px — legal h2, tour step title */
   --fs-body: 0.9375rem;     /* 15px — reading prose and form inputs */
-  --fs-ui: 0.8125rem;       /* 13px — buttons, list items, secondary notes */
+  --fs-ui: 0.8125rem;       /* 13px — list items, secondary notes */
+  --fs-ui-lg: 0.875rem;     /* 14px — pill-button labels (fixed 32px height) */
   --fs-meta: 0.75rem;       /* 12px — footer, captions, tertiary notes */
   --fs-micro: 0.6875rem;    /* 11px — mono keys, chips, uppercase micro-labels */
 }
@@ -130,16 +135,39 @@ body {
 /* ---------- Header ---------- */
 .header {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 24px;
   padding-bottom: 6px;
   margin-bottom: 6px;
+  /* Shared by h1 (font-size) and the logo (height) so they stay equal. */
+  --title-size: var(--fs-display);
+}
+/* Title column shrinks to the h1's own width; the h2 (width:0 + min-width:100%)
+   then wraps inside that width instead of stretching the column. */
+.header-title {
+  width: fit-content;
+}
+.header-title h2 {
+  width: 0;
+  min-width: 100%;
+  /* One line spread edge to edge, so it reads as the h1's underline. */
+  text-align-last: justify;
+  /* The h1's "E" has a ~0.06em left side bearing at display size; the mono
+     "D" has almost none at 11px. Inset so the two ink edges coincide. */
+  padding-left: calc(var(--title-size) * 0.06);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 400;
+  margin: 10px 0 0;
 }
 .header h1 {
   font-family: var(--font-sans);
   font-weight: 600;
-  font-size: var(--fs-display);
+  font-size: var(--title-size);
   line-height: 1.02;
   /* Tighter than the serif it replaces: Plex Sans sets looser at display size,
      and 52px needs the counters closed up to read as one word-shape. */
@@ -154,18 +182,29 @@ body {
   color: var(--ink-soft);
   font-weight: 400;
 }
-.header .meta {
-  font-family: var(--font-mono);
-  font-size: var(--fs-micro);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-  text-align: right;
-  line-height: 1.7;
+/* Attribution mark: intrinsic 507x120, sized to sit beside the display h1
+   rather than read as a brand banner. */
+.header-logo img {
+  display: block;
+  /* Logo ink spans the h1's visible glyphs (cap top to the descender of "p"),
+     not its line box. Plex Sans 600: cap 0.698em, ascent 1.025em, line-height
+     1.02em, so caps start 0.187em below the h1 top; measured glyph extent is
+     0.871em. The PNG has ink in rows 11-109 of 120, so its ink is 98/120 of
+     the box and starts 11/120 down. */
+  height: calc(var(--title-size) * 0.871 * 120 / 98);
+  margin-top: calc(var(--title-size) * (0.187 - 0.871 * 11 / 98));
+  width: auto;
+  opacity: 0.75;
+  transition: opacity 120ms ease;
 }
-.header .meta b {
-  color: var(--ink-soft);
-  font-weight: 500;
+.header-logo:hover img,
+.header-logo:focus-visible img {
+  opacity: 1;
+}
+.header-logo:focus-visible {
+  outline: 2px solid var(--c-formula);
+  outline-offset: 4px;
+  border-radius: 2px;
 }
 /* Feedback trigger: rendered on the "Draw a molecule…" section-label row
    (justify-content: space-between pushes it to the right). Shares that row
@@ -175,10 +214,10 @@ body {
   padding: 0 14px;
   border: none;
   border-radius: 999px;
-  background: var(--c-formula);
+  background: var(--c-brand);
   color: var(--bg-canvas);
   font-family: var(--font-sans);
-  font-size: var(--fs-ui);
+  font-size: var(--fs-ui-lg);
   font-weight: 500;
   letter-spacing: 0;
   text-transform: none;
@@ -187,10 +226,10 @@ body {
   transition: background 120ms;
 }
 .feedback-trigger:hover {
-  background: oklch(from var(--c-formula) calc(l + 0.05) c h);
+  background: oklch(from var(--c-brand) calc(l + 0.08) c h);
 }
 .feedback-trigger:focus-visible {
-  outline: 2px solid var(--c-formula);
+  outline: 2px solid var(--c-brand);
   outline-offset: 2px;
 }
 /* Reset trigger: secondary-action pill, subdued style — to the left of Send feedback.
@@ -206,7 +245,7 @@ body {
   background: var(--line);
   color: var(--ink-soft);
   font-family: var(--font-sans);
-  font-size: var(--fs-ui);
+  font-size: var(--fs-ui-lg);
   font-weight: 500;
   letter-spacing: 0;
   text-transform: none;
@@ -233,7 +272,7 @@ body {
   background: var(--line);
   color: var(--ink-soft);
   font-family: var(--font-sans);
-  font-size: var(--fs-ui);
+  font-size: var(--fs-ui-lg);
   font-weight: 500;
   letter-spacing: 0;
   text-transform: none;
@@ -303,32 +342,21 @@ body {
   max-width: 1240px;
   margin: 8px auto 0;
   padding: 4px 34px 52px;
-  font-family: var(--font-sans);
+  font-family: var(--font-mono);
   font-size: var(--fs-meta);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--ink-faint);
 }
-/* Attribution mark: intrinsic 507x120, sized to sit on the 12px link baseline
-   rather than read as a brand banner. */
-/* Auto margin pushes the link group to the right edge; wraps to its own line
-   on narrow viewports because the row is flex-wrap. */
-.site-footer-logo {
+/* Version meta: auto margin pushes the legal links to the right edge; wraps
+   to its own line on narrow viewports because the row is flex-wrap. */
+.site-footer .meta {
   margin-right: auto;
+  white-space: nowrap;
 }
-.site-footer-logo img {
-  display: block;
-  width: 140px;
-  height: auto;
-  opacity: 0.75;
-  transition: opacity 120ms ease;
-}
-.site-footer-logo:hover img,
-.site-footer-logo:focus-visible img {
-  opacity: 1;
-}
-.site-footer-logo:focus-visible {
-  outline: 2px solid var(--c-formula);
-  outline-offset: 4px;
-  border-radius: 2px;
+.site-footer .meta b {
+  color: var(--ink-soft);
+  font-weight: 500;
 }
 .site-footer a {
   color: var(--ink-faint);
@@ -370,6 +398,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-left: auto;
 }
 .canvas-wrap {
   position: relative;
@@ -456,7 +485,7 @@ body {
   .app { padding: 20px 16px 0; }
   /* Same arithmetic as the desktop rule: 16 + 2 inset, 32 + 12 below. */
   .site-footer { padding: 4px 18px 44px; }
-  .header h1 { font-size: var(--fs-display-sm); }
+  .header { --title-size: var(--fs-display-sm); }
   .section-label { flex-wrap: wrap; row-gap: 8px; }
   /* Examples reflow from a vertical sidebar into a horizontal chip strip
      below the editor (the mol-list is grid row 2 on mobile — see

@@ -27,6 +27,19 @@ describe('SiteFooter', () => {
     );
   });
 
+  it('carries the InChI version meta with the InChI Trust link', () => {
+    render(<SiteFooter />);
+    expect(screen.getByText(/standard/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'International Chemical Identifier' }),
+    ).toHaveAttribute('href', 'https://www.inchi-trust.org/');
+  });
+
+  it('no longer carries the Beilstein-Institut logo', () => {
+    render(<SiteFooter />);
+    expect(screen.queryByRole('link', { name: 'Beilstein-Institut' })).toBeNull();
+  });
+
   it('does not link out to the licences notices', () => {
     render(<SiteFooter />);
     expect(screen.queryByRole('link', { name: 'Licenses' })).toBeNull();
